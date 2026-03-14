@@ -41,6 +41,7 @@ const navItems: NavItem[] = [
   { path: "/payslips", label: "Payslips", icon: Receipt },
   { path: "/reports", label: "Reports", icon: FileText },
   { path: "/geofencing", label: "Geofencing", icon: MapPin },
+  { path: "/leave-management", label: "Leave Approvals", icon: CalendarDays, managerOnly: true },
   { path: "/portal", label: "My Portal", icon: UserCircle, separator: true },
   { path: "/users", label: "User Management", icon: Shield, adminOnly: true },
   { path: "/settings", label: "Settings", icon: Settings },
