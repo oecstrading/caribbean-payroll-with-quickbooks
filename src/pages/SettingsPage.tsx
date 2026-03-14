@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Globe, Building, Shield, Phone, Link, FileText, Save } from "lucide-react";
+import { Globe, Building, Shield, Phone, Link, FileText, Save, Upload, ImageIcon, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ST_LUCIA_CONFIG, formatCurrency } from "@/lib/payroll-engine";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +17,7 @@ interface CompanySettings {
   telephone: string;
   website: string;
   address: string;
+  logo_url: string;
 }
 
 const defaultSettings: Omit<CompanySettings, "id"> = {
@@ -27,6 +28,7 @@ const defaultSettings: Omit<CompanySettings, "id"> = {
   telephone: "",
   website: "",
   address: "",
+  logo_url: "",
 };
 
 export default function SettingsPage() {
@@ -37,6 +39,9 @@ export default function SettingsPage() {
   const [form, setForm] = useState(defaultSettings);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [logoUrl, setLogoUrl] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const fetch = async () => {
@@ -47,6 +52,7 @@ export default function SettingsPage() {
         .maybeSingle();
       if (data) {
         setSettings(data as CompanySettings);
+        setLogoUrl(data.logo_url || "");
         setForm({
           company_name: data.company_name || "",
           employer_nic_number: data.employer_nic_number || "",
@@ -55,6 +61,7 @@ export default function SettingsPage() {
           telephone: data.telephone || "",
           website: data.website || "",
           address: data.address || "",
+          logo_url: data.logo_url || "",
         });
       }
       setLoading(false);
@@ -87,6 +94,38 @@ export default function SettingsPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !settings?.id || !user) return;
+    if (!file.type.startsWith("image/")) { toast.error("Please upload an image file"); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error("File must be under 5MB"); return; }
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const filePath = `logo-${Date.now()}.${ext}`;
+      const { error: uploadErr } = await supabase.storage.from("company-assets").upload(filePath, file, { upsert: true });
+      if (uploadErr) throw uploadErr;
+      const { data: urlData } = supabase.storage.from("company-assets").getPublicUrl(filePath);
+      const newUrl = urlData.publicUrl;
+      const { error: updateErr } = await supabase.from("company_settings").update({ logo_url: newUrl, updated_by: user.id }).eq("id", settings.id);
+      if (updateErr) throw updateErr;
+      setLogoUrl(newUrl);
+      setForm({ ...form, logo_url: newUrl });
+      toast.success("Logo uploaded successfully");
+    } catch (err: any) { toast.error(err.message || "Failed to upload logo"); }
+    finally { setUploading(false); if (fileInputRef.current) fileInputRef.current.value = ""; }
+  };
+
+  const handleRemoveLogo = async () => {
+    if (!settings?.id || !user) return;
+    try {
+      await supabase.from("company_settings").update({ logo_url: "", updated_by: user.id }).eq("id", settings.id);
+      setLogoUrl("");
+      setForm({ ...form, logo_url: "" });
+      toast.success("Logo removed");
+    } catch (err: any) { toast.error(err.message || "Failed to remove logo"); }
   };
 
   const inputClass = "w-full px-3 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20";
@@ -178,7 +217,57 @@ export default function SettingsPage() {
               {loading ? (
                 <p className="text-sm text-muted-foreground py-4">Loading...</p>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-6">
+                  {/* Logo Upload */}
+                  <div className="flex items-center gap-6 pb-4 border-b border-border/50">
+                    <div className="relative group">
+                      {logoUrl ? (
+                        <img
+                          src={logoUrl}
+                          alt="Company logo"
+                          className="w-20 h-20 rounded-xl object-contain bg-secondary border border-border/50 p-1"
+                        />
+                      ) : (
+                        <div className="w-20 h-20 rounded-xl bg-secondary border-2 border-dashed border-border flex items-center justify-center">
+                          <ImageIcon size={24} className="text-muted-foreground/40" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-foreground">Company Logo</p>
+                      <p className="text-xs text-muted-foreground">PNG, JPG or SVG. Max 5MB.</p>
+                      {isAdminOrManager && (
+                        <div className="flex gap-2">
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleLogoUpload}
+                            className="hidden"
+                          />
+                          <button
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploading}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                          >
+                            <Upload size={12} />
+                            {uploading ? "Uploading..." : "Upload"}
+                          </button>
+                          {logoUrl && (
+                            <button
+                              onClick={handleRemoveLogo}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-destructive/10 text-destructive rounded-lg text-xs font-medium hover:bg-destructive/20 transition-colors"
+                            >
+                              <Trash2 size={12} />
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Company Name</label>
                     <input value={form.company_name} onChange={update("company_name")} disabled={!isAdminOrManager} placeholder="Enter company name" className={inputClass} />
@@ -228,6 +317,7 @@ export default function SettingsPage() {
                       </button>
                     </div>
                   )}
+                  </div>
                 </div>
               )}
             </CardContent>
