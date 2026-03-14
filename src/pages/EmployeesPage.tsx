@@ -1,10 +1,17 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Search, UserPlus, MoreHorizontal, Mail, Phone } from "lucide-react";
+import { Search, UserPlus, MoreHorizontal, Mail, Phone, FileText, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { sampleEmployees, type Employee } from "@/lib/sample-data";
-import { formatCurrency } from "@/lib/payroll-engine";
+import { formatCurrency, calculatePayroll, ST_LUCIA_CONFIG } from "@/lib/payroll-engine";
+import { useNavigate } from "react-router-dom";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function EmployeesPage() {
   const [search, setSearch] = useState("");
