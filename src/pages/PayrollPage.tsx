@@ -14,7 +14,28 @@ const steps = ["Review & Sync", "Audit", "Approve & Run"];
 export default function PayrollPage() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
+  const [bulkEmailing, setBulkEmailing] = useState(false);
   const { deductionsMap } = useAllEmployeeDeductions();
+
+  const handleBulkEmail = async () => {
+    setBulkEmailing(true);
+    let sent = 0;
+    let failed = 0;
+    for (const emp of payrollData) {
+      try {
+        const { data, error } = await supabase.functions.invoke("email-payslip", {
+          body: { user_id: emp.id, payslip_html: `Payslip for ${emp.firstName} ${emp.lastName}`, period: "March 2026" },
+        });
+        if (error || data?.error) { failed++; } else { sent++; }
+      } catch { failed++; }
+    }
+    setBulkEmailing(false);
+    if (failed === 0) {
+      toast.success(`All ${sent} payslips emailed successfully`);
+    } else {
+      toast.warning(`${sent} sent, ${failed} failed`);
+    }
+  };
 
   const payrollData = sampleEmployees
     .filter((e) => e.status === "Active")
