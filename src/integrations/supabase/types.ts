@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      clock_punches: {
+        Row: {
+          address_label: string | null
+          geofence_zone_id: string | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          punch_type: string
+          punched_at: string
+          user_id: string
+          within_geofence: boolean | null
+        }
+        Insert: {
+          address_label?: string | null
+          geofence_zone_id?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          punch_type: string
+          punched_at?: string
+          user_id: string
+          within_geofence?: boolean | null
+        }
+        Update: {
+          address_label?: string | null
+          geofence_zone_id?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          punch_type?: string
+          punched_at?: string
+          user_id?: string
+          within_geofence?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clock_punches_geofence_zone_id_fkey"
+            columns: ["geofence_zone_id"]
+            isOneToOne: false
+            referencedRelation: "geofence_zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_bank_info: {
         Row: {
           account_number: string | null
@@ -44,6 +88,39 @@ export type Database = {
           routing_number?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      geofence_zones: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          latitude: number
+          longitude: number
+          name: string
+          radius_meters: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          latitude: number
+          longitude: number
+          name: string
+          radius_meters?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          latitude?: number
+          longitude?: number
+          name?: string
+          radius_meters?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -271,14 +348,40 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin_or_manager: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
+      app_role: "admin" | "manager" | "employee"
       leave_status: "pending" | "approved" | "rejected"
       leave_type:
         | "annual"
@@ -414,6 +517,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "manager", "employee"],
       leave_status: ["pending", "approved", "rejected"],
       leave_type: [
         "annual",
