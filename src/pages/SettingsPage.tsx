@@ -63,8 +63,8 @@ export default function SettingsPage() {
   }, []);
 
   const handleSave = async () => {
-    if (!isAdmin || !user) {
-      toast.error("Only admins can update company settings");
+    if (!isAdminOrManager || !user) {
+      toast.error("Only admins and managers can update company settings");
       return;
     }
     setSaving(true);
