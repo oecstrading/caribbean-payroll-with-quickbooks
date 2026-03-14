@@ -15,6 +15,8 @@ export default function PayrollPage() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [bulkEmailing, setBulkEmailing] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const [approved, setApproved] = useState(false);
   const { deductionsMap } = useAllEmployeeDeductions();
 
   const handleBulkEmail = async () => {
