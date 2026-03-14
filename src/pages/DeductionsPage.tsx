@@ -189,12 +189,12 @@ export default function DeductionsPage() {
     try {
       const { error } = await supabase.from("employee_additions").insert({
         user_id: additionForm.user_id,
-        addition_type: additionForm.addition_type,
+        addition_type: additionForm.addition_type as any,
         description: additionForm.description || additionTypes.find(t => t.value === additionForm.addition_type)?.label || "",
         amount: additionForm.amount,
         frequency: additionForm.frequency,
         notes: additionForm.notes,
-      });
+      } as any);
       if (error) throw error;
       toast.success("Addition added");
       setShowAdditionForm(false);
