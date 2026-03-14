@@ -76,7 +76,8 @@ export default function UserManagementPage() {
 
   const filtered = users.filter(
     (u) =>
-      `${u.first_name} ${u.last_name} ${u.email}`.toLowerCase().includes(search.toLowerCase())
+      `${u.first_name} ${u.last_name} ${u.email}`.toLowerCase().includes(search.toLowerCase()) &&
+      (!roleFilter || u.role === roleFilter)
   );
 
   const handleRoleChange = async (userId: string, newRole: AppRole) => {
