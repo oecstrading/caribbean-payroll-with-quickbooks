@@ -41,6 +41,7 @@ const navItems: NavItem[] = [
   { path: "/employees", label: "Employees", icon: Users },
   { path: "/attendance", label: "Attendance", icon: Clock },
   { path: "/payroll", label: "Payroll", icon: DollarSign },
+  { path: "/payroll-history", label: "Payroll History", icon: History },
   { path: "/payslips", label: "Payslips", icon: Receipt },
   { path: "/reports", label: "Reports", icon: FileText },
   { path: "/geofencing", label: "Geofencing", icon: MapPin },
