@@ -330,6 +330,7 @@ export default function PayrollHistoryPage() {
                                   ))}
                                 </tbody>
                               </table>
+                              </div>
                             )}
                           </div>
                         </td>
