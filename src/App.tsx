@@ -20,6 +20,7 @@ import UserManagementPage from "@/pages/UserManagementPage";
 import GeofencingPage from "@/pages/GeofencingPage";
 import LeaveManagementPage from "@/pages/LeaveManagementPage";
 import DeductionsPage from "@/pages/DeductionsPage";
+import PayrollHistoryPage from "@/pages/PayrollHistoryPage";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
