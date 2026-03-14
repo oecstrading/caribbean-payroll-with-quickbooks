@@ -271,6 +271,21 @@ export default function PayrollHistoryPage() {
                             ) : (payslips[run.id]?.length || 0) === 0 ? (
                               <p className="text-sm text-muted-foreground text-center py-3">No payslips found for this run.</p>
                             ) : (
+                              <div className="space-y-3">
+                                <div className="flex justify-end gap-2">
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); exportRunPayslipsCSV(run.id); }}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary text-foreground rounded-md text-xs font-medium hover:bg-muted transition-colors"
+                                  >
+                                    <Download size={12} /> CSV
+                                  </button>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); exportRunPayslipsPDF(run.id); }}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-md text-xs font-medium hover:bg-primary/90 transition-colors"
+                                  >
+                                    <Download size={12} /> PDF
+                                  </button>
+                                </div>
                               <table className="w-full text-sm">
                                 <thead>
                                   <tr className="border-b border-border/40">
