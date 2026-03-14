@@ -1,13 +1,14 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Printer, Download, ArrowLeft, Building, User, Calendar, DollarSign, Mail, Loader2 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Printer, ArrowLeft, Building, User, Calendar, DollarSign, Mail, Loader2 } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { sampleEmployees, type Employee } from "@/lib/sample-data";
 import { calculatePayroll, formatCurrency, ST_LUCIA_CONFIG } from "@/lib/payroll-engine";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCompany } from "@/hooks/useCompany";
+import { useAllEmployeeDeductions } from "@/hooks/useEmployeeDeductions";
 
 export default function PayslipPage() {
   const navigate = useNavigate();
@@ -18,13 +19,13 @@ export default function PayslipPage() {
   const [payPeriod] = useState("March 2026");
   const payslipRef = useRef<HTMLDivElement>(null);
   const [emailing, setEmailing] = useState(false);
+  const { deductionsMap } = useAllEmployeeDeductions();
 
   const employee = sampleEmployees.find((e) => e.id === selectedId);
-  const payroll = employee ? calculatePayroll(employee.monthlySalary, ST_LUCIA_CONFIG) : null;
+  const creditorDeductions = deductionsMap[selectedId] || [];
+  const payroll = employee ? calculatePayroll(employee.monthlySalary, ST_LUCIA_CONFIG, 0, creditorDeductions) : null;
 
-  const handlePrint = () => {
-    window.print();
-  };
+  const handlePrint = () => window.print();
 
   const handleEmailPayslip = async () => {
     if (!employee) return;
@@ -32,11 +33,7 @@ export default function PayslipPage() {
     try {
       const payslipHtml = payslipRef.current?.innerHTML || "";
       const { data, error } = await supabase.functions.invoke("email-payslip", {
-        body: {
-          user_id: employee.id,
-          payslip_html: payslipHtml,
-          period: payPeriod,
-        },
+        body: { user_id: employee.id, payslip_html: payslipHtml, period: payPeriod },
       });
       if (error || data?.error) throw new Error(data?.error || error?.message || "Failed to email payslip");
       toast.success(data.message || "Payslip emailed successfully");
@@ -60,10 +57,7 @@ export default function PayslipPage() {
       {/* Header - no print */}
       <div className="no-print flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-2 rounded-lg hover:bg-secondary transition-colors"
-          >
+          <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-secondary transition-colors">
             <ArrowLeft size={20} className="text-muted-foreground" />
           </button>
           <div>
@@ -115,12 +109,7 @@ export default function PayslipPage() {
       </div>
 
       {/* Payslip Document */}
-      <motion.div
-        ref={payslipRef}
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        key={selectedId}
-      >
+      <motion.div ref={payslipRef} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} key={selectedId}>
         <Card className="shadow-card border-border/60 overflow-hidden print:shadow-none print:border">
           {/* Company Header */}
           <div className="bg-primary px-6 py-5 text-primary-foreground">
@@ -155,22 +144,17 @@ export default function PayslipPage() {
                   <User size={12} /> Employee Details
                 </h3>
                 <div className="space-y-1.5">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Name</span>
-                    <span className="text-sm font-medium text-foreground">{employee.firstName} {employee.lastName}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Employee #</span>
-                    <span className="text-sm font-mono text-foreground">{employee.personId}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Department</span>
-                    <span className="text-sm text-foreground">{employee.department}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Job Title</span>
-                    <span className="text-sm text-foreground">{employee.jobTitle}</span>
-                  </div>
+                  {[
+                    ["Name", `${employee.firstName} ${employee.lastName}`],
+                    ["Employee #", employee.personId],
+                    ["Department", employee.department],
+                    ["Job Title", employee.jobTitle],
+                  ].map(([label, value]) => (
+                    <div key={label} className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">{label}</span>
+                      <span className={`text-sm ${label === "Employee #" ? "font-mono" : ""} text-foreground font-medium`}>{value}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
               <div className="space-y-3">
@@ -178,22 +162,17 @@ export default function PayslipPage() {
                   <Calendar size={12} /> Tax & Statutory
                 </h3>
                 <div className="space-y-1.5">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">NIC No.</span>
-                    <span className="text-sm font-mono text-foreground">{employee.nicNumber}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">TAN No.</span>
-                    <span className="text-sm font-mono text-foreground">{employee.tanNumber}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Pay Period</span>
-                    <span className="text-sm text-foreground">{payPeriod}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Pay Date</span>
-                    <span className="text-sm text-foreground">March 31, 2026</span>
-                  </div>
+                  {[
+                    ["NIC No.", employee.nicNumber],
+                    ["TAN No.", employee.tanNumber],
+                    ["Pay Period", payPeriod],
+                    ["Pay Date", "March 31, 2026"],
+                  ].map(([label, value]) => (
+                    <div key={label} className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">{label}</span>
+                      <span className={`text-sm ${["NIC No.", "TAN No."].includes(label) ? "font-mono" : ""} text-foreground`}>{value}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -233,7 +212,7 @@ export default function PayslipPage() {
               </table>
             </div>
 
-            {/* Deductions */}
+            {/* Statutory Deductions */}
             <div>
               <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Statutory Deductions</h3>
               <table className="w-full text-sm">
@@ -255,16 +234,47 @@ export default function PayslipPage() {
                     <td className="py-2 text-right font-mono text-destructive">{formatCurrency(payroll.paye)}</td>
                     <td className="py-2 text-right font-mono text-muted-foreground">{formatCurrency(payroll.paye * 3)}</td>
                   </tr>
-                  <tr className="font-semibold">
-                    <td className="py-2 text-foreground">Total Deductions</td>
-                    <td className="py-2 text-right font-mono text-destructive">{formatCurrency(payroll.totalDeductions)}</td>
-                    <td className="py-2 text-right font-mono text-muted-foreground">{formatCurrency(payroll.totalDeductions * 3)}</td>
-                  </tr>
                 </tbody>
               </table>
             </div>
 
-            {/* Employer Contributions (info only) */}
+            {/* Creditor Deductions */}
+            {payroll.creditorDeductions.length > 0 && (
+              <div>
+                <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Other Deductions</h3>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left py-2 font-medium text-muted-foreground">Creditor</th>
+                      <th className="text-right py-2 font-medium text-muted-foreground">Current</th>
+                      <th className="text-right py-2 font-medium text-muted-foreground">YTD (3 months)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {payroll.creditorDeductions.map((d, i) => (
+                      <tr key={i} className="border-b border-border/50">
+                        <td className="py-2 text-foreground">{d.creditorName}</td>
+                        <td className="py-2 text-right font-mono text-destructive">{formatCurrency(d.amount)}</td>
+                        <td className="py-2 text-right font-mono text-muted-foreground">{formatCurrency(d.amount * 3)}</td>
+                      </tr>
+                    ))}
+                    <tr className="font-semibold">
+                      <td className="py-2 text-foreground">Subtotal Other Deductions</td>
+                      <td className="py-2 text-right font-mono text-destructive">{formatCurrency(payroll.totalCreditorDeductions)}</td>
+                      <td className="py-2 text-right font-mono text-muted-foreground">{formatCurrency(payroll.totalCreditorDeductions * 3)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Total Deductions */}
+            <div className="flex justify-between py-2 border-t border-border font-semibold text-sm">
+              <span className="text-foreground">Total Deductions</span>
+              <span className="font-mono text-destructive">{formatCurrency(payroll.totalDeductions)}</span>
+            </div>
+
+            {/* Employer Contributions */}
             <div className="p-4 rounded-lg bg-secondary/50 border border-border/50">
               <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Employer Contributions (not deducted from pay)</h3>
               <div className="flex justify-between text-sm">
@@ -272,8 +282,6 @@ export default function PayslipPage() {
                 <span className="font-mono text-foreground">{formatCurrency(payroll.employerNIC)}</span>
               </div>
             </div>
-
-            <div className="border-t border-border" />
 
             {/* Net Pay */}
             <div className="p-5 rounded-lg bg-success/5 border border-success/20">
