@@ -183,6 +183,7 @@ export default function UserManagementPage() {
     } finally {
       setSettingPin(false);
     }
+  };
   
 
   if (!isAdmin) {
