@@ -92,6 +92,7 @@ export default function PayrollPage() {
     }
   };
 
+  const payrollData = sampleEmployees
     .filter((e) => e.status === "Active")
     .map((e) => {
       // Try to match deductions by sample employee id (will be empty for sample data)
