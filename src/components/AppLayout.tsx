@@ -75,8 +75,12 @@ export default function AppLayout() {
       >
         {/* Logo */}
         <div className="flex items-center gap-3 px-4 h-16 border-b border-sidebar-border">
-          <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
-            <span className="font-display font-bold text-primary-foreground text-sm">OE</span>
+          <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-primary flex items-center justify-center overflow-hidden">
+            {company.logo_url ? (
+              <img src={company.logo_url} alt="Logo" className="w-full h-full object-contain" />
+            ) : (
+              <span className="font-display font-bold text-primary-foreground text-sm">OE</span>
+            )}
           </div>
           <AnimatePresence>
             {!collapsed && (
