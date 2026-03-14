@@ -5,17 +5,21 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { sampleEmployees } from "@/lib/sample-data";
 import { calculatePayroll, formatCurrency, ST_LUCIA_CONFIG, checkMinimumWageCompliance } from "@/lib/payroll-engine";
+import { useAllEmployeeDeductions } from "@/hooks/useEmployeeDeductions";
 
 const steps = ["Review & Sync", "Audit", "Approve & Run"];
 
 export default function PayrollPage() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
+  const { deductionsMap } = useAllEmployeeDeductions();
 
   const payrollData = sampleEmployees
     .filter((e) => e.status === "Active")
     .map((e) => {
-      const result = calculatePayroll(e.monthlySalary, ST_LUCIA_CONFIG);
+      // Try to match deductions by sample employee id (will be empty for sample data)
+      const creditorDeductions = deductionsMap[e.id] || [];
+      const result = calculatePayroll(e.monthlySalary, ST_LUCIA_CONFIG, 0, creditorDeductions);
       const hourlyRate = e.monthlySalary / (e.stdHoursPerDay * 22);
       const compliance = checkMinimumWageCompliance(hourlyRate, ST_LUCIA_CONFIG);
       return { ...e, payroll: result, hourlyRate, compliance };
@@ -27,9 +31,10 @@ export default function PayrollPage() {
       nicEmployee: acc.nicEmployee + e.payroll.employeeNIC,
       nicEmployer: acc.nicEmployer + e.payroll.employerNIC,
       paye: acc.paye + e.payroll.paye,
+      creditor: acc.creditor + e.payroll.totalCreditorDeductions,
       net: acc.net + e.payroll.netPay,
     }),
-    { gross: 0, nicEmployee: 0, nicEmployer: 0, paye: 0, net: 0 }
+    { gross: 0, nicEmployee: 0, nicEmployer: 0, paye: 0, creditor: 0, net: 0 }
   );
 
   const anomalies = payrollData.filter((e) => !e.compliance.compliant);
@@ -81,7 +86,8 @@ export default function PayrollPage() {
                     <th className="text-right py-3 px-4 font-medium text-muted-foreground">Basic Pay</th>
                     <th className="text-right py-3 px-4 font-medium text-muted-foreground">NIC (5%)</th>
                     <th className="text-right py-3 px-4 font-medium text-muted-foreground">PAYE</th>
-                    <th className="text-right py-3 px-4 font-medium text-muted-foreground">Deductions</th>
+                    <th className="text-right py-3 px-4 font-medium text-muted-foreground">Creditor Ded.</th>
+                    <th className="text-right py-3 px-4 font-medium text-muted-foreground">Total Ded.</th>
                     <th className="text-right py-3 px-4 font-medium text-muted-foreground">Net Pay</th>
                   </tr>
                 </thead>
@@ -108,6 +114,7 @@ export default function PayrollPage() {
                       <td className="py-3 px-4 text-right font-mono text-foreground">{formatCurrency(emp.payroll.basicPay)}</td>
                       <td className="py-3 px-4 text-right font-mono text-destructive">{formatCurrency(emp.payroll.employeeNIC)}</td>
                       <td className="py-3 px-4 text-right font-mono text-destructive">{formatCurrency(emp.payroll.paye)}</td>
+                      <td className="py-3 px-4 text-right font-mono text-destructive">{formatCurrency(emp.payroll.totalCreditorDeductions)}</td>
                       <td className="py-3 px-4 text-right font-mono text-destructive">{formatCurrency(emp.payroll.totalDeductions)}</td>
                       <td className="py-3 px-4 text-right font-mono font-semibold text-success">{formatCurrency(emp.payroll.netPay)}</td>
                     </motion.tr>
@@ -119,7 +126,8 @@ export default function PayrollPage() {
                     <td className="py-3 px-4 text-right font-mono text-foreground">{formatCurrency(totals.gross)}</td>
                     <td className="py-3 px-4 text-right font-mono text-destructive">{formatCurrency(totals.nicEmployee)}</td>
                     <td className="py-3 px-4 text-right font-mono text-destructive">{formatCurrency(totals.paye)}</td>
-                    <td className="py-3 px-4 text-right font-mono text-destructive">{formatCurrency(totals.nicEmployee + totals.paye)}</td>
+                    <td className="py-3 px-4 text-right font-mono text-destructive">{formatCurrency(totals.creditor)}</td>
+                    <td className="py-3 px-4 text-right font-mono text-destructive">{formatCurrency(totals.nicEmployee + totals.paye + totals.creditor)}</td>
                     <td className="py-3 px-4 text-right font-mono font-bold text-success">{formatCurrency(totals.net)}</td>
                   </tr>
                 </tfoot>
@@ -172,6 +180,7 @@ export default function PayrollPage() {
                   "No pay spikes exceeding 20% from last month",
                   `Employer NIC contribution: ${formatCurrency(totals.nicEmployer)} XCD`,
                   "PAYE brackets applied correctly (15% / 20% / 30%)",
+                  `Total creditor deductions: ${formatCurrency(totals.creditor)} XCD`,
                 ].map((check) => (
                   <div key={check} className="flex items-center gap-2 text-sm">
                     <CheckCircle size={14} className="text-success" />
@@ -227,6 +236,10 @@ export default function PayrollPage() {
                     <div className="flex justify-between py-2 border-b border-border/50">
                       <span className="text-sm text-foreground">PAYE Income Tax</span>
                       <span className="font-mono text-destructive">{formatCurrency(totals.paye)}</span>
+                    </div>
+                    <div className="flex justify-between py-2 border-b border-border/50">
+                      <span className="text-sm text-foreground">Creditor Deductions</span>
+                      <span className="font-mono text-destructive">{formatCurrency(totals.creditor)}</span>
                     </div>
                   </div>
                 </div>

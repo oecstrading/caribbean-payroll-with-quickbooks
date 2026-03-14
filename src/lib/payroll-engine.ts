@@ -63,11 +63,18 @@ export const ST_LUCIA_CONFIG: CountryTaxConfig = {
   },
 };
 
+export interface CreditorDeduction {
+  creditorName: string;
+  amount: number;
+}
+
 export interface PayrollResult {
   grossMonthly: number;
   employeeNIC: number;
   employerNIC: number;
   paye: number;
+  creditorDeductions: CreditorDeduction[];
+  totalCreditorDeductions: number;
   totalDeductions: number;
   netPay: number;
   overtimePay: number;
@@ -77,7 +84,8 @@ export interface PayrollResult {
 export function calculatePayroll(
   grossMonthly: number,
   config: CountryTaxConfig = ST_LUCIA_CONFIG,
-  overtimePay: number = 0
+  overtimePay: number = 0,
+  creditorDeductions: CreditorDeduction[] = []
 ): PayrollResult {
   const totalGross = grossMonthly + overtimePay;
 
@@ -105,7 +113,8 @@ export function calculatePayroll(
     remaining -= taxable;
   }
 
-  const totalDeductions = employeeNIC + paye;
+  const totalCreditorDeductions = creditorDeductions.reduce((sum, d) => sum + d.amount, 0);
+  const totalDeductions = employeeNIC + paye + totalCreditorDeductions;
   const netPay = totalGross - totalDeductions;
 
   return {
@@ -115,6 +124,8 @@ export function calculatePayroll(
     employeeNIC: Math.round(employeeNIC * 100) / 100,
     employerNIC: Math.round(employerNIC * 100) / 100,
     paye: Math.round(paye * 100) / 100,
+    creditorDeductions,
+    totalCreditorDeductions: Math.round(totalCreditorDeductions * 100) / 100,
     totalDeductions: Math.round(totalDeductions * 100) / 100,
     netPay: Math.round(netPay * 100) / 100,
   };
