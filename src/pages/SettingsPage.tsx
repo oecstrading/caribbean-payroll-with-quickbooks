@@ -96,6 +96,38 @@ export default function SettingsPage() {
     }
   };
 
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !settings?.id || !user) return;
+    if (!file.type.startsWith("image/")) { toast.error("Please upload an image file"); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error("File must be under 5MB"); return; }
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const filePath = `logo-${Date.now()}.${ext}`;
+      const { error: uploadErr } = await supabase.storage.from("company-assets").upload(filePath, file, { upsert: true });
+      if (uploadErr) throw uploadErr;
+      const { data: urlData } = supabase.storage.from("company-assets").getPublicUrl(filePath);
+      const newUrl = urlData.publicUrl;
+      const { error: updateErr } = await supabase.from("company_settings").update({ logo_url: newUrl, updated_by: user.id }).eq("id", settings.id);
+      if (updateErr) throw updateErr;
+      setLogoUrl(newUrl);
+      setForm({ ...form, logo_url: newUrl });
+      toast.success("Logo uploaded successfully");
+    } catch (err: any) { toast.error(err.message || "Failed to upload logo"); }
+    finally { setUploading(false); if (fileInputRef.current) fileInputRef.current.value = ""; }
+  };
+
+  const handleRemoveLogo = async () => {
+    if (!settings?.id || !user) return;
+    try {
+      await supabase.from("company_settings").update({ logo_url: "", updated_by: user.id }).eq("id", settings.id);
+      setLogoUrl("");
+      setForm({ ...form, logo_url: "" });
+      toast.success("Logo removed");
+    } catch (err: any) { toast.error(err.message || "Failed to remove logo"); }
+  };
+
   const inputClass = "w-full px-3 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20";
 
   const update = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
