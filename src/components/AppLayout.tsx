@@ -19,6 +19,7 @@ import {
   MapPin,
   Shield,
   LogOut,
+  History,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
