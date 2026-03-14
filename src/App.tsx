@@ -78,7 +78,9 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <RoleProvider>
-            <AppRoutes />
+            <CompanyProvider>
+              <AppRoutes />
+            </CompanyProvider>
           </RoleProvider>
         </AuthProvider>
       </BrowserRouter>

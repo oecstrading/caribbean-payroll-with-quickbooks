@@ -91,7 +91,7 @@ export default function AppLayout() {
                 className="overflow-hidden"
               >
                 <h1 className="font-display font-bold text-sidebar-foreground text-sm whitespace-nowrap">
-                  OECS HR & Payroll
+                  {company.company_name || "OECS HR & Payroll"}
                 </h1>
                 <p className="text-[10px] text-sidebar-muted whitespace-nowrap">Saint Lucia</p>
               </motion.div>
