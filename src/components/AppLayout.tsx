@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -20,13 +20,14 @@ import {
   Shield,
   LogOut,
   History,
+  Menu,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRole } from "@/hooks/useRole";
 import { useCompany } from "@/hooks/useCompany";
 import { useAuth } from "@/hooks/useAuth";
-import { Badge } from "@/components/ui/badge";
 
 interface NavItem {
   path: string;
@@ -35,31 +36,38 @@ interface NavItem {
   adminOnly?: boolean;
   managerOnly?: boolean;
   separator?: boolean;
+  bottomNav?: boolean; // show in mobile bottom nav
 }
 
 const navItems: NavItem[] = [
-  { path: "/", label: "Dashboard", icon: LayoutDashboard },
+  { path: "/", label: "Dashboard", icon: LayoutDashboard, bottomNav: true },
   { path: "/employees", label: "Employees", icon: Users },
   { path: "/attendance", label: "Attendance", icon: Clock },
-  { path: "/payroll", label: "Payroll", icon: DollarSign },
+  { path: "/payroll", label: "Payroll", icon: DollarSign, bottomNav: true },
   { path: "/payroll-history", label: "Payroll History", icon: History },
   { path: "/payslips", label: "Payslips", icon: Receipt },
   { path: "/reports", label: "Reports", icon: FileText },
   { path: "/geofencing", label: "Geofencing", icon: MapPin },
   { path: "/leave-management", label: "Leave Approvals", icon: CalendarDays, managerOnly: true },
   { path: "/deductions", label: "Deductions", icon: Landmark, managerOnly: true },
-  { path: "/portal", label: "My Portal", icon: UserCircle, separator: true },
+  { path: "/portal", label: "My Portal", icon: UserCircle, separator: true, bottomNav: true },
   { path: "/users", label: "User Management", icon: Shield, adminOnly: true },
-  { path: "/settings", label: "Settings", icon: Settings },
+  { path: "/settings", label: "Settings", icon: Settings, bottomNav: true },
 ];
 
 export default function AppLayout() {
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { role, isAdmin, isAdminOrManager } = useRole();
   const { signOut } = useAuth();
   const company = useCompany();
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
 
   const visibleNavItems = navItems.filter((item) => {
     if (item.adminOnly && !isAdmin) return false;
@@ -67,131 +75,168 @@ export default function AppLayout() {
     return true;
   });
 
+  const bottomNavItems = visibleNavItems.filter((item) => item.bottomNav).slice(0, 5);
+
+  const handleNav = (path: string) => {
+    navigate(path);
+    setMobileOpen(false);
+  };
+
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* Sidebar */}
-      <motion.aside
-        animate={{ width: collapsed ? 72 : 256 }}
-        transition={{ duration: 0.2, ease: "easeInOut" }}
-        className="flex flex-col bg-sidebar border-r border-sidebar-border"
-      >
-        {/* Logo */}
-        <div className="flex items-center gap-3 px-4 h-16 border-b border-sidebar-border">
-          <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-primary flex items-center justify-center overflow-hidden">
-            {company.logo_url ? (
-              <img src={company.logo_url} alt="Logo" className="w-full h-full object-contain" />
-            ) : (
-              <span className="font-display font-bold text-primary-foreground text-sm">OE</span>
-            )}
-          </div>
-          <AnimatePresence>
-            {!collapsed && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="overflow-hidden"
-              >
-                <h1 className="font-display font-bold text-sidebar-foreground text-sm whitespace-nowrap">
-                  {company.company_name || "OECS HR & Payroll"}
-                </h1>
-                <p className="text-[10px] text-sidebar-muted whitespace-nowrap">Saint Lucia</p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+      {/* Mobile Overlay */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setMobileOpen(false)}
+            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          />
+        )}
+      </AnimatePresence>
 
-        {/* Navigation */}
-        <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
-          {visibleNavItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <div key={item.path}>
-                {item.separator && <div className="h-px bg-sidebar-border my-2 mx-2" />}
+      {/* Sidebar - hidden on mobile, slide-out drawer when toggled */}
+      <AnimatePresence>
+        {(mobileOpen || true) && (
+          <motion.aside
+            initial={false}
+            animate={{
+              width: collapsed ? 72 : 256,
+              x: 0,
+            }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            className={cn(
+              "flex flex-col bg-sidebar border-r border-sidebar-border z-50",
+              "hidden md:flex", // hidden on mobile by default
+              mobileOpen && "!flex fixed inset-y-0 left-0 w-[280px]" // show as overlay on mobile
+            )}
+            style={mobileOpen ? { width: 280 } : undefined}
+          >
+            {/* Logo */}
+            <div className="flex items-center justify-between px-4 h-16 border-b border-sidebar-border">
+              <div className="flex items-center gap-3">
+                <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-primary flex items-center justify-center overflow-hidden">
+                  {company.logo_url ? (
+                    <img src={company.logo_url} alt="Logo" className="w-full h-full object-contain" />
+                  ) : (
+                    <span className="font-display font-bold text-primary-foreground text-sm">OE</span>
+                  )}
+                </div>
+                {(!collapsed || mobileOpen) && (
+                  <div className="overflow-hidden">
+                    <h1 className="font-display font-bold text-sidebar-foreground text-sm whitespace-nowrap">
+                      {company.company_name || "OECS HR & Payroll"}
+                    </h1>
+                    <p className="text-[10px] text-sidebar-muted whitespace-nowrap">Saint Lucia</p>
+                  </div>
+                )}
+              </div>
+              {/* Close button on mobile */}
+              {mobileOpen && (
                 <button
-                  onClick={() => navigate(item.path)}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150",
-                    isActive
-                      ? "bg-sidebar-accent text-sidebar-primary"
-                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                  )}
+                  onClick={() => setMobileOpen(false)}
+                  className="md:hidden p-1.5 rounded-lg text-sidebar-foreground/50 hover:bg-sidebar-accent"
                 >
-                  <item.icon size={20} className="flex-shrink-0" />
-                  <AnimatePresence>
-                    {!collapsed && (
-                      <motion.span
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="whitespace-nowrap"
-                      >
-                        {item.label}
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                  {item.adminOnly && !collapsed && (
-                    <span className="ml-auto text-[9px] px-1.5 py-0.5 rounded bg-sidebar-accent text-sidebar-primary font-bold">
-                      ADMIN
-                    </span>
-                  )}
+                  <X size={20} />
+                </button>
+              )}
+            </div>
+
+            {/* Navigation */}
+            <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
+              {visibleNavItems.map((item) => {
+                const isActive = location.pathname === item.path;
+                return (
+                  <div key={item.path}>
+                    {item.separator && <div className="h-px bg-sidebar-border my-2 mx-2" />}
+                    <button
+                      onClick={() => handleNav(item.path)}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150",
+                        isActive
+                          ? "bg-sidebar-accent text-sidebar-primary"
+                          : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                      )}
+                    >
+                      <item.icon size={20} className="flex-shrink-0" />
+                      {(!collapsed || mobileOpen) && (
+                        <span className="whitespace-nowrap">{item.label}</span>
+                      )}
+                      {item.adminOnly && (!collapsed || mobileOpen) && (
+                        <span className="ml-auto text-[9px] px-1.5 py-0.5 rounded bg-sidebar-accent text-sidebar-primary font-bold">
+                          ADMIN
+                        </span>
+                      )}
+                    </button>
+                  </div>
+                );
+              })}
+            </nav>
+
+            {/* Role badge + Collapse + Logout */}
+            <div className="px-2 py-3 border-t border-sidebar-border space-y-2">
+              {(!collapsed || mobileOpen) && role && (
+                <div className="flex items-center justify-between px-2">
+                  <span className="text-[10px] text-sidebar-muted uppercase tracking-wider">Role</span>
+                  <span className={cn(
+                    "text-[10px] px-2 py-0.5 rounded-full font-bold",
+                    role === "admin" ? "bg-destructive/20 text-destructive" :
+                    role === "manager" ? "bg-primary/20 text-primary" :
+                    "bg-sidebar-accent text-sidebar-foreground"
+                  )}>
+                    {role.toUpperCase()}
+                  </span>
+                </div>
+              )}
+              <div className="flex gap-1">
+                <button
+                  onClick={() => setCollapsed(!collapsed)}
+                  className="hidden md:flex flex-1 items-center justify-center py-2 rounded-lg text-sidebar-foreground/50 hover:bg-sidebar-accent transition-colors"
+                >
+                  {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+                </button>
+                <button
+                  onClick={signOut}
+                  className="flex items-center justify-center py-2 px-3 rounded-lg text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-destructive transition-colors"
+                  title="Sign out"
+                >
+                  <LogOut size={18} />
+                  {mobileOpen && <span className="ml-2 text-sm">Sign Out</span>}
                 </button>
               </div>
-            );
-          })}
-        </nav>
-
-        {/* Role badge + Collapse */}
-        <div className="px-2 py-3 border-t border-sidebar-border space-y-2">
-          {!collapsed && role && (
-            <div className="flex items-center justify-between px-2">
-              <span className="text-[10px] text-sidebar-muted uppercase tracking-wider">Role</span>
-              <span className={cn(
-                "text-[10px] px-2 py-0.5 rounded-full font-bold",
-                role === "admin" ? "bg-destructive/20 text-destructive" :
-                role === "manager" ? "bg-primary/20 text-primary" :
-                "bg-sidebar-accent text-sidebar-foreground"
-              )}>
-                {role.toUpperCase()}
-              </span>
             </div>
-          )}
-          <div className="flex gap-1">
-            <button
-              onClick={() => setCollapsed(!collapsed)}
-              className="flex-1 flex items-center justify-center py-2 rounded-lg text-sidebar-foreground/50 hover:bg-sidebar-accent transition-colors"
-            >
-              {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-            </button>
-            <button
-              onClick={signOut}
-              className="flex items-center justify-center py-2 px-3 rounded-lg text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-destructive transition-colors"
-              title="Sign out"
-            >
-              <LogOut size={18} />
-            </button>
-          </div>
-        </div>
-      </motion.aside>
+          </motion.aside>
+        )}
+      </AnimatePresence>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar */}
-        <header className="h-16 bg-card border-b border-border flex items-center justify-between px-6">
-          <div className="flex items-center gap-3">
-            <div className="relative">
+        <header className="h-14 md:h-16 bg-card border-b border-border flex items-center justify-between px-3 md:px-6">
+          <div className="flex items-center gap-2 md:gap-3">
+            {/* Hamburger for mobile */}
+            <button
+              onClick={() => setMobileOpen(true)}
+              className="md:hidden p-2 rounded-lg hover:bg-secondary transition-colors"
+            >
+              <Menu size={20} className="text-foreground" />
+            </button>
+            <div className="relative hidden sm:block">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Search employees, payroll..."
-                className="pl-9 pr-4 py-2 w-72 bg-secondary rounded-lg text-sm font-body placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="pl-9 pr-4 py-2 w-48 md:w-72 bg-secondary rounded-lg text-sm font-body placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary text-sm font-medium text-foreground hover:bg-muted transition-colors">
+          <div className="flex items-center gap-2 md:gap-4">
+            <button className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary text-sm font-medium text-foreground hover:bg-muted transition-colors">
               <Globe size={14} />
-              <span>🇱🇨 St. Lucia</span>
+              <span className="hidden md:inline">🇱🇨 St. Lucia</span>
+              <span className="md:hidden">🇱🇨</span>
             </button>
             <button className="relative p-2 rounded-lg hover:bg-secondary transition-colors">
               <Bell size={18} className="text-muted-foreground" />
@@ -204,9 +249,36 @@ export default function AppLayout() {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto bg-background">
+        <main className="flex-1 overflow-y-auto bg-background pb-16 md:pb-0">
           <Outlet />
         </main>
+
+        {/* Mobile Bottom Navigation */}
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border flex items-center justify-around px-1 py-1 z-30 safe-bottom">
+          {bottomNavItems.map((item) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <button
+                key={item.path}
+                onClick={() => handleNav(item.path)}
+                className={cn(
+                  "flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-colors min-w-0 flex-1",
+                  isActive ? "text-primary" : "text-muted-foreground"
+                )}
+              >
+                <item.icon size={20} />
+                <span className="text-[10px] font-medium truncate w-full text-center">{item.label}</span>
+              </button>
+            );
+          })}
+          <button
+            onClick={() => setMobileOpen(true)}
+            className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg text-muted-foreground transition-colors min-w-0 flex-1"
+          >
+            <Menu size={20} />
+            <span className="text-[10px] font-medium">More</span>
+          </button>
+        </nav>
       </div>
     </div>
   );
