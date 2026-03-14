@@ -196,7 +196,7 @@ export default function SettingsPage() {
                       <FileText size={12} />
                       VAT Number
                     </label>
-                    <input value={form.vat_number} onChange={update("vat_number")} disabled={!isAdmin} placeholder="e.g. VAT-LC-00456" className={inputClass} />
+                    <input value={form.vat_number} onChange={update("vat_number")} disabled={!isAdminOrManager} placeholder="e.g. VAT-LC-00456" className={inputClass} />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
