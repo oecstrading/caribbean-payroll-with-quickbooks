@@ -217,7 +217,57 @@ export default function SettingsPage() {
               {loading ? (
                 <p className="text-sm text-muted-foreground py-4">Loading...</p>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-6">
+                  {/* Logo Upload */}
+                  <div className="flex items-center gap-6 pb-4 border-b border-border/50">
+                    <div className="relative group">
+                      {logoUrl ? (
+                        <img
+                          src={logoUrl}
+                          alt="Company logo"
+                          className="w-20 h-20 rounded-xl object-contain bg-secondary border border-border/50 p-1"
+                        />
+                      ) : (
+                        <div className="w-20 h-20 rounded-xl bg-secondary border-2 border-dashed border-border flex items-center justify-center">
+                          <ImageIcon size={24} className="text-muted-foreground/40" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-foreground">Company Logo</p>
+                      <p className="text-xs text-muted-foreground">PNG, JPG or SVG. Max 5MB.</p>
+                      {isAdminOrManager && (
+                        <div className="flex gap-2">
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleLogoUpload}
+                            className="hidden"
+                          />
+                          <button
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploading}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                          >
+                            <Upload size={12} />
+                            {uploading ? "Uploading..." : "Upload"}
+                          </button>
+                          {logoUrl && (
+                            <button
+                              onClick={handleRemoveLogo}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-destructive/10 text-destructive rounded-lg text-xs font-medium hover:bg-destructive/20 transition-colors"
+                            >
+                              <Trash2 size={12} />
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Company Name</label>
                     <input value={form.company_name} onChange={update("company_name")} disabled={!isAdminOrManager} placeholder="Enter company name" className={inputClass} />
