@@ -129,14 +129,36 @@ export default function AppLayout() {
           })}
         </nav>
 
-        {/* Collapse Toggle */}
-        <div className="px-2 py-3 border-t border-sidebar-border">
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="w-full flex items-center justify-center py-2 rounded-lg text-sidebar-foreground/50 hover:bg-sidebar-accent transition-colors"
-          >
-            {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-          </button>
+        {/* Role badge + Collapse */}
+        <div className="px-2 py-3 border-t border-sidebar-border space-y-2">
+          {!collapsed && role && (
+            <div className="flex items-center justify-between px-2">
+              <span className="text-[10px] text-sidebar-muted uppercase tracking-wider">Role</span>
+              <span className={cn(
+                "text-[10px] px-2 py-0.5 rounded-full font-bold",
+                role === "admin" ? "bg-destructive/20 text-destructive" :
+                role === "manager" ? "bg-primary/20 text-primary" :
+                "bg-sidebar-accent text-sidebar-foreground"
+              )}>
+                {role.toUpperCase()}
+              </span>
+            </div>
+          )}
+          <div className="flex gap-1">
+            <button
+              onClick={() => setCollapsed(!collapsed)}
+              className="flex-1 flex items-center justify-center py-2 rounded-lg text-sidebar-foreground/50 hover:bg-sidebar-accent transition-colors"
+            >
+              {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+            </button>
+            <button
+              onClick={signOut}
+              className="flex items-center justify-center py-2 px-3 rounded-lg text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-destructive transition-colors"
+              title="Sign out"
+            >
+              <LogOut size={18} />
+            </button>
+          </div>
         </div>
       </motion.aside>
 
