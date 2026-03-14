@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Users, Shield, Mail, Search, MoreHorizontal, UserPlus, Ban, CheckCircle } from "lucide-react";
+import { Users, Shield, Mail, Search, MoreHorizontal, UserPlus, Ban, CheckCircle, Hash } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -41,7 +41,9 @@ export default function UserManagementPage() {
   const [inviting, setInviting] = useState(false);
   const [editUser, setEditUser] = useState<UserWithRole | null>(null);
   const [editForm, setEditForm] = useState({ department: "", job_title: "", monthly_salary: 0, status: "Active" });
-
+  const [pinUser, setPinUser] = useState<UserWithRole | null>(null);
+  const [pinValue, setPinValue] = useState("");
+  const [settingPin, setSettingPin] = useState(false);
   const fetchUsers = async () => {
     // Fetch profiles joined with roles
     const { data: profiles } = await supabase.from("profiles").select("*");
@@ -161,6 +163,28 @@ export default function UserManagementPage() {
       toast.error(err.message || "Failed to update");
     }
   };
+
+  const handleSetPin = async () => {
+    if (!pinUser || !/^\d{4,6}$/.test(pinValue)) {
+      toast.error("PIN must be 4-6 digits");
+      return;
+    }
+    setSettingPin(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("set-pin", {
+        body: { user_id: pinUser.user_id, pin: pinValue },
+      });
+      if (error || data?.error) throw new Error(data?.error || error?.message || "Failed to set PIN");
+      toast.success(`PIN set for ${pinUser.first_name} ${pinUser.last_name}`);
+      setPinUser(null);
+      setPinValue("");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to set PIN");
+    } finally {
+      setSettingPin(false);
+    }
+  };
+  
 
   if (!isAdmin) {
     return (
@@ -304,6 +328,13 @@ export default function UserManagementPage() {
                             <CheckCircle size={14} className="text-success" />
                           )}
                         </button>
+                        <button
+                          onClick={() => { setPinUser(u); setPinValue(""); }}
+                          className="p-1.5 rounded-md hover:bg-secondary transition-colors text-xs text-primary font-medium"
+                          title="Set PIN"
+                        >
+                          <Hash size={14} />
+                        </button>
                       </div>
                     </td>
                   </motion.tr>
@@ -422,6 +453,46 @@ export default function UserManagementPage() {
                     Cancel
                   </button>
                 </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Set PIN Dialog */}
+      <Dialog open={!!pinUser} onOpenChange={(o) => !o && setPinUser(null)}>
+        <DialogContent className="sm:max-w-sm">
+          {pinUser && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="font-display flex items-center gap-2">
+                  <Hash size={18} className="text-primary" />
+                  Set PIN for {pinUser.first_name} {pinUser.last_name}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 mt-2">
+                <p className="text-sm text-muted-foreground">
+                  Set a 4-6 digit PIN to allow this user to sign in with their email and PIN instead of a password.
+                </p>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">PIN (4-6 digits)</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={pinValue}
+                    onChange={(e) => setPinValue(e.target.value.replace(/\D/g, ""))}
+                    placeholder="e.g. 1234"
+                    className="w-full px-3 py-2.5 bg-secondary border border-border rounded-lg text-sm text-foreground text-center tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <button
+                  onClick={handleSetPin}
+                  disabled={settingPin || pinValue.length < 4}
+                  className="w-full px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  {settingPin ? "Setting PIN..." : "Set PIN & Enable Login"}
+                </button>
               </div>
             </>
           )}

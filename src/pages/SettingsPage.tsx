@@ -31,7 +31,7 @@ const defaultSettings: Omit<CompanySettings, "id"> = {
 
 export default function SettingsPage() {
   const config = ST_LUCIA_CONFIG;
-  const { isAdmin } = useRole();
+  const { isAdmin, isAdminOrManager } = useRole();
   const { user } = useAuth();
   const [settings, setSettings] = useState<CompanySettings | null>(null);
   const [form, setForm] = useState(defaultSettings);
@@ -63,8 +63,8 @@ export default function SettingsPage() {
   }, []);
 
   const handleSave = async () => {
-    if (!isAdmin || !user) {
-      toast.error("Only admins can update company settings");
+    if (!isAdminOrManager || !user) {
+      toast.error("Only admins and managers can update company settings");
       return;
     }
     setSaving(true);
@@ -181,42 +181,42 @@ export default function SettingsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Company Name</label>
-                    <input value={form.company_name} onChange={update("company_name")} disabled={!isAdmin} placeholder="Enter company name" className={inputClass} />
+                    <input value={form.company_name} onChange={update("company_name")} disabled={!isAdminOrManager} placeholder="Enter company name" className={inputClass} />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Employer NIC Number</label>
-                    <input value={form.employer_nic_number} onChange={update("employer_nic_number")} disabled={!isAdmin} placeholder="e.g. EMP-NIC-2022-001" className={inputClass} />
+                    <input value={form.employer_nic_number} onChange={update("employer_nic_number")} disabled={!isAdminOrManager} placeholder="e.g. EMP-NIC-2022-001" className={inputClass} />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Tax ID</label>
-                    <input value={form.tax_id} onChange={update("tax_id")} disabled={!isAdmin} placeholder="e.g. TID-LC-00123" className={inputClass} />
+                    <input value={form.tax_id} onChange={update("tax_id")} disabled={!isAdminOrManager} placeholder="e.g. TID-LC-00123" className={inputClass} />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
                       <FileText size={12} />
                       VAT Number
                     </label>
-                    <input value={form.vat_number} onChange={update("vat_number")} disabled={!isAdmin} placeholder="e.g. VAT-LC-00456" className={inputClass} />
+                    <input value={form.vat_number} onChange={update("vat_number")} disabled={!isAdminOrManager} placeholder="e.g. VAT-LC-00456" className={inputClass} />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
                       <Phone size={12} />
                       Telephone
                     </label>
-                    <input value={form.telephone} onChange={update("telephone")} disabled={!isAdmin} placeholder="e.g. +1 (758) 123-4567" className={inputClass} />
+                    <input value={form.telephone} onChange={update("telephone")} disabled={!isAdminOrManager} placeholder="e.g. +1 (758) 123-4567" className={inputClass} />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
                       <Link size={12} />
                       Website
                     </label>
-                    <input value={form.website} onChange={update("website")} disabled={!isAdmin} placeholder="e.g. https://www.company.com" className={inputClass} />
+                    <input value={form.website} onChange={update("website")} disabled={!isAdminOrManager} placeholder="e.g. https://www.company.com" className={inputClass} />
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Address</label>
-                    <input value={form.address} onChange={update("address")} disabled={!isAdmin} placeholder="e.g. 123 Bridge St, Castries, Saint Lucia" className={inputClass} />
+                    <input value={form.address} onChange={update("address")} disabled={!isAdminOrManager} placeholder="e.g. 123 Bridge St, Castries, Saint Lucia" className={inputClass} />
                   </div>
-                  {isAdmin && (
+                  {isAdminOrManager && (
                     <div className="md:col-span-2 flex justify-end pt-2">
                       <button
                         onClick={handleSave}
