@@ -105,11 +105,84 @@ export default function PayrollHistoryPage() {
     { gross: 0, deductions: 0, net: 0, employees: 0 }
   );
 
+  const exportRunsCSV = () => {
+    if (runs.length === 0) { toast.error("No data to export"); return; }
+    const headers = ["Period", "Run Date", "Status", "Employees", "Gross", "Deductions", "Net"];
+    const rows = runs.map((r) => [
+      r.period, r.run_date, r.status, r.employee_count,
+      Number(r.total_gross).toFixed(2), Number(r.total_deductions).toFixed(2), Number(r.total_net).toFixed(2),
+    ]);
+    downloadCSV("payroll-history", headers, rows);
+    toast.success("CSV exported");
+  };
+
+  const exportRunsPDF = () => {
+    if (runs.length === 0) { toast.error("No data to export"); return; }
+    const headers = ["Period", "Run Date", "Status", "Employees", "Gross (XCD)", "Deductions (XCD)", "Net (XCD)"];
+    const rows = runs.map((r) => [
+      r.period, r.run_date, r.status, r.employee_count,
+      Number(r.total_gross).toFixed(2), Number(r.total_deductions).toFixed(2), Number(r.total_net).toFixed(2),
+    ]);
+    downloadPDF("payroll-history", "Payroll History Report", headers, rows, {
+      subtitle: `${runs.length} payroll runs — Generated ${new Date().toLocaleDateString()}`,
+      summaryRows: [
+        { label: "Total Gross", value: formatCurrency(totals.gross) + " XCD" },
+        { label: "Total Deductions", value: formatCurrency(totals.deductions) + " XCD" },
+        { label: "Total Net", value: formatCurrency(totals.net) + " XCD" },
+      ],
+    });
+    toast.success("PDF exported");
+  };
+
+  const exportRunPayslipsCSV = (runId: string) => {
+    const slips = payslips[runId];
+    if (!slips?.length) { toast.error("No payslips to export"); return; }
+    const run = runs.find((r) => r.id === runId);
+    const headers = ["Employee", "Department", "Basic", "OT", "Gross", "NIC", "PAYE", "Deductions", "Net"];
+    const rows = slips.map((s) => [
+      s.profile ? `${s.profile.first_name} ${s.profile.last_name}` : s.user_id.slice(0, 8),
+      s.profile?.department || "",
+      Number(s.basic_pay).toFixed(2), Number(s.overtime_pay).toFixed(2), Number(s.gross_pay).toFixed(2),
+      Number(s.employee_nic).toFixed(2), Number(s.paye).toFixed(2),
+      Number(s.total_deductions).toFixed(2), Number(s.net_pay).toFixed(2),
+    ]);
+    downloadCSV(`payslips-${run?.period || runId}`, headers, rows);
+    toast.success("Payslips CSV exported");
+  };
+
+  const exportRunPayslipsPDF = (runId: string) => {
+    const slips = payslips[runId];
+    if (!slips?.length) { toast.error("No payslips to export"); return; }
+    const run = runs.find((r) => r.id === runId);
+    const headers = ["Employee", "Dept", "Basic", "OT", "Gross", "NIC", "PAYE", "Deductions", "Net"];
+    const rows = slips.map((s) => [
+      s.profile ? `${s.profile.first_name} ${s.profile.last_name}` : s.user_id.slice(0, 8),
+      s.profile?.department || "",
+      Number(s.basic_pay).toFixed(2), Number(s.overtime_pay).toFixed(2), Number(s.gross_pay).toFixed(2),
+      Number(s.employee_nic).toFixed(2), Number(s.paye).toFixed(2),
+      Number(s.total_deductions).toFixed(2), Number(s.net_pay).toFixed(2),
+    ]);
+    downloadPDF(`payslips-${run?.period || runId}`, `Payslips — ${run?.period || ""}`, headers, rows, {
+      subtitle: `${slips.length} employees — Run date: ${run?.run_date || ""}`,
+    });
+    toast.success("Payslips PDF exported");
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-display font-bold text-foreground">Payroll History</h1>
-        <p className="text-sm text-muted-foreground mt-1">View past payroll runs and drill into individual payslips</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-display font-bold text-foreground">Payroll History</h1>
+          <p className="text-sm text-muted-foreground mt-1">View past payroll runs and drill into individual payslips</p>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={exportRunsCSV} className="flex items-center gap-2 px-4 py-2.5 bg-secondary text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors">
+            <Download size={14} /> CSV
+          </button>
+          <button onClick={exportRunsPDF} className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
+            <Download size={14} /> PDF
+          </button>
+        </div>
       </div>
 
       {/* Summary Cards */}
