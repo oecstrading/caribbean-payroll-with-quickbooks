@@ -12,6 +12,8 @@ import {
   Globe,
   Bell,
   Search,
+  UserCircle,
+  Receipt,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -21,7 +23,9 @@ const navItems = [
   { path: "/employees", label: "Employees", icon: Users },
   { path: "/attendance", label: "Attendance", icon: Clock },
   { path: "/payroll", label: "Payroll", icon: DollarSign },
+  { path: "/payslips", label: "Payslips", icon: Receipt },
   { path: "/reports", label: "Reports", icon: FileText },
+  { path: "/portal", label: "My Portal", icon: UserCircle },
   { path: "/settings", label: "Settings", icon: Settings },
 ];
 
