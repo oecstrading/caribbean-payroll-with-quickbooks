@@ -165,10 +165,11 @@ export default function PayrollPage() {
                   <tr className="border-b border-border bg-secondary/50">
                     <th className="text-left py-3 px-4 font-medium text-muted-foreground">Employee</th>
                     <th className="text-right py-3 px-4 font-medium text-muted-foreground">Basic Pay</th>
+                    <th className="text-right py-3 px-4 font-medium text-muted-foreground">Additions</th>
+                    <th className="text-right py-3 px-4 font-medium text-muted-foreground">Gross</th>
                     <th className="text-right py-3 px-4 font-medium text-muted-foreground">NIC (5%)</th>
                     <th className="text-right py-3 px-4 font-medium text-muted-foreground">PAYE</th>
                     <th className="text-right py-3 px-4 font-medium text-muted-foreground">Creditor Ded.</th>
-                    <th className="text-right py-3 px-4 font-medium text-muted-foreground">Total Ded.</th>
                     <th className="text-right py-3 px-4 font-medium text-muted-foreground">Net Pay</th>
                   </tr>
                 </thead>
@@ -193,10 +194,11 @@ export default function PayrollPage() {
                         </div>
                       </td>
                       <td className="py-3 px-4 text-right font-mono text-foreground">{formatCurrency(emp.payroll.basicPay)}</td>
+                      <td className="py-3 px-4 text-right font-mono text-success">{formatCurrency(emp.payroll.totalAdditions)}</td>
+                      <td className="py-3 px-4 text-right font-mono font-semibold text-foreground">{formatCurrency(emp.payroll.grossMonthly)}</td>
                       <td className="py-3 px-4 text-right font-mono text-destructive">{formatCurrency(emp.payroll.employeeNIC)}</td>
                       <td className="py-3 px-4 text-right font-mono text-destructive">{formatCurrency(emp.payroll.paye)}</td>
                       <td className="py-3 px-4 text-right font-mono text-destructive">{formatCurrency(emp.payroll.totalCreditorDeductions)}</td>
-                      <td className="py-3 px-4 text-right font-mono text-destructive">{formatCurrency(emp.payroll.totalDeductions)}</td>
                       <td className="py-3 px-4 text-right font-mono font-semibold text-success">{formatCurrency(emp.payroll.netPay)}</td>
                     </motion.tr>
                   ))}
@@ -204,11 +206,12 @@ export default function PayrollPage() {
                 <tfoot>
                   <tr className="bg-secondary/80 font-semibold">
                     <td className="py-3 px-4 text-foreground">Totals</td>
-                    <td className="py-3 px-4 text-right font-mono text-foreground">{formatCurrency(totals.gross)}</td>
+                    <td className="py-3 px-4 text-right font-mono text-foreground">{formatCurrency(totals.gross - totals.additions)}</td>
+                    <td className="py-3 px-4 text-right font-mono text-success">{formatCurrency(totals.additions)}</td>
+                    <td className="py-3 px-4 text-right font-mono font-semibold text-foreground">{formatCurrency(totals.gross)}</td>
                     <td className="py-3 px-4 text-right font-mono text-destructive">{formatCurrency(totals.nicEmployee)}</td>
                     <td className="py-3 px-4 text-right font-mono text-destructive">{formatCurrency(totals.paye)}</td>
                     <td className="py-3 px-4 text-right font-mono text-destructive">{formatCurrency(totals.creditor)}</td>
-                    <td className="py-3 px-4 text-right font-mono text-destructive">{formatCurrency(totals.nicEmployee + totals.paye + totals.creditor)}</td>
                     <td className="py-3 px-4 text-right font-mono font-bold text-success">{formatCurrency(totals.net)}</td>
                   </tr>
                 </tfoot>
