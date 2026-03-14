@@ -301,9 +301,13 @@ export default function PayrollPage() {
                 <Receipt size={16} />
                 Generate Payslips
               </button>
-              <button className="flex items-center gap-2 px-8 py-3 bg-success text-success-foreground rounded-lg text-sm font-bold hover:bg-success/90 transition-colors">
-                <CheckCircle size={18} />
-                Approve & Process Payroll
+              <button
+                onClick={handleApprovePayroll}
+                disabled={processing || approved}
+                className="flex items-center gap-2 px-8 py-3 bg-success text-success-foreground rounded-lg text-sm font-bold hover:bg-success/90 transition-colors disabled:opacity-50"
+              >
+                {processing ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle size={18} />}
+                {approved ? "Payroll Approved ✓" : processing ? "Processing..." : "Approve & Process Payroll"}
               </button>
             </div>
           </div>
