@@ -28,6 +28,54 @@ export default function PayslipPage() {
 
   const handlePrint = () => window.print();
 
+  const handleExportCSV = () => {
+    if (!employee || !payroll) return;
+    const headers = ["Description", "Current (XCD)", "YTD (XCD)"];
+    const rows: (string | number)[][] = [
+      ["Basic Salary", payroll.basicPay.toFixed(2), (payroll.basicPay * 3).toFixed(2)],
+      ["Overtime Pay", payroll.overtimePay.toFixed(2), (payroll.overtimePay * 3).toFixed(2)],
+      ["Total Earnings", payroll.grossMonthly.toFixed(2), (payroll.grossMonthly * 3).toFixed(2)],
+      ["NIC Employee (5%)", payroll.employeeNIC.toFixed(2), (payroll.employeeNIC * 3).toFixed(2)],
+      ["PAYE Income Tax", payroll.paye.toFixed(2), (payroll.paye * 3).toFixed(2)],
+      ...payroll.creditorDeductions.map((d) => [d.creditorName, d.amount.toFixed(2), (d.amount * 3).toFixed(2)]),
+      ["Total Deductions", payroll.totalDeductions.toFixed(2), (payroll.totalDeductions * 3).toFixed(2)],
+      ["Net Pay", payroll.netPay.toFixed(2), (payroll.netPay * 3).toFixed(2)],
+    ];
+    downloadCSV(`payslip-${employee.firstName}-${employee.lastName}-${payPeriod}`, headers, rows);
+    toast.success("Payslip CSV exported");
+  };
+
+  const handleExportPDF = () => {
+    if (!employee || !payroll) return;
+    const headers = ["Description", "Current (XCD)", "YTD (XCD)"];
+    const rows: (string | number)[][] = [
+      ["Basic Salary", payroll.basicPay.toFixed(2), (payroll.basicPay * 3).toFixed(2)],
+      ["Overtime Pay", payroll.overtimePay.toFixed(2), (payroll.overtimePay * 3).toFixed(2)],
+      ["--- Total Earnings ---", payroll.grossMonthly.toFixed(2), (payroll.grossMonthly * 3).toFixed(2)],
+      ["NIC Employee (5%)", payroll.employeeNIC.toFixed(2), (payroll.employeeNIC * 3).toFixed(2)],
+      ["PAYE Income Tax", payroll.paye.toFixed(2), (payroll.paye * 3).toFixed(2)],
+      ...payroll.creditorDeductions.map((d) => [d.creditorName, d.amount.toFixed(2), (d.amount * 3).toFixed(2)]),
+      ["--- Total Deductions ---", payroll.totalDeductions.toFixed(2), (payroll.totalDeductions * 3).toFixed(2)],
+      ["NET PAY", payroll.netPay.toFixed(2), (payroll.netPay * 3).toFixed(2)],
+    ];
+    downloadPDF(
+      `payslip-${employee.firstName}-${employee.lastName}-${payPeriod}`,
+      `Payslip — ${employee.firstName} ${employee.lastName}`,
+      headers,
+      rows,
+      {
+        subtitle: `${company.company_name || "OECS HR & Payroll"} • ${payPeriod} • Employee #${employee.personId}`,
+        orientation: "portrait",
+        summaryRows: [
+          { label: "NIC No.", value: employee.nicNumber },
+          { label: "Department", value: employee.department },
+          { label: "Employer NIC", value: formatCurrency(payroll.employerNIC) + " XCD" },
+        ],
+      }
+    );
+    toast.success("Payslip PDF exported");
+  };
+
   const handleEmailPayslip = async () => {
     if (!employee) return;
     setEmailing(true);
