@@ -18,6 +18,7 @@ import PortalPage from "@/pages/PortalPage";
 import UserManagementPage from "@/pages/UserManagementPage";
 import GeofencingPage from "@/pages/GeofencingPage";
 import LeaveManagementPage from "@/pages/LeaveManagementPage";
+import DeductionsPage from "@/pages/DeductionsPage";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
