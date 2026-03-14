@@ -10,19 +10,66 @@ import {
   UserPlus,
   PlayCircle,
   FileDown,
+  RefreshCw,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { sampleEmployees, sampleAttendance } from "@/lib/sample-data";
 import { calculatePayroll, formatCurrency, ST_LUCIA_CONFIG } from "@/lib/payroll-engine";
 import { useNavigate } from "react-router-dom";
+import { useRef, useState, useCallback } from "react";
 
 const fadeUp = {
   initial: { opacity: 0, y: 12 },
   animate: { opacity: 1, y: 0 },
 };
 
+function usePullToRefresh(onRefresh: () => Promise<void>) {
+  const [pulling, setPulling] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
+  const startY = useRef(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const threshold = 80;
+
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    if (containerRef.current && containerRef.current.scrollTop === 0) {
+      startY.current = e.touches[0].clientY;
+      setPulling(true);
+    }
+  }, []);
+
+  const onTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!pulling) return;
+    const delta = e.touches[0].clientY - startY.current;
+    if (delta > 0) {
+      setPullDistance(Math.min(delta * 0.5, 120));
+    }
+  }, [pulling]);
+
+  const onTouchEnd = useCallback(async () => {
+    if (pullDistance >= threshold && !refreshing) {
+      setRefreshing(true);
+      setPullDistance(threshold);
+      await onRefresh();
+      setRefreshing(false);
+    }
+    setPulling(false);
+    setPullDistance(0);
+  }, [pullDistance, refreshing, onRefresh, threshold]);
+
+  return { containerRef, pullDistance, refreshing, onTouchStart, onTouchMove, onTouchEnd, threshold };
+}
+
 export default function DashboardPage() {
   const navigate = useNavigate();
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleRefresh = useCallback(async () => {
+    await new Promise((r) => setTimeout(r, 800));
+    setRefreshKey((k) => k + 1);
+  }, []);
+
+  const { containerRef, pullDistance, refreshing, onTouchStart, onTouchMove, onTouchEnd, threshold } = usePullToRefresh(handleRefresh);
   const activeEmployees = sampleEmployees.filter((e) => e.status === "Active");
   const totalPayroll = activeEmployees.reduce((sum, e) => {
     const result = calculatePayroll(e.monthlySalary, ST_LUCIA_CONFIG);
