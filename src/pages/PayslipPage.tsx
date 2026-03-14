@@ -9,6 +9,7 @@ import { calculatePayroll, formatCurrency, ST_LUCIA_CONFIG } from "@/lib/payroll
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCompany } from "@/hooks/useCompany";
 import { useAllEmployeeDeductions } from "@/hooks/useEmployeeDeductions";
+import { useAllEmployeeAdditions } from "@/hooks/useEmployeeAdditions";
 import { downloadCSV, downloadPDF } from "@/lib/export-utils";
 
 export default function PayslipPage() {
@@ -21,12 +22,16 @@ export default function PayslipPage() {
   const payslipRef = useRef<HTMLDivElement>(null);
   const [emailing, setEmailing] = useState(false);
   const { deductionsMap } = useAllEmployeeDeductions();
+  const { additionsMap } = useAllEmployeeAdditions();
 
   const employee = sampleEmployees.find((e) => e.id === selectedId);
   const creditorDeductions = deductionsMap[selectedId] || [];
-  const payroll = employee ? calculatePayroll(employee.monthlySalary, ST_LUCIA_CONFIG, 0, creditorDeductions) : null;
+  const additions = additionsMap[selectedId] || [];
+  const payroll = employee ? calculatePayroll(employee.monthlySalary, ST_LUCIA_CONFIG, 0, creditorDeductions, additions) : null;
 
   const handlePrint = () => window.print();
+
+  const statutoryDeductions = payroll ? payroll.employeeNIC + payroll.paye : 0;
 
   const handleExportCSV = () => {
     if (!employee || !payroll) return;
@@ -34,12 +39,20 @@ export default function PayslipPage() {
     const rows: (string | number)[][] = [
       ["Basic Salary", payroll.basicPay.toFixed(2), (payroll.basicPay * 3).toFixed(2)],
       ["Overtime Pay", payroll.overtimePay.toFixed(2), (payroll.overtimePay * 3).toFixed(2)],
-      ["Total Earnings", payroll.grossMonthly.toFixed(2), (payroll.grossMonthly * 3).toFixed(2)],
+      ...payroll.additions.map((a) => [`+ ${a.description}`, a.amount.toFixed(2), (a.amount * 3).toFixed(2)]),
+      ["Total Earnings (Gross)", payroll.grossMonthly.toFixed(2), (payroll.grossMonthly * 3).toFixed(2)],
+      ["", "", ""],
+      ["--- Statutory Deductions ---", "", ""],
       ["NIC Employee (5%)", payroll.employeeNIC.toFixed(2), (payroll.employeeNIC * 3).toFixed(2)],
       ["PAYE Income Tax", payroll.paye.toFixed(2), (payroll.paye * 3).toFixed(2)],
+      ["Subtotal Statutory", statutoryDeductions.toFixed(2), (statutoryDeductions * 3).toFixed(2)],
+      ["", "", ""],
+      ["--- Other Deductions ---", "", ""],
       ...payroll.creditorDeductions.map((d) => [d.creditorName, d.amount.toFixed(2), (d.amount * 3).toFixed(2)]),
+      ["Subtotal Other Deductions", payroll.totalCreditorDeductions.toFixed(2), (payroll.totalCreditorDeductions * 3).toFixed(2)],
+      ["", "", ""],
       ["Total Deductions", payroll.totalDeductions.toFixed(2), (payroll.totalDeductions * 3).toFixed(2)],
-      ["Net Pay", payroll.netPay.toFixed(2), (payroll.netPay * 3).toFixed(2)],
+      ["NET PAY (Check Amount)", payroll.netPay.toFixed(2), (payroll.netPay * 3).toFixed(2)],
     ];
     downloadCSV(`payslip-${employee.firstName}-${employee.lastName}-${payPeriod}`, headers, rows);
     toast.success("Payslip CSV exported");
@@ -51,12 +64,13 @@ export default function PayslipPage() {
     const rows: (string | number)[][] = [
       ["Basic Salary", payroll.basicPay.toFixed(2), (payroll.basicPay * 3).toFixed(2)],
       ["Overtime Pay", payroll.overtimePay.toFixed(2), (payroll.overtimePay * 3).toFixed(2)],
-      ["--- Total Earnings ---", payroll.grossMonthly.toFixed(2), (payroll.grossMonthly * 3).toFixed(2)],
+      ...payroll.additions.map((a) => [`+ ${a.description}`, a.amount.toFixed(2), (a.amount * 3).toFixed(2)]),
+      ["--- Total Earnings (Gross) ---", payroll.grossMonthly.toFixed(2), (payroll.grossMonthly * 3).toFixed(2)],
       ["NIC Employee (5%)", payroll.employeeNIC.toFixed(2), (payroll.employeeNIC * 3).toFixed(2)],
       ["PAYE Income Tax", payroll.paye.toFixed(2), (payroll.paye * 3).toFixed(2)],
       ...payroll.creditorDeductions.map((d) => [d.creditorName, d.amount.toFixed(2), (d.amount * 3).toFixed(2)]),
       ["--- Total Deductions ---", payroll.totalDeductions.toFixed(2), (payroll.totalDeductions * 3).toFixed(2)],
-      ["NET PAY", payroll.netPay.toFixed(2), (payroll.netPay * 3).toFixed(2)],
+      ["NET PAY (Check Amount)", payroll.netPay.toFixed(2), (payroll.netPay * 3).toFixed(2)],
     ];
     downloadPDF(
       `payslip-${employee.firstName}-${employee.lastName}-${payPeriod}`,
@@ -264,8 +278,23 @@ export default function PayslipPage() {
                     <td className="py-2 text-right font-mono text-foreground">{formatCurrency(payroll.overtimePay)}</td>
                     <td className="py-2 text-right font-mono text-muted-foreground">{formatCurrency(payroll.overtimePay * 3)}</td>
                   </tr>
+                  {/* Additions */}
+                  {payroll.additions.map((a, i) => (
+                    <tr key={i} className="border-b border-border/50">
+                      <td className="py-2 text-success">+ {a.description}</td>
+                      <td className="py-2 text-right font-mono text-success">+{formatCurrency(a.amount)}</td>
+                      <td className="py-2 text-right font-mono text-muted-foreground">+{formatCurrency(a.amount * 3)}</td>
+                    </tr>
+                  ))}
+                  {payroll.totalAdditions > 0 && (
+                    <tr className="border-b border-border/50 bg-success/5">
+                      <td className="py-2 text-success font-medium">Subtotal Additions</td>
+                      <td className="py-2 text-right font-mono text-success font-semibold">+{formatCurrency(payroll.totalAdditions)}</td>
+                      <td className="py-2 text-right font-mono text-muted-foreground">+{formatCurrency(payroll.totalAdditions * 3)}</td>
+                    </tr>
+                  )}
                   <tr className="font-semibold">
-                    <td className="py-2 text-foreground">Total Earnings</td>
+                    <td className="py-2 text-foreground">Total Gross Earnings</td>
                     <td className="py-2 text-right font-mono text-foreground">{formatCurrency(payroll.grossMonthly)}</td>
                     <td className="py-2 text-right font-mono text-muted-foreground">{formatCurrency(payroll.grossMonthly * 3)}</td>
                   </tr>
@@ -295,43 +324,54 @@ export default function PayslipPage() {
                     <td className="py-2 text-right font-mono text-destructive">{formatCurrency(payroll.paye)}</td>
                     <td className="py-2 text-right font-mono text-muted-foreground">{formatCurrency(payroll.paye * 3)}</td>
                   </tr>
+                  <tr className="font-semibold bg-secondary/30">
+                    <td className="py-2 text-foreground">Subtotal Statutory</td>
+                    <td className="py-2 text-right font-mono text-destructive">{formatCurrency(statutoryDeductions)}</td>
+                    <td className="py-2 text-right font-mono text-muted-foreground">{formatCurrency(statutoryDeductions * 3)}</td>
+                  </tr>
                 </tbody>
               </table>
             </div>
 
-            {/* Creditor Deductions */}
-            {payroll.creditorDeductions.length > 0 && (
-              <div>
-                <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Other Deductions</h3>
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="text-left py-2 font-medium text-muted-foreground">Creditor</th>
-                      <th className="text-right py-2 font-medium text-muted-foreground">Current</th>
-                      <th className="text-right py-2 font-medium text-muted-foreground">YTD (3 months)</th>
+            {/* Other Deductions (Creditors, Loans, etc.) */}
+            <div>
+              <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Other Deductions</h3>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left py-2 font-medium text-muted-foreground">Creditor / Description</th>
+                    <th className="text-right py-2 font-medium text-muted-foreground">Current</th>
+                    <th className="text-right py-2 font-medium text-muted-foreground">YTD (3 months)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {payroll.creditorDeductions.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="py-2 text-muted-foreground text-center italic">No other deductions</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {payroll.creditorDeductions.map((d, i) => (
-                      <tr key={i} className="border-b border-border/50">
-                        <td className="py-2 text-foreground">{d.creditorName}</td>
-                        <td className="py-2 text-right font-mono text-destructive">{formatCurrency(d.amount)}</td>
-                        <td className="py-2 text-right font-mono text-muted-foreground">{formatCurrency(d.amount * 3)}</td>
+                  ) : (
+                    <>
+                      {payroll.creditorDeductions.map((d, i) => (
+                        <tr key={i} className="border-b border-border/50">
+                          <td className="py-2 text-foreground">{d.creditorName}</td>
+                          <td className="py-2 text-right font-mono text-destructive">{formatCurrency(d.amount)}</td>
+                          <td className="py-2 text-right font-mono text-muted-foreground">{formatCurrency(d.amount * 3)}</td>
+                        </tr>
+                      ))}
+                      <tr className="font-semibold bg-secondary/30">
+                        <td className="py-2 text-foreground">Subtotal Other Deductions</td>
+                        <td className="py-2 text-right font-mono text-destructive">{formatCurrency(payroll.totalCreditorDeductions)}</td>
+                        <td className="py-2 text-right font-mono text-muted-foreground">{formatCurrency(payroll.totalCreditorDeductions * 3)}</td>
                       </tr>
-                    ))}
-                    <tr className="font-semibold">
-                      <td className="py-2 text-foreground">Subtotal Other Deductions</td>
-                      <td className="py-2 text-right font-mono text-destructive">{formatCurrency(payroll.totalCreditorDeductions)}</td>
-                      <td className="py-2 text-right font-mono text-muted-foreground">{formatCurrency(payroll.totalCreditorDeductions * 3)}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            )}
+                    </>
+                  )}
+                </tbody>
+              </table>
+            </div>
 
             {/* Total Deductions */}
-            <div className="flex justify-between py-2 border-t border-border font-semibold text-sm">
-              <span className="text-foreground">Total Deductions</span>
+            <div className="flex justify-between py-3 border-t-2 border-border font-semibold text-sm">
+              <span className="text-foreground">Total All Deductions</span>
               <span className="font-mono text-destructive">{formatCurrency(payroll.totalDeductions)}</span>
             </div>
 
@@ -344,13 +384,16 @@ export default function PayslipPage() {
               </div>
             </div>
 
-            {/* Net Pay */}
-            <div className="p-5 rounded-lg bg-success/5 border border-success/20">
+            {/* Net Pay / Check Amount */}
+            <div className="p-5 rounded-lg bg-success/5 border-2 border-success/30">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Net Pay</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Net Pay — Check Amount</p>
                   <p className="text-3xl font-display font-bold text-success mt-1">
                     {formatCurrency(payroll.netPay)} <span className="text-lg">XCD</span>
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Gross ({formatCurrency(payroll.grossMonthly)}) − Statutory ({formatCurrency(statutoryDeductions)}) − Other ({formatCurrency(payroll.totalCreditorDeductions)})
                   </p>
                 </div>
                 <DollarSign size={32} className="text-success/30" />
