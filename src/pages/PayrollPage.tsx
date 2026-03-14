@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle, ArrowRight, DollarSign, FileText, AlertCircle } from "lucide-react";
+import { CheckCircle, ArrowRight, DollarSign, FileText, AlertCircle, Receipt } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { sampleEmployees } from "@/lib/sample-data";
 import { calculatePayroll, formatCurrency, ST_LUCIA_CONFIG, checkMinimumWageCompliance } from "@/lib/payroll-engine";
