@@ -14,18 +14,35 @@ import {
   Search,
   UserCircle,
   Receipt,
+  MapPin,
+  Shield,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRole } from "@/hooks/useRole";
+import { useAuth } from "@/hooks/useAuth";
+import { Badge } from "@/components/ui/badge";
 
-const navItems = [
+interface NavItem {
+  path: string;
+  label: string;
+  icon: any;
+  adminOnly?: boolean;
+  managerOnly?: boolean;
+  separator?: boolean;
+}
+
+const navItems: NavItem[] = [
   { path: "/", label: "Dashboard", icon: LayoutDashboard },
   { path: "/employees", label: "Employees", icon: Users },
   { path: "/attendance", label: "Attendance", icon: Clock },
   { path: "/payroll", label: "Payroll", icon: DollarSign },
   { path: "/payslips", label: "Payslips", icon: Receipt },
   { path: "/reports", label: "Reports", icon: FileText },
-  { path: "/portal", label: "My Portal", icon: UserCircle },
+  { path: "/geofencing", label: "Geofencing", icon: MapPin },
+  { path: "/portal", label: "My Portal", icon: UserCircle, separator: true },
+  { path: "/users", label: "User Management", icon: Shield, adminOnly: true },
   { path: "/settings", label: "Settings", icon: Settings },
 ];
 
@@ -33,6 +50,14 @@ export default function AppLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { role, isAdmin, isAdminOrManager } = useRole();
+  const { signOut } = useAuth();
+
+  const visibleNavItems = navItems.filter((item) => {
+    if (item.adminOnly && !isAdmin) return false;
+    if (item.managerOnly && !isAdminOrManager) return false;
+    return true;
+  });
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -65,46 +90,75 @@ export default function AppLayout() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 py-4 px-2 space-y-1">
-          {navItems.map((item) => {
+        <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
+          {visibleNavItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
-              <button
-                key={item.path}
-                onClick={() => navigate(item.path)}
-                className={cn(
-                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150",
-                  isActive
-                    ? "bg-sidebar-accent text-sidebar-primary"
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                )}
-              >
-                <item.icon size={20} className="flex-shrink-0" />
-                <AnimatePresence>
-                  {!collapsed && (
-                    <motion.span
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="whitespace-nowrap"
-                    >
-                      {item.label}
-                    </motion.span>
+              <div key={item.path}>
+                {item.separator && <div className="h-px bg-sidebar-border my-2 mx-2" />}
+                <button
+                  onClick={() => navigate(item.path)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150",
+                    isActive
+                      ? "bg-sidebar-accent text-sidebar-primary"
+                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
                   )}
-                </AnimatePresence>
-              </button>
+                >
+                  <item.icon size={20} className="flex-shrink-0" />
+                  <AnimatePresence>
+                    {!collapsed && (
+                      <motion.span
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="whitespace-nowrap"
+                      >
+                        {item.label}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                  {item.adminOnly && !collapsed && (
+                    <span className="ml-auto text-[9px] px-1.5 py-0.5 rounded bg-sidebar-accent text-sidebar-primary font-bold">
+                      ADMIN
+                    </span>
+                  )}
+                </button>
+              </div>
             );
           })}
         </nav>
 
-        {/* Collapse Toggle */}
-        <div className="px-2 py-3 border-t border-sidebar-border">
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="w-full flex items-center justify-center py-2 rounded-lg text-sidebar-foreground/50 hover:bg-sidebar-accent transition-colors"
-          >
-            {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-          </button>
+        {/* Role badge + Collapse */}
+        <div className="px-2 py-3 border-t border-sidebar-border space-y-2">
+          {!collapsed && role && (
+            <div className="flex items-center justify-between px-2">
+              <span className="text-[10px] text-sidebar-muted uppercase tracking-wider">Role</span>
+              <span className={cn(
+                "text-[10px] px-2 py-0.5 rounded-full font-bold",
+                role === "admin" ? "bg-destructive/20 text-destructive" :
+                role === "manager" ? "bg-primary/20 text-primary" :
+                "bg-sidebar-accent text-sidebar-foreground"
+              )}>
+                {role.toUpperCase()}
+              </span>
+            </div>
+          )}
+          <div className="flex gap-1">
+            <button
+              onClick={() => setCollapsed(!collapsed)}
+              className="flex-1 flex items-center justify-center py-2 rounded-lg text-sidebar-foreground/50 hover:bg-sidebar-accent transition-colors"
+            >
+              {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+            </button>
+            <button
+              onClick={signOut}
+              className="flex items-center justify-center py-2 px-3 rounded-lg text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-destructive transition-colors"
+              title="Sign out"
+            >
+              <LogOut size={18} />
+            </button>
+          </div>
         </div>
       </motion.aside>
 
