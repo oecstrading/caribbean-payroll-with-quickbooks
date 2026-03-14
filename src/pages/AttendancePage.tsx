@@ -3,23 +3,44 @@ import { motion } from "framer-motion";
 import { Clock, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { sampleAttendance } from "@/lib/sample-data";
+import { sampleAttendance, type AttendanceRecord } from "@/lib/sample-data";
+import AttendanceCSVImport from "@/components/AttendanceCSVImport";
 
 export default function AttendancePage() {
-  const [selectedDate, setSelectedDate] = useState("2026-03-06");
+  const [importedRecords, setImportedRecords] = useState<AttendanceRecord[]>([]);
+  const allRecords = [...sampleAttendance, ...importedRecords];
 
-  const dates = [...new Set(sampleAttendance.map((a) => a.date))].sort();
-  const dayRecords = sampleAttendance.filter((a) => a.date === selectedDate);
+  const dates = [...new Set(allRecords.map((a) => a.date))].sort();
+  const [selectedDate, setSelectedDate] = useState(dates[dates.length - 1] || "2026-03-06");
+
+  const dayRecords = allRecords.filter((a) => a.date === selectedDate);
   const completeCount = dayRecords.filter((a) => a.status === "Complete").length;
   const missingCount = dayRecords.filter((a) => a.status !== "Complete").length;
   const lateCount = dayRecords.filter((a) => a.late).length;
   const totalOT = dayRecords.reduce((s, a) => s + a.otHours, 0);
 
+  const handleImport = (records: AttendanceRecord[]) => {
+    setImportedRecords((prev) => [...prev, ...records]);
+    // Auto-select the first imported date
+    const importedDates = [...new Set(records.map((r) => r.date))].sort();
+    if (importedDates.length > 0) {
+      setSelectedDate(importedDates[0]);
+    }
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-display font-bold text-foreground">Attendance</h1>
-        <p className="text-sm text-muted-foreground mt-1">Track clock-ins, overtime, and late arrivals</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-display font-bold text-foreground">Attendance</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Track clock-ins, overtime, and late arrivals
+            {importedRecords.length > 0 && (
+              <span className="ml-2 text-primary">• {importedRecords.length} imported records</span>
+            )}
+          </p>
+        </div>
+        <AttendanceCSVImport onImport={handleImport} />
       </div>
 
       {/* Date Selector */}
