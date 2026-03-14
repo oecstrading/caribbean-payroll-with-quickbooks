@@ -58,11 +58,28 @@ const navItems: NavItem[] = [
 export default function AppLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { role, isAdmin, isAdminOrManager } = useRole();
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const company = useCompany();
+
+  const userInitials = useMemo(() => {
+    const first = user?.user_metadata?.first_name?.[0] || user?.email?.[0] || "U";
+    const last = user?.user_metadata?.last_name?.[0] || "";
+    return (first + last).toUpperCase();
+  }, [user]);
+
+  // Search results based on nav items
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase();
+    return visibleNavItems.filter((item) =>
+      item.label.toLowerCase().includes(q)
+    );
+  }, [searchQuery]);
 
   // Close mobile menu on route change
   useEffect(() => {
