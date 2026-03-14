@@ -9,6 +9,7 @@ import { calculatePayroll, formatCurrency, ST_LUCIA_CONFIG, checkMinimumWageComp
 const steps = ["Review & Sync", "Audit", "Approve & Run"];
 
 export default function PayrollPage() {
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
 
   const payrollData = sampleEmployees
