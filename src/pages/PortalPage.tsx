@@ -21,10 +21,10 @@ export default function PortalPage() {
   const { user, signOut } = useAuth();
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-4 md:space-y-6">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-display font-bold text-foreground">Employee Portal</h1>
+          <h1 className="text-xl md:text-2xl font-display font-bold text-foreground">Employee Portal</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Welcome, {user?.user_metadata?.first_name || user?.email?.split("@")[0] || "Employee"}
           </p>
@@ -39,19 +39,19 @@ export default function PortalPage() {
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex gap-1 bg-secondary/50 p-1 rounded-xl">
+      <div className="flex gap-1 bg-secondary/50 p-1 rounded-xl overflow-x-auto">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+            className={`flex-1 flex items-center justify-center gap-1.5 px-3 md:px-4 py-2.5 rounded-lg text-xs md:text-sm font-medium transition-all whitespace-nowrap ${
               activeTab === tab.id
                 ? "bg-card text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <tab.icon size={16} />
-            <span className="hidden sm:inline">{tab.label}</span>
+            <tab.icon size={16} className="flex-shrink-0" />
+            <span>{tab.label}</span>
           </button>
         ))}
       </div>
