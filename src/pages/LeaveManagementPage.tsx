@@ -148,16 +148,14 @@ export default function LeaveManagementPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-display font-bold text-foreground">Leave Management</h1>
-          <p className="text-sm text-muted-foreground mt-1">Review and manage team leave requests</p>
-        </div>
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6">
+      <div>
+        <h1 className="text-xl md:text-2xl font-display font-bold text-foreground">Leave Management</h1>
+        <p className="text-sm text-muted-foreground mt-1">Review and manage team leave requests</p>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-3 md:gap-4">
         {[
           { label: "Pending", count: pendingCount, color: "text-warning", bg: "bg-warning/10" },
           { label: "Approved", count: approvedCount, color: "text-success", bg: "bg-success/10" },
