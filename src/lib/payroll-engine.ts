@@ -63,11 +63,18 @@ export const ST_LUCIA_CONFIG: CountryTaxConfig = {
   },
 };
 
+export interface CreditorDeduction {
+  creditorName: string;
+  amount: number;
+}
+
 export interface PayrollResult {
   grossMonthly: number;
   employeeNIC: number;
   employerNIC: number;
   paye: number;
+  creditorDeductions: CreditorDeduction[];
+  totalCreditorDeductions: number;
   totalDeductions: number;
   netPay: number;
   overtimePay: number;
