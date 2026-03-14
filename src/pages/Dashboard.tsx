@@ -35,10 +35,10 @@ export default function DashboardPage() {
   const lateToday = sampleAttendance.filter((a) => a.late).length;
 
   const metrics = [
-    { label: "Total Employees", value: activeEmployees.length.toString(), icon: Users, color: "text-primary", bgColor: "bg-primary/10" },
-    { label: "Monthly Gross", value: formatCurrency(totalGross, "$"), icon: DollarSign, color: "text-success", bgColor: "bg-success/10" },
-    { label: "On Clock Today", value: onClockToday.toString(), icon: Clock, color: "text-primary", bgColor: "bg-primary/10" },
-    { label: "Next Pay Date", value: "Mar 31", icon: CalendarDays, color: "text-accent-foreground", bgColor: "bg-accent/20" },
+    { label: "Total Employees", value: activeEmployees.length.toString(), icon: Users, color: "text-primary", bgColor: "bg-primary/10", path: "/employees" },
+    { label: "Monthly Gross", value: formatCurrency(totalGross, "$"), icon: DollarSign, color: "text-success", bgColor: "bg-success/10", path: "/payroll" },
+    { label: "On Clock Today", value: onClockToday.toString(), icon: Clock, color: "text-primary", bgColor: "bg-primary/10", path: "/attendance" },
+    { label: "Next Pay Date", value: "Mar 31", icon: CalendarDays, color: "text-accent-foreground", bgColor: "bg-accent/20", path: "/payroll" },
   ];
 
   const quickActions = [
@@ -59,14 +59,17 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {metrics.map((metric, i) => (
           <motion.div key={metric.label} {...fadeUp} transition={{ delay: 0.05 * (i + 1) }}>
-            <Card className="shadow-card border-border/60 hover:shadow-md transition-shadow">
+            <Card
+              className="shadow-card border-border/60 hover:shadow-md transition-shadow cursor-pointer group"
+              onClick={() => navigate(metric.path)}
+            >
               <CardContent className="p-5">
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{metric.label}</p>
                     <p className="text-2xl font-display font-bold text-foreground mt-1">{metric.value}</p>
                   </div>
-                  <div className={`p-2.5 rounded-lg ${metric.bgColor}`}>
+                  <div className={`p-2.5 rounded-lg ${metric.bgColor} group-hover:scale-110 transition-transform`}>
                     <metric.icon size={20} className={metric.color} />
                   </div>
                 </div>
@@ -113,18 +116,24 @@ export default function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-warning/10 border border-warning/20">
+              <div
+                className="flex items-start gap-3 p-3 rounded-lg bg-warning/10 border border-warning/20 cursor-pointer hover:bg-warning/15 transition-colors"
+                onClick={() => navigate("/attendance")}
+              >
                 <AlertTriangle size={16} className="text-warning mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="text-sm font-medium text-foreground">{lateToday} late arrivals this week</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Review attendance records</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Review attendance records →</p>
                 </div>
               </div>
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-primary/5 border border-primary/10">
+              <div
+                className="flex items-start gap-3 p-3 rounded-lg bg-primary/5 border border-primary/10 cursor-pointer hover:bg-primary/10 transition-colors"
+                onClick={() => navigate("/reports")}
+              >
                 <TrendingUp size={16} className="text-primary mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="text-sm font-medium text-foreground">NIC remittance due Mar 15</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Generate C3 report before deadline</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Generate C3 report →</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 p-3 rounded-lg bg-success/5 border border-success/10">

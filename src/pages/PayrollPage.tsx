@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle, ArrowRight, DollarSign, FileText, AlertCircle } from "lucide-react";
+import { CheckCircle, ArrowRight, DollarSign, FileText, AlertCircle, Receipt } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { sampleEmployees } from "@/lib/sample-data";
 import { calculatePayroll, formatCurrency, ST_LUCIA_CONFIG, checkMinimumWageCompliance } from "@/lib/payroll-engine";
@@ -8,6 +9,7 @@ import { calculatePayroll, formatCurrency, ST_LUCIA_CONFIG, checkMinimumWageComp
 const steps = ["Review & Sync", "Audit", "Approve & Run"];
 
 export default function PayrollPage() {
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
 
   const payrollData = sampleEmployees
@@ -245,10 +247,19 @@ export default function PayrollPage() {
             <button onClick={() => setCurrentStep(1)} className="px-6 py-2.5 bg-secondary text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors">
               Back
             </button>
-            <button className="flex items-center gap-2 px-8 py-3 bg-success text-success-foreground rounded-lg text-sm font-bold hover:bg-success/90 transition-colors">
-              <CheckCircle size={18} />
-              Approve & Process Payroll
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => navigate("/payslips")}
+                className="flex items-center gap-2 px-6 py-3 bg-secondary text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors"
+              >
+                <Receipt size={16} />
+                Generate Payslips
+              </button>
+              <button className="flex items-center gap-2 px-8 py-3 bg-success text-success-foreground rounded-lg text-sm font-bold hover:bg-success/90 transition-colors">
+                <CheckCircle size={18} />
+                Approve & Process Payroll
+              </button>
+            </div>
           </div>
         </motion.div>
       )}

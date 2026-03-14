@@ -10,6 +10,7 @@ import AttendancePage from "@/pages/AttendancePage";
 import PayrollPage from "@/pages/PayrollPage";
 import ReportsPage from "@/pages/ReportsPage";
 import SettingsPage from "@/pages/SettingsPage";
+import PayslipPage from "@/pages/PayslipPage";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="/attendance" element={<AttendancePage />} />
             <Route path="/payroll" element={<PayrollPage />} />
             <Route path="/reports" element={<ReportsPage />} />
+            <Route path="/payslips" element={<PayslipPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />

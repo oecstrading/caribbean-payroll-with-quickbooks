@@ -1,14 +1,23 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Search, UserPlus, MoreHorizontal, Mail, Phone } from "lucide-react";
+import { Search, UserPlus, MoreHorizontal, Mail, Phone, FileText, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { sampleEmployees, type Employee } from "@/lib/sample-data";
-import { formatCurrency } from "@/lib/payroll-engine";
+import { formatCurrency, calculatePayroll, ST_LUCIA_CONFIG } from "@/lib/payroll-engine";
+import { useNavigate } from "react-router-dom";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function EmployeesPage() {
   const [search, setSearch] = useState("");
   const [filterDept, setFilterDept] = useState("All");
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const navigate = useNavigate();
 
   const departments = ["All", ...new Set(sampleEmployees.map((e) => e.department))];
 
@@ -82,7 +91,8 @@ export default function EmployeesPage() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: i * 0.02 }}
-                  className="border-b border-border/50 hover:bg-secondary/30 transition-colors"
+                  className="border-b border-border/50 hover:bg-secondary/30 transition-colors cursor-pointer"
+                  onClick={() => setSelectedEmployee(employee)}
                 >
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-3">
@@ -120,6 +130,94 @@ export default function EmployeesPage() {
           </table>
         </div>
       </Card>
+
+      {/* Employee Detail Dialog */}
+      <Dialog open={!!selectedEmployee} onOpenChange={(open) => !open && setSelectedEmployee(null)}>
+        <DialogContent className="sm:max-w-lg">
+          {selectedEmployee && (() => {
+            const payroll = calculatePayroll(selectedEmployee.monthlySalary, ST_LUCIA_CONFIG);
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="font-display flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <span className="text-sm font-bold text-primary">
+                        {selectedEmployee.firstName[0]}{selectedEmployee.lastName[0]}
+                      </span>
+                    </div>
+                    {selectedEmployee.firstName} {selectedEmployee.lastName}
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 mt-2">
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-muted-foreground text-xs uppercase tracking-wide">Department</p>
+                      <p className="font-medium text-foreground">{selectedEmployee.department}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs uppercase tracking-wide">Job Title</p>
+                      <p className="font-medium text-foreground">{selectedEmployee.jobTitle}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs uppercase tracking-wide">Email</p>
+                      <p className="font-medium text-foreground">{selectedEmployee.email}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs uppercase tracking-wide">Phone</p>
+                      <p className="font-medium text-foreground">{selectedEmployee.phone}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs uppercase tracking-wide">NIC Number</p>
+                      <p className="font-mono text-foreground">{selectedEmployee.nicNumber}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs uppercase tracking-wide">Start Date</p>
+                      <p className="font-medium text-foreground">{new Date(selectedEmployee.startDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-border pt-3">
+                    <p className="text-muted-foreground text-xs uppercase tracking-wide mb-2">Monthly Pay Summary</p>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="p-3 rounded-lg bg-secondary text-center">
+                        <p className="text-xs text-muted-foreground">Gross</p>
+                        <p className="font-display font-bold text-foreground">{formatCurrency(payroll.grossMonthly)}</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-destructive/5 text-center">
+                        <p className="text-xs text-muted-foreground">Deductions</p>
+                        <p className="font-display font-bold text-destructive">{formatCurrency(payroll.totalDeductions)}</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-success/5 text-center">
+                        <p className="text-xs text-muted-foreground">Net Pay</p>
+                        <p className="font-display font-bold text-success">{formatCurrency(payroll.netPay)}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      onClick={() => {
+                        setSelectedEmployee(null);
+                        navigate(`/payslips?employee=${selectedEmployee.id}`);
+                      }}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+                    >
+                      <FileText size={16} />
+                      View Payslip
+                    </button>
+                    <button
+                      onClick={() => setSelectedEmployee(null)}
+                      className="px-4 py-2.5 bg-secondary text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
