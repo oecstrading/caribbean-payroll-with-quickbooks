@@ -11,6 +11,7 @@ import { useCompany } from "@/hooks/useCompany";
 
 export default function PayslipPage() {
   const navigate = useNavigate();
+  const company = useCompany();
   const [searchParams] = useSearchParams();
   const initialId = searchParams.get("employee") || sampleEmployees[0]?.id || "";
   const [selectedId, setSelectedId] = useState(initialId);
