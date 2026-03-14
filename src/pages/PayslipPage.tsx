@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Printer, ArrowLeft, Building, User, Calendar, DollarSign, Mail, Loader2 } from "lucide-react";
+import { Printer, ArrowLeft, Building, User, Calendar, DollarSign, Mail, Loader2, Download } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
