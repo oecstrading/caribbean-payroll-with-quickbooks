@@ -482,7 +482,29 @@ export default function DeductionsPage() {
       {/* Additions Tab */}
       {tab === "additions" && (
         <div className="space-y-4">
-          <div className="flex justify-end">
+          <div className="flex flex-wrap items-center gap-2 justify-end">
+            <input
+              ref={csvFileRef}
+              type="file"
+              accept=".csv"
+              onChange={handleCSVImport}
+              className="hidden"
+            />
+            <button
+              onClick={downloadSampleCSV}
+              className="flex items-center gap-2 px-3 py-2 bg-secondary text-foreground rounded-lg text-xs font-medium hover:bg-muted transition-colors"
+            >
+              <FileDown size={14} />
+              Download Template
+            </button>
+            <button
+              onClick={() => csvFileRef.current?.click()}
+              disabled={importing}
+              className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+            >
+              {importing ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+              {importing ? "Importing..." : "Import CSV"}
+            </button>
             <button
               onClick={() => { setAdditionForm({ user_id: "", addition_type: "bonus", description: "", amount: 0, frequency: "one-time", notes: "" }); setShowAdditionForm(true); }}
               className="flex items-center gap-2 px-4 py-2.5 bg-success text-success-foreground rounded-lg text-sm font-medium hover:bg-success/90 transition-colors"
