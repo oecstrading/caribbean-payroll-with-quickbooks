@@ -52,6 +52,7 @@ export default function SettingsPage() {
         .maybeSingle();
       if (data) {
         setSettings(data as CompanySettings);
+        setLogoUrl(data.logo_url || "");
         setForm({
           company_name: data.company_name || "",
           employer_nic_number: data.employer_nic_number || "",
@@ -60,6 +61,7 @@ export default function SettingsPage() {
           telephone: data.telephone || "",
           website: data.website || "",
           address: data.address || "",
+          logo_url: data.logo_url || "",
         });
       }
       setLoading(false);
