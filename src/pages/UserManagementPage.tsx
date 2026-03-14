@@ -41,7 +41,9 @@ export default function UserManagementPage() {
   const [inviting, setInviting] = useState(false);
   const [editUser, setEditUser] = useState<UserWithRole | null>(null);
   const [editForm, setEditForm] = useState({ department: "", job_title: "", monthly_salary: 0, status: "Active" });
-
+  const [pinUser, setPinUser] = useState<UserWithRole | null>(null);
+  const [pinValue, setPinValue] = useState("");
+  const [settingPin, setSettingPin] = useState(false);
   const fetchUsers = async () => {
     // Fetch profiles joined with roles
     const { data: profiles } = await supabase.from("profiles").select("*");
