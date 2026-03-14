@@ -95,7 +95,27 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-4 md:space-y-6">
+    <div
+      ref={containerRef}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      className="p-4 md:p-6 max-w-7xl mx-auto space-y-4 md:space-y-6 relative"
+    >
+      {/* Pull to refresh indicator */}
+      <div
+        className="flex items-center justify-center overflow-hidden transition-all duration-200 md:hidden"
+        style={{ height: pullDistance > 0 ? `${pullDistance}px` : 0 }}
+      >
+        <RefreshCw
+          size={22}
+          className={`text-primary transition-transform ${refreshing ? "animate-spin" : ""}`}
+          style={{ transform: `rotate(${(pullDistance / threshold) * 360}deg)` }}
+        />
+        <span className="ml-2 text-xs text-muted-foreground">
+          {refreshing ? "Refreshing…" : pullDistance >= threshold ? "Release to refresh" : "Pull to refresh"}
+        </span>
+      </div>
       {/* Page Header */}
       <motion.div {...fadeUp} transition={{ delay: 0 }}>
         <h1 className="text-2xl font-display font-bold text-foreground">Dashboard</h1>
