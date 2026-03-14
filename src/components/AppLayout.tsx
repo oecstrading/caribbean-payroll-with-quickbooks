@@ -57,6 +57,7 @@ export default function AppLayout() {
   const navigate = useNavigate();
   const { role, isAdmin, isAdminOrManager } = useRole();
   const { signOut } = useAuth();
+  const company = useCompany();
 
   const visibleNavItems = navItems.filter((item) => {
     if (item.adminOnly && !isAdmin) return false;
