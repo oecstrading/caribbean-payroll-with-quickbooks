@@ -118,7 +118,7 @@ export default function PayrollPage() {
   const anomalies = payrollData.filter((e) => !e.compliance.compliant);
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-4 md:space-y-6">
       <div>
         <h1 className="text-2xl font-display font-bold text-foreground">Run Payroll</h1>
         <p className="text-sm text-muted-foreground mt-1">March 2026 • Saint Lucia (XCD)</p>
