@@ -164,6 +164,27 @@ export default function UserManagementPage() {
     }
   };
 
+  const handleSetPin = async () => {
+    if (!pinUser || !/^\d{4,6}$/.test(pinValue)) {
+      toast.error("PIN must be 4-6 digits");
+      return;
+    }
+    setSettingPin(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("set-pin", {
+        body: { user_id: pinUser.user_id, pin: pinValue },
+      });
+      if (error || data?.error) throw new Error(data?.error || error?.message || "Failed to set PIN");
+      toast.success(`PIN set for ${pinUser.first_name} ${pinUser.last_name}`);
+      setPinUser(null);
+      setPinValue("");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to set PIN");
+    } finally {
+      setSettingPin(false);
+    }
+  
+
   if (!isAdmin) {
     return (
       <div className="p-6 max-w-4xl mx-auto text-center">
