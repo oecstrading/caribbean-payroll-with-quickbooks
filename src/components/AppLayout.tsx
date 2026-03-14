@@ -245,9 +245,33 @@ export default function AppLayout() {
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Search employees, payroll..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
+                placeholder="Search pages..."
                 className="pl-9 pr-4 py-2 w-48 md:w-72 bg-secondary rounded-lg text-sm font-body placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
+              {/* Search dropdown */}
+              {searchFocused && searchResults.length > 0 && (
+                <div className="absolute top-full left-0 mt-1 w-full bg-card border border-border rounded-lg shadow-lg z-50 overflow-hidden">
+                  {searchResults.map((item) => (
+                    <button
+                      key={item.path}
+                      onMouseDown={() => { navigate(item.path); setSearchQuery(""); }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors"
+                    >
+                      <item.icon size={16} className="text-muted-foreground" />
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {searchFocused && searchQuery.trim() && searchResults.length === 0 && (
+                <div className="absolute top-full left-0 mt-1 w-full bg-card border border-border rounded-lg shadow-lg z-50 p-3">
+                  <p className="text-sm text-muted-foreground text-center">No results found</p>
+                </div>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2 md:gap-4">
@@ -256,13 +280,21 @@ export default function AppLayout() {
               <span className="hidden md:inline">🇱🇨 St. Lucia</span>
               <span className="md:hidden">🇱🇨</span>
             </button>
-            <button className="relative p-2 rounded-lg hover:bg-secondary transition-colors">
+            <button
+              onClick={() => navigate("/leave-management")}
+              className="relative p-2 rounded-lg hover:bg-secondary transition-colors"
+              title="Notifications"
+            >
               <Bell size={18} className="text-muted-foreground" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-accent rounded-full" />
             </button>
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground text-xs font-bold">MS</span>
-            </div>
+            <button
+              onClick={() => navigate("/portal")}
+              className="w-8 h-8 rounded-full bg-primary flex items-center justify-center hover:bg-primary/90 transition-colors"
+              title="My Portal"
+            >
+              <span className="text-primary-foreground text-xs font-bold">{userInitials}</span>
+            </button>
           </div>
         </header>
 
