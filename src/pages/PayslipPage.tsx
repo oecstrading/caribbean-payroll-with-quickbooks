@@ -116,12 +116,24 @@ export default function PayslipPage() {
         </div>
         <div className="flex gap-2">
           <button
+            onClick={handleExportCSV}
+            className="flex items-center gap-2 px-4 py-2.5 bg-secondary text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors"
+          >
+            <Download size={14} /> CSV
+          </button>
+          <button
+            onClick={handleExportPDF}
+            className="flex items-center gap-2 px-4 py-2.5 bg-secondary text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors"
+          >
+            <Download size={14} /> PDF
+          </button>
+          <button
             onClick={handleEmailPayslip}
             disabled={emailing}
             className="flex items-center gap-2 px-4 py-2.5 bg-secondary text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50"
           >
             {emailing ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
-            {emailing ? "Sending..." : "Email Payslip"}
+            {emailing ? "Sending..." : "Email"}
           </button>
           <button
             onClick={handlePrint}
