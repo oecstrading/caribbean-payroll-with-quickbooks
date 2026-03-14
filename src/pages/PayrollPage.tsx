@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { sampleEmployees } from "@/lib/sample-data";
 import { calculatePayroll, formatCurrency, ST_LUCIA_CONFIG, checkMinimumWageCompliance } from "@/lib/payroll-engine";
 import { useAllEmployeeDeductions } from "@/hooks/useEmployeeDeductions";
+import { useAllEmployeeAdditions } from "@/hooks/useEmployeeAdditions";
 
 const steps = ["Review & Sync", "Audit", "Approve & Run"];
 
