@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { RoleProvider } from "@/hooks/useRole";
 import AppLayout from "@/components/AppLayout";
 import DashboardPage from "@/pages/Dashboard";
 import EmployeesPage from "@/pages/EmployeesPage";
@@ -14,6 +15,8 @@ import SettingsPage from "@/pages/SettingsPage";
 import PayslipPage from "@/pages/PayslipPage";
 import AuthPage from "@/pages/AuthPage";
 import PortalPage from "@/pages/PortalPage";
+import UserManagementPage from "@/pages/UserManagementPage";
+import GeofencingPage from "@/pages/GeofencingPage";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -54,6 +57,8 @@ const AppRoutes = () => (
       <Route path="/reports" element={<ReportsPage />} />
       <Route path="/payslips" element={<PayslipPage />} />
       <Route path="/portal" element={<PortalPage />} />
+      <Route path="/geofencing" element={<GeofencingPage />} />
+      <Route path="/users" element={<UserManagementPage />} />
       <Route path="/settings" element={<SettingsPage />} />
     </Route>
     <Route path="*" element={<NotFound />} />
@@ -67,7 +72,9 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <AppRoutes />
+          <RoleProvider>
+            <AppRoutes />
+          </RoleProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
