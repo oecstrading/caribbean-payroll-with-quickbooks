@@ -91,7 +91,8 @@ export default function EmployeesPage() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: i * 0.02 }}
-                  className="border-b border-border/50 hover:bg-secondary/30 transition-colors"
+                  className="border-b border-border/50 hover:bg-secondary/30 transition-colors cursor-pointer"
+                  onClick={() => setSelectedEmployee(employee)}
                 >
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-3">
