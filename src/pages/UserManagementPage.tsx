@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 import { useRole } from "@/hooks/useRole";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
@@ -35,6 +36,7 @@ export default function UserManagementPage() {
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState<AppRole | null>(null);
   const [showInvite, setShowInvite] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<AppRole>("employee");
@@ -76,7 +78,8 @@ export default function UserManagementPage() {
 
   const filtered = users.filter(
     (u) =>
-      `${u.first_name} ${u.last_name} ${u.email}`.toLowerCase().includes(search.toLowerCase())
+      `${u.first_name} ${u.last_name} ${u.email}`.toLowerCase().includes(search.toLowerCase()) &&
+      (!roleFilter || u.role === roleFilter)
   );
 
   const handleRoleChange = async (userId: string, newRole: AppRole) => {
@@ -215,7 +218,14 @@ export default function UserManagementPage() {
       {/* Role Stats */}
       <div className="grid grid-cols-3 gap-3 md:gap-4">
         {(["admin", "manager", "employee"] as AppRole[]).map((r) => (
-          <Card key={r} className="shadow-card border-border/60">
+          <Card
+            key={r}
+            onClick={() => setRoleFilter(roleFilter === r ? null : r)}
+            className={cn(
+              "shadow-card border-border/60 cursor-pointer transition-all hover:shadow-md",
+              roleFilter === r && "ring-2 ring-primary border-primary"
+            )}
+          >
             <CardContent className="p-4 flex items-center gap-3">
               <div className={`p-2 rounded-lg ${roleColors[r]}`}>
                 <Shield size={18} />
