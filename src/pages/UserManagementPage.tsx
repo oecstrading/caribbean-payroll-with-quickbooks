@@ -328,6 +328,13 @@ export default function UserManagementPage() {
                             <CheckCircle size={14} className="text-success" />
                           )}
                         </button>
+                        <button
+                          onClick={() => { setPinUser(u); setPinValue(""); }}
+                          className="p-1.5 rounded-md hover:bg-secondary transition-colors text-xs text-primary font-medium"
+                          title="Set PIN"
+                        >
+                          <Hash size={14} />
+                        </button>
                       </div>
                     </td>
                   </motion.tr>
