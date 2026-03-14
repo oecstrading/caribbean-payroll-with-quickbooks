@@ -1,10 +1,98 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Globe, Building, Shield, Bell } from "lucide-react";
+import { Globe, Building, Shield, Phone, Link, FileText, Save } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ST_LUCIA_CONFIG, formatCurrency } from "@/lib/payroll-engine";
+import { supabase } from "@/integrations/supabase/client";
+import { useRole } from "@/hooks/useRole";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
+
+interface CompanySettings {
+  id: string;
+  company_name: string;
+  employer_nic_number: string;
+  tax_id: string;
+  vat_number: string;
+  telephone: string;
+  website: string;
+  address: string;
+}
+
+const defaultSettings: Omit<CompanySettings, "id"> = {
+  company_name: "",
+  employer_nic_number: "",
+  tax_id: "",
+  vat_number: "",
+  telephone: "",
+  website: "",
+  address: "",
+};
 
 export default function SettingsPage() {
   const config = ST_LUCIA_CONFIG;
+  const { isAdmin } = useRole();
+  const { user } = useAuth();
+  const [settings, setSettings] = useState<CompanySettings | null>(null);
+  const [form, setForm] = useState(defaultSettings);
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetch = async () => {
+      const { data } = await supabase
+        .from("company_settings")
+        .select("*")
+        .limit(1)
+        .maybeSingle();
+      if (data) {
+        setSettings(data as CompanySettings);
+        setForm({
+          company_name: data.company_name || "",
+          employer_nic_number: data.employer_nic_number || "",
+          tax_id: data.tax_id || "",
+          vat_number: data.vat_number || "",
+          telephone: data.telephone || "",
+          website: data.website || "",
+          address: data.address || "",
+        });
+      }
+      setLoading(false);
+    };
+    fetch();
+  }, []);
+
+  const handleSave = async () => {
+    if (!isAdmin || !user) {
+      toast.error("Only admins can update company settings");
+      return;
+    }
+    setSaving(true);
+    try {
+      if (settings?.id) {
+        const { error } = await supabase
+          .from("company_settings")
+          .update({ ...form, updated_by: user.id, updated_at: new Date().toISOString() })
+          .eq("id", settings.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("company_settings")
+          .insert({ ...form, updated_by: user.id });
+        if (error) throw error;
+      }
+      toast.success("Company settings saved");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const inputClass = "w-full px-3 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20";
+
+  const update = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm({ ...form, [field]: e.target.value });
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
@@ -78,7 +166,7 @@ export default function SettingsPage() {
         </motion.div>
 
         {/* Company Profile */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }}>
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }} className="md:col-span-2">
           <Card className="shadow-card border-border/60">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-display flex items-center gap-2">
@@ -86,25 +174,68 @@ export default function SettingsPage() {
                 Company Profile
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Company Name</label>
-                <input defaultValue="Promotech Solutions Ltd." className="w-full px-3 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Employer NIC Number</label>
-                <input defaultValue="EMP-NIC-2022-001" className="w-full px-3 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Tax ID</label>
-                <input defaultValue="TID-LC-00123" className="w-full px-3 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20" />
-              </div>
+            <CardContent>
+              {loading ? (
+                <p className="text-sm text-muted-foreground py-4">Loading...</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Company Name</label>
+                    <input value={form.company_name} onChange={update("company_name")} disabled={!isAdmin} placeholder="Enter company name" className={inputClass} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Employer NIC Number</label>
+                    <input value={form.employer_nic_number} onChange={update("employer_nic_number")} disabled={!isAdmin} placeholder="e.g. EMP-NIC-2022-001" className={inputClass} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Tax ID</label>
+                    <input value={form.tax_id} onChange={update("tax_id")} disabled={!isAdmin} placeholder="e.g. TID-LC-00123" className={inputClass} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                      <FileText size={12} />
+                      VAT Number
+                    </label>
+                    <input value={form.vat_number} onChange={update("vat_number")} disabled={!isAdmin} placeholder="e.g. VAT-LC-00456" className={inputClass} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                      <Phone size={12} />
+                      Telephone
+                    </label>
+                    <input value={form.telephone} onChange={update("telephone")} disabled={!isAdmin} placeholder="e.g. +1 (758) 123-4567" className={inputClass} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                      <Link size={12} />
+                      Website
+                    </label>
+                    <input value={form.website} onChange={update("website")} disabled={!isAdmin} placeholder="e.g. https://www.company.com" className={inputClass} />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Address</label>
+                    <input value={form.address} onChange={update("address")} disabled={!isAdmin} placeholder="e.g. 123 Bridge St, Castries, Saint Lucia" className={inputClass} />
+                  </div>
+                  {isAdmin && (
+                    <div className="md:col-span-2 flex justify-end pt-2">
+                      <button
+                        onClick={handleSave}
+                        disabled={saving}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                      >
+                        <Save size={14} />
+                        {saving ? "Saving..." : "Save Changes"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>
 
         {/* OECS Countries */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }}>
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }} className="md:col-span-2">
           <Card className="shadow-card border-border/60">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-display flex items-center gap-2">
@@ -114,7 +245,7 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-4">Expandable to other OECS member states:</p>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {[
                   { flag: "🇱🇨", name: "Saint Lucia", active: true },
                   { flag: "🇬🇩", name: "Grenada", active: false },

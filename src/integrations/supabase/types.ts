@@ -58,6 +58,45 @@ export type Database = {
           },
         ]
       }
+      company_settings: {
+        Row: {
+          address: string | null
+          company_name: string
+          employer_nic_number: string | null
+          id: string
+          tax_id: string | null
+          telephone: string | null
+          updated_at: string
+          updated_by: string | null
+          vat_number: string | null
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          company_name?: string
+          employer_nic_number?: string | null
+          id?: string
+          tax_id?: string | null
+          telephone?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          vat_number?: string | null
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          company_name?: string
+          employer_nic_number?: string | null
+          id?: string
+          tax_id?: string | null
+          telephone?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          vat_number?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       employee_bank_info: {
         Row: {
           account_number: string | null
