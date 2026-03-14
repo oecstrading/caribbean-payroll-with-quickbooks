@@ -71,6 +71,14 @@ export default function PayslipPage() {
         </div>
         <div className="flex gap-2">
           <button
+            onClick={handleEmailPayslip}
+            disabled={emailing}
+            className="flex items-center gap-2 px-4 py-2.5 bg-secondary text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50"
+          >
+            {emailing ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
+            {emailing ? "Sending..." : "Email Payslip"}
+          </button>
+          <button
             onClick={handlePrint}
             className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
           >
