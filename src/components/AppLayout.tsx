@@ -12,6 +12,8 @@ import {
   Globe,
   Bell,
   Search,
+  UserCircle,
+  Receipt,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
