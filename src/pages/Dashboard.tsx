@@ -35,10 +35,10 @@ export default function DashboardPage() {
   const lateToday = sampleAttendance.filter((a) => a.late).length;
 
   const metrics = [
-    { label: "Total Employees", value: activeEmployees.length.toString(), icon: Users, color: "text-primary", bgColor: "bg-primary/10" },
-    { label: "Monthly Gross", value: formatCurrency(totalGross, "$"), icon: DollarSign, color: "text-success", bgColor: "bg-success/10" },
-    { label: "On Clock Today", value: onClockToday.toString(), icon: Clock, color: "text-primary", bgColor: "bg-primary/10" },
-    { label: "Next Pay Date", value: "Mar 31", icon: CalendarDays, color: "text-accent-foreground", bgColor: "bg-accent/20" },
+    { label: "Total Employees", value: activeEmployees.length.toString(), icon: Users, color: "text-primary", bgColor: "bg-primary/10", path: "/employees" },
+    { label: "Monthly Gross", value: formatCurrency(totalGross, "$"), icon: DollarSign, color: "text-success", bgColor: "bg-success/10", path: "/payroll" },
+    { label: "On Clock Today", value: onClockToday.toString(), icon: Clock, color: "text-primary", bgColor: "bg-primary/10", path: "/attendance" },
+    { label: "Next Pay Date", value: "Mar 31", icon: CalendarDays, color: "text-accent-foreground", bgColor: "bg-accent/20", path: "/payroll" },
   ];
 
   const quickActions = [
