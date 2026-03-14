@@ -10,6 +10,7 @@ import AttendancePage from "@/pages/AttendancePage";
 import PayrollPage from "@/pages/PayrollPage";
 import ReportsPage from "@/pages/ReportsPage";
 import SettingsPage from "@/pages/SettingsPage";
+import PayslipPage from "@/pages/PayslipPage";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
