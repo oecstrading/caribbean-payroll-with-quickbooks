@@ -18,6 +18,7 @@ import PortalPage from "@/pages/PortalPage";
 import UserManagementPage from "@/pages/UserManagementPage";
 import GeofencingPage from "@/pages/GeofencingPage";
 import LeaveManagementPage from "@/pages/LeaveManagementPage";
+import DeductionsPage from "@/pages/DeductionsPage";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -60,6 +61,7 @@ const AppRoutes = () => (
       <Route path="/portal" element={<PortalPage />} />
       <Route path="/geofencing" element={<GeofencingPage />} />
       <Route path="/leave-management" element={<LeaveManagementPage />} />
+      <Route path="/deductions" element={<DeductionsPage />} />
       <Route path="/users" element={<UserManagementPage />} />
       <Route path="/settings" element={<SettingsPage />} />
     </Route>

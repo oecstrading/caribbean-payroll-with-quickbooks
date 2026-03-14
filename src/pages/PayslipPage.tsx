@@ -1,7 +1,9 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Printer, Download, ArrowLeft, Building, User, Calendar, DollarSign } from "lucide-react";
+import { Printer, Download, ArrowLeft, Building, User, Calendar, DollarSign, Mail, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { sampleEmployees, type Employee } from "@/lib/sample-data";
 import { calculatePayroll, formatCurrency, ST_LUCIA_CONFIG } from "@/lib/payroll-engine";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -13,12 +15,34 @@ export default function PayslipPage() {
   const [selectedId, setSelectedId] = useState(initialId);
   const [payPeriod] = useState("March 2026");
   const payslipRef = useRef<HTMLDivElement>(null);
+  const [emailing, setEmailing] = useState(false);
 
   const employee = sampleEmployees.find((e) => e.id === selectedId);
   const payroll = employee ? calculatePayroll(employee.monthlySalary, ST_LUCIA_CONFIG) : null;
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleEmailPayslip = async () => {
+    if (!employee) return;
+    setEmailing(true);
+    try {
+      const payslipHtml = payslipRef.current?.innerHTML || "";
+      const { data, error } = await supabase.functions.invoke("email-payslip", {
+        body: {
+          user_id: employee.id,
+          payslip_html: payslipHtml,
+          period: payPeriod,
+        },
+      });
+      if (error || data?.error) throw new Error(data?.error || error?.message || "Failed to email payslip");
+      toast.success(data.message || "Payslip emailed successfully");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to email payslip");
+    } finally {
+      setEmailing(false);
+    }
   };
 
   if (!employee || !payroll) {
@@ -46,6 +70,14 @@ export default function PayslipPage() {
           </div>
         </div>
         <div className="flex gap-2">
+          <button
+            onClick={handleEmailPayslip}
+            disabled={emailing}
+            className="flex items-center gap-2 px-4 py-2.5 bg-secondary text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50"
+          >
+            {emailing ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
+            {emailing ? "Sending..." : "Email Payslip"}
+          </button>
           <button
             onClick={handlePrint}
             className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"

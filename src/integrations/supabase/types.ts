@@ -97,6 +97,39 @@ export type Database = {
         }
         Relationships: []
       }
+      creditors: {
+        Row: {
+          account_number: string | null
+          contact_info: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          account_number?: string | null
+          contact_info?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          account_number?: string | null
+          contact_info?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       employee_bank_info: {
         Row: {
           account_number: string | null
@@ -129,6 +162,56 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      employee_deductions: {
+        Row: {
+          amount: number
+          created_at: string
+          creditor_id: string
+          end_date: string | null
+          frequency: string
+          id: string
+          is_active: boolean
+          notes: string | null
+          start_date: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          creditor_id: string
+          end_date?: string | null
+          frequency?: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          start_date?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          creditor_id?: string
+          end_date?: string | null
+          frequency?: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          start_date?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_deductions_creditor_id_fkey"
+            columns: ["creditor_id"]
+            isOneToOne: false
+            referencedRelation: "creditors"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       geofence_zones: {
         Row: {
