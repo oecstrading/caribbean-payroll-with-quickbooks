@@ -19,6 +19,7 @@ export default function PayrollPage() {
   const [processing, setProcessing] = useState(false);
   const [approved, setApproved] = useState(false);
   const { deductionsMap } = useAllEmployeeDeductions();
+  const { additionsMap } = useAllEmployeeAdditions();
 
   const handleBulkEmail = async () => {
     setBulkEmailing(true);
