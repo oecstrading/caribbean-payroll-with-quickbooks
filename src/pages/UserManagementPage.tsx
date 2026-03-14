@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Users, Shield, Mail, Search, MoreHorizontal, UserPlus, Ban, CheckCircle } from "lucide-react";
+import { Users, Shield, Mail, Search, MoreHorizontal, UserPlus, Ban, CheckCircle, Hash } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
