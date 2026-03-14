@@ -59,14 +59,17 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {metrics.map((metric, i) => (
           <motion.div key={metric.label} {...fadeUp} transition={{ delay: 0.05 * (i + 1) }}>
-            <Card className="shadow-card border-border/60 hover:shadow-md transition-shadow">
+            <Card
+              className="shadow-card border-border/60 hover:shadow-md transition-shadow cursor-pointer group"
+              onClick={() => navigate(metric.path)}
+            >
               <CardContent className="p-5">
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{metric.label}</p>
                     <p className="text-2xl font-display font-bold text-foreground mt-1">{metric.value}</p>
                   </div>
-                  <div className={`p-2.5 rounded-lg ${metric.bgColor}`}>
+                  <div className={`p-2.5 rounded-lg ${metric.bgColor} group-hover:scale-110 transition-transform`}>
                     <metric.icon size={20} className={metric.color} />
                   </div>
                 </div>
