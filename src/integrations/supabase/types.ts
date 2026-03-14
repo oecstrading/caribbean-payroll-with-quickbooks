@@ -64,6 +64,7 @@ export type Database = {
           company_name: string
           employer_nic_number: string | null
           id: string
+          logo_url: string | null
           tax_id: string | null
           telephone: string | null
           updated_at: string
@@ -76,6 +77,7 @@ export type Database = {
           company_name?: string
           employer_nic_number?: string | null
           id?: string
+          logo_url?: string | null
           tax_id?: string | null
           telephone?: string | null
           updated_at?: string
@@ -88,6 +90,7 @@ export type Database = {
           company_name?: string
           employer_nic_number?: string | null
           id?: string
+          logo_url?: string | null
           tax_id?: string | null
           telephone?: string | null
           updated_at?: string
