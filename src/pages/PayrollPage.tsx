@@ -285,6 +285,14 @@ export default function PayrollPage() {
             </button>
             <div className="flex gap-2">
               <button
+                onClick={handleBulkEmail}
+                disabled={bulkEmailing}
+                className="flex items-center gap-2 px-6 py-3 bg-secondary text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50"
+              >
+                {bulkEmailing ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
+                {bulkEmailing ? `Emailing ${payrollData.length}...` : `Email All Payslips (${payrollData.length})`}
+              </button>
+              <button
                 onClick={() => navigate("/payslips")}
                 className="flex items-center gap-2 px-6 py-3 bg-secondary text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors"
               >
