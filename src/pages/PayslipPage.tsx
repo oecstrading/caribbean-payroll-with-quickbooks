@@ -15,6 +15,7 @@ export default function PayslipPage() {
   const [selectedId, setSelectedId] = useState(initialId);
   const [payPeriod] = useState("March 2026");
   const payslipRef = useRef<HTMLDivElement>(null);
+  const [emailing, setEmailing] = useState(false);
 
   const employee = sampleEmployees.find((e) => e.id === selectedId);
   const payroll = employee ? calculatePayroll(employee.monthlySalary, ST_LUCIA_CONFIG) : null;
