@@ -102,42 +102,42 @@ export default function PayslipPage() {
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-6">
+    <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-4 md:space-y-6">
       {/* Header - no print */}
-      <div className="no-print flex items-center justify-between">
+      <div className="no-print space-y-3">
         <div className="flex items-center gap-3">
           <button onClick={() => navigate(-1)} className="p-2 rounded-lg hover:bg-secondary transition-colors">
             <ArrowLeft size={20} className="text-muted-foreground" />
           </button>
           <div>
-            <h1 className="text-2xl font-display font-bold text-foreground">Payslip Generator</h1>
-            <p className="text-sm text-muted-foreground mt-1">Generate and print employee payslips</p>
+            <h1 className="text-xl md:text-2xl font-display font-bold text-foreground">Payslip Generator</h1>
+            <p className="text-xs md:text-sm text-muted-foreground mt-0.5">Generate and print employee payslips</p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-2 px-4 py-2.5 bg-secondary text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors"
+            className="flex items-center gap-2 px-3 md:px-4 py-2 md:py-2.5 bg-secondary text-foreground rounded-lg text-xs md:text-sm font-medium hover:bg-muted transition-colors"
           >
             <Download size={14} /> CSV
           </button>
           <button
             onClick={handleExportPDF}
-            className="flex items-center gap-2 px-4 py-2.5 bg-secondary text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors"
+            className="flex items-center gap-2 px-3 md:px-4 py-2 md:py-2.5 bg-secondary text-foreground rounded-lg text-xs md:text-sm font-medium hover:bg-muted transition-colors"
           >
             <Download size={14} /> PDF
           </button>
           <button
             onClick={handleEmailPayslip}
             disabled={emailing}
-            className="flex items-center gap-2 px-4 py-2.5 bg-secondary text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-3 md:px-4 py-2 md:py-2.5 bg-secondary text-foreground rounded-lg text-xs md:text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50"
           >
             {emailing ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
             {emailing ? "Sending..." : "Email"}
           </button>
           <button
             onClick={handlePrint}
-            className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+            className="flex items-center gap-2 px-3 md:px-4 py-2 md:py-2.5 bg-primary text-primary-foreground rounded-lg text-xs md:text-sm font-medium hover:bg-primary/90 transition-colors"
           >
             <Printer size={16} />
             Print
