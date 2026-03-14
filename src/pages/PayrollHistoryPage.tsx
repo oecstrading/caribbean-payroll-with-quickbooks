@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { History, ChevronDown, ChevronRight, Calendar, Users, DollarSign, FileText, Eye } from "lucide-react";
+import { History, ChevronDown, ChevronRight, Calendar, Users, DollarSign, FileText, Eye, Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/payroll-engine";
+import { downloadCSV, downloadPDF } from "@/lib/export-utils";
+import { toast } from "sonner";
 
 interface PayrollRun {
   id: string;
