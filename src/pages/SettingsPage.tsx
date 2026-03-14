@@ -210,7 +210,7 @@ export default function SettingsPage() {
                       <Link size={12} />
                       Website
                     </label>
-                    <input value={form.website} onChange={update("website")} disabled={!isAdmin} placeholder="e.g. https://www.company.com" className={inputClass} />
+                    <input value={form.website} onChange={update("website")} disabled={!isAdminOrManager} placeholder="e.g. https://www.company.com" className={inputClass} />
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Address</label>
