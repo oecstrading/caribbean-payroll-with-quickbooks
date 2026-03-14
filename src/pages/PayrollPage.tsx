@@ -15,6 +15,8 @@ export default function PayrollPage() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [bulkEmailing, setBulkEmailing] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const [approved, setApproved] = useState(false);
   const { deductionsMap } = useAllEmployeeDeductions();
 
   const handleBulkEmail = async () => {
@@ -34,6 +36,59 @@ export default function PayrollPage() {
       toast.success(`All ${sent} payslips emailed successfully`);
     } else {
       toast.warning(`${sent} sent, ${failed} failed`);
+    }
+  };
+
+  const handleApprovePayroll = async () => {
+    setProcessing(true);
+    try {
+      const period = "March 2026";
+
+      // 1. Create payroll run
+      const { data: run, error: runError } = await supabase
+        .from("payroll_runs")
+        .insert({
+          period,
+          status: "approved",
+          employee_count: payrollData.length,
+          total_gross: totals.gross,
+          total_deductions: totals.nicEmployee + totals.paye + totals.creditor,
+          total_net: totals.net,
+        })
+        .select()
+        .single();
+
+      if (runError) throw runError;
+
+      // 2. Create payslips for each employee
+      // Use crypto.randomUUID() for sample employees since they don't have real user_ids
+      const payslipRows = payrollData.map((emp) => ({
+        payroll_run_id: run.id,
+        user_id: crypto.randomUUID(), // placeholder for sample data
+        period,
+        basic_pay: emp.payroll.basicPay,
+        overtime_pay: emp.payroll.overtimePay,
+        gross_pay: emp.payroll.grossMonthly,
+        employee_nic: emp.payroll.employeeNIC,
+        employer_nic: emp.payroll.employerNIC,
+        paye: emp.payroll.paye,
+        total_deductions: emp.payroll.totalDeductions,
+        net_pay: emp.payroll.netPay,
+      }));
+
+      const { error: slipError } = await supabase
+        .from("payslips")
+        .insert(payslipRows);
+
+      if (slipError) throw slipError;
+
+      setApproved(true);
+      toast.success(`Payroll approved! ${payrollData.length} payslips saved.`);
+    } catch (err: any) {
+      console.error("Payroll approval error:", err);
+      toast.error(err.message || "Failed to process payroll");
+    } finally {
+      setProcessing(false);
     }
   };
 
@@ -299,9 +354,13 @@ export default function PayrollPage() {
                 <Receipt size={16} />
                 Generate Payslips
               </button>
-              <button className="flex items-center gap-2 px-8 py-3 bg-success text-success-foreground rounded-lg text-sm font-bold hover:bg-success/90 transition-colors">
-                <CheckCircle size={18} />
-                Approve & Process Payroll
+              <button
+                onClick={handleApprovePayroll}
+                disabled={processing || approved}
+                className="flex items-center gap-2 px-8 py-3 bg-success text-success-foreground rounded-lg text-sm font-bold hover:bg-success/90 transition-colors disabled:opacity-50"
+              >
+                {processing ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle size={18} />}
+                {approved ? "Payroll Approved ✓" : processing ? "Processing..." : "Approve & Process Payroll"}
               </button>
             </div>
           </div>
