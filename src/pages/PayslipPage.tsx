@@ -24,6 +24,27 @@ export default function PayslipPage() {
     window.print();
   };
 
+  const handleEmailPayslip = async () => {
+    if (!employee) return;
+    setEmailing(true);
+    try {
+      const payslipHtml = payslipRef.current?.innerHTML || "";
+      const { data, error } = await supabase.functions.invoke("email-payslip", {
+        body: {
+          user_id: employee.id,
+          payslip_html: payslipHtml,
+          period: payPeriod,
+        },
+      });
+      if (error || data?.error) throw new Error(data?.error || error?.message || "Failed to email payslip");
+      toast.success(data.message || "Payslip emailed successfully");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to email payslip");
+    } finally {
+      setEmailing(false);
+    }
+  };
+
   if (!employee || !payroll) {
     return (
       <div className="p-6 max-w-4xl mx-auto text-center">
