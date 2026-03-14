@@ -213,7 +213,7 @@ export default function UserManagementPage() {
       </div>
 
       {/* Role Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-3 md:gap-4">
         {(["admin", "manager", "employee"] as AppRole[]).map((r) => (
           <Card key={r} className="shadow-card border-border/60">
             <CardContent className="p-4 flex items-center gap-3">

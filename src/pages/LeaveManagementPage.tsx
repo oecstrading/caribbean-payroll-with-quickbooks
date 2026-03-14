@@ -219,39 +219,36 @@ export default function LeaveManagementPage() {
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -8 }}
-                      className="flex items-center justify-between p-4 rounded-lg bg-secondary/50 border border-border/50"
+                      className="flex flex-col sm:flex-row sm:items-center justify-between p-3 md:p-4 rounded-lg bg-secondary/50 border border-border/50 gap-3"
                     >
-                      <div className="flex items-center gap-4 flex-1 min-w-0">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
                         <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                           <span className="text-xs font-bold text-primary">
                             {req.profile ? `${req.profile.first_name[0]}${req.profile.last_name[0]}` : "?"}
                           </span>
                         </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">{name}</p>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-sm font-medium text-foreground truncate">{name}</p>
+                            <Badge variant="secondary" className={`${info.color} text-[10px] flex-shrink-0`}>
+                              {info.label}
+                            </Badge>
+                          </div>
                           <p className="text-xs text-muted-foreground">
-                            {req.profile?.department || "No dept"} · {req.profile?.job_title || "No title"}
-                          </p>
-                        </div>
-                        <Badge variant="secondary" className={`${info.color} text-[10px] flex-shrink-0`}>
-                          {info.label}
-                        </Badge>
-                        <div className="text-sm text-foreground flex-shrink-0">
-                          <span>
-                            {new Date(req.start_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                            {req.profile?.department || "No dept"} · {new Date(req.start_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                             {" — "}
                             {new Date(req.end_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                          </span>
-                          <span className="text-xs text-muted-foreground ml-2">({req.days}d)</span>
-                        </div>
-                        {req.reason && (
-                          <p className="text-xs text-muted-foreground truncate max-w-[200px] flex-shrink" title={req.reason}>
-                            "{req.reason}"
+                            {" "}({req.days}d)
                           </p>
-                        )}
+                          {req.reason && (
+                            <p className="text-xs text-muted-foreground truncate mt-0.5" title={req.reason}>
+                              "{req.reason}"
+                            </p>
+                          )}
+                        </div>
                       </div>
 
-                      <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+                      <div className="flex items-center gap-2 flex-shrink-0">
                         {req.status === "pending" ? (
                           <>
                             <button

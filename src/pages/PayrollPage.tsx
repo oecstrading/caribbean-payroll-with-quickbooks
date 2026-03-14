@@ -334,33 +334,35 @@ export default function PayrollPage() {
               </div>
             </CardContent>
           </Card>
-          <div className="flex justify-between">
+          <div className="flex flex-col sm:flex-row justify-between gap-3">
             <button onClick={() => setCurrentStep(1)} className="px-6 py-2.5 bg-secondary text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors">
               Back
             </button>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2 justify-end">
               <button
                 onClick={handleBulkEmail}
                 disabled={bulkEmailing}
-                className="flex items-center gap-2 px-6 py-3 bg-secondary text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-secondary text-foreground rounded-lg text-xs md:text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50"
               >
                 {bulkEmailing ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
-                {bulkEmailing ? `Emailing ${payrollData.length}...` : `Email All Payslips (${payrollData.length})`}
+                <span className="hidden sm:inline">{bulkEmailing ? `Emailing ${payrollData.length}...` : `Email All (${payrollData.length})`}</span>
+                <span className="sm:hidden">{bulkEmailing ? "Emailing..." : "Email"}</span>
               </button>
               <button
                 onClick={() => navigate("/payslips")}
-                className="flex items-center gap-2 px-6 py-3 bg-secondary text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors"
+                className="flex items-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-secondary text-foreground rounded-lg text-xs md:text-sm font-medium hover:bg-muted transition-colors"
               >
                 <Receipt size={16} />
-                Generate Payslips
+                <span className="hidden sm:inline">Generate Payslips</span>
+                <span className="sm:hidden">Payslips</span>
               </button>
               <button
                 onClick={handleApprovePayroll}
                 disabled={processing || approved}
-                className="flex items-center gap-2 px-8 py-3 bg-success text-success-foreground rounded-lg text-sm font-bold hover:bg-success/90 transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-4 md:px-8 py-2.5 md:py-3 bg-success text-success-foreground rounded-lg text-xs md:text-sm font-bold hover:bg-success/90 transition-colors disabled:opacity-50"
               >
                 {processing ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle size={18} />}
-                {approved ? "Payroll Approved ✓" : processing ? "Processing..." : "Approve & Process Payroll"}
+                {approved ? "Approved ✓" : processing ? "Processing..." : "Approve Payroll"}
               </button>
             </div>
           </div>

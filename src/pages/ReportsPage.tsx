@@ -111,7 +111,7 @@ export default function ReportsPage() {
   ];
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-4 md:space-y-6">
       <div>
         <h1 className="text-2xl font-display font-bold text-foreground">Reports</h1>
         <p className="text-sm text-muted-foreground mt-1">Government reports, payslips, and statutory exports</p>
