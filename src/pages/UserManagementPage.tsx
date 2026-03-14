@@ -216,7 +216,14 @@ export default function UserManagementPage() {
       {/* Role Stats */}
       <div className="grid grid-cols-3 gap-3 md:gap-4">
         {(["admin", "manager", "employee"] as AppRole[]).map((r) => (
-          <Card key={r} className="shadow-card border-border/60">
+          <Card
+            key={r}
+            onClick={() => setRoleFilter(roleFilter === r ? null : r)}
+            className={cn(
+              "shadow-card border-border/60 cursor-pointer transition-all hover:shadow-md",
+              roleFilter === r && "ring-2 ring-primary border-primary"
+            )}
+          >
             <CardContent className="p-4 flex items-center gap-3">
               <div className={`p-2 rounded-lg ${roleColors[r]}`}>
                 <Shield size={18} />
