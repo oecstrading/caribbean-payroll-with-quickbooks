@@ -216,6 +216,72 @@ export default function DeductionsPage() {
     else { toast.success(isActive ? "Addition deactivated" : "Addition activated"); fetchData(); }
   };
 
+  const csvFileRef = useRef<HTMLInputElement>(null);
+  const [importing, setImporting] = useState(false);
+
+  const handleCSVImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImporting(true);
+    try {
+      const text = await file.text();
+      const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
+      if (lines.length < 2) { toast.error("CSV must have a header row and at least one data row"); return; }
+      
+      // Expected: email, type, description, amount, frequency, notes
+      const rows = lines.slice(1).map(line => {
+        const parts = line.split(",").map(s => s.trim().replace(/^"|"$/g, ""));
+        return { email: parts[0], type: parts[1] || "bonus", description: parts[2] || "", amount: parseFloat(parts[3]) || 0, frequency: parts[4] || "one-time", notes: parts[5] || "" };
+      }).filter(r => r.email && r.amount > 0);
+
+      if (rows.length === 0) { toast.error("No valid rows found in CSV"); setImporting(false); return; }
+
+      // Map emails to user_ids
+      let inserted = 0;
+      let skipped = 0;
+      for (const row of rows) {
+        const profile = profiles.find(p => p.email.toLowerCase() === row.email.toLowerCase());
+        if (!profile) { skipped++; continue; }
+        
+        const validTypes = ["bonus", "overtime", "double_time", "vacation_pay", "commission", "allowance", "other"];
+        const addType = validTypes.includes(row.type) ? row.type : "other";
+
+        const { error } = await supabase.from("employee_additions").insert({
+          user_id: profile.user_id,
+          addition_type: addType,
+          description: row.description || additionTypes.find(t => t.value === addType)?.label || "",
+          amount: row.amount,
+          frequency: row.frequency,
+          notes: row.notes,
+        } as any);
+        if (error) { skipped++; } else { inserted++; }
+      }
+
+      toast.success(`Imported ${inserted} additions${skipped > 0 ? `, ${skipped} skipped` : ""}`);
+      fetchData();
+    } catch (err: any) {
+      toast.error("Failed to parse CSV: " + err.message);
+    } finally {
+      setImporting(false);
+      if (csvFileRef.current) csvFileRef.current.value = "";
+    }
+  };
+
+  const downloadSampleCSV = () => {
+    const header = "email,type,description,amount,frequency,notes";
+    const sample = [
+      "john@example.com,bonus,Q1 Performance Bonus,500.00,one-time,Approved by HR",
+      "jane@example.com,overtime,March OT 20hrs,350.00,one-time,",
+      "mike@example.com,vacation_pay,Vacation Payout,1200.00,one-time,Unused vacation days",
+    ].join("\n");
+    const blob = new Blob([header + "\n" + sample], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "additions-template.csv"; a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Template downloaded");
+  };
+
   const filteredCreditors = creditors.filter(c =>
     c.name.toLowerCase().includes(search.toLowerCase()) || c.type.includes(search.toLowerCase())
   );
