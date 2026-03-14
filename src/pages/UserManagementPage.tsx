@@ -197,10 +197,10 @@ export default function UserManagementPage() {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-4 md:space-y-6">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-display font-bold text-foreground">User Management</h1>
+          <h1 className="text-xl md:text-2xl font-display font-bold text-foreground">User Management</h1>
           <p className="text-sm text-muted-foreground mt-1">{users.length} users • Manage roles, access, and profiles</p>
         </div>
         <button
