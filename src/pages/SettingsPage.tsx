@@ -214,9 +214,9 @@ export default function SettingsPage() {
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Address</label>
-                    <input value={form.address} onChange={update("address")} disabled={!isAdmin} placeholder="e.g. 123 Bridge St, Castries, Saint Lucia" className={inputClass} />
+                    <input value={form.address} onChange={update("address")} disabled={!isAdminOrManager} placeholder="e.g. 123 Bridge St, Castries, Saint Lucia" className={inputClass} />
                   </div>
-                  {isAdmin && (
+                  {isAdminOrManager && (
                     <div className="md:col-span-2 flex justify-end pt-2">
                       <button
                         onClick={handleSave}
