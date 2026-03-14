@@ -458,6 +458,46 @@ export default function UserManagementPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Set PIN Dialog */}
+      <Dialog open={!!pinUser} onOpenChange={(o) => !o && setPinUser(null)}>
+        <DialogContent className="sm:max-w-sm">
+          {pinUser && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="font-display flex items-center gap-2">
+                  <Hash size={18} className="text-primary" />
+                  Set PIN for {pinUser.first_name} {pinUser.last_name}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 mt-2">
+                <p className="text-sm text-muted-foreground">
+                  Set a 4-6 digit PIN to allow this user to sign in with their email and PIN instead of a password.
+                </p>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">PIN (4-6 digits)</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={pinValue}
+                    onChange={(e) => setPinValue(e.target.value.replace(/\D/g, ""))}
+                    placeholder="e.g. 1234"
+                    className="w-full px-3 py-2.5 bg-secondary border border-border rounded-lg text-sm text-foreground text-center tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <button
+                  onClick={handleSetPin}
+                  disabled={settingPin || pinValue.length < 4}
+                  className="w-full px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  {settingPin ? "Setting PIN..." : "Set PIN & Enable Login"}
+                </button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
