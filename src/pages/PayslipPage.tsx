@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { sampleEmployees, type Employee } from "@/lib/sample-data";
 import { calculatePayroll, formatCurrency, ST_LUCIA_CONFIG } from "@/lib/payroll-engine";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useCompany } from "@/hooks/useCompany";
 
 export default function PayslipPage() {
   const navigate = useNavigate();
