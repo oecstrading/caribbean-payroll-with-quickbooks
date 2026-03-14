@@ -1,7 +1,9 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Printer, Download, ArrowLeft, Building, User, Calendar, DollarSign } from "lucide-react";
+import { Printer, Download, ArrowLeft, Building, User, Calendar, DollarSign, Mail, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { sampleEmployees, type Employee } from "@/lib/sample-data";
 import { calculatePayroll, formatCurrency, ST_LUCIA_CONFIG } from "@/lib/payroll-engine";
 import { useNavigate, useSearchParams } from "react-router-dom";
