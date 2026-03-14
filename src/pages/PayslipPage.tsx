@@ -199,7 +199,7 @@ export default function PayslipPage() {
 
           <CardContent className="p-6 space-y-6">
             {/* Employee Info */}
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
               <div className="space-y-3">
                 <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
                   <User size={12} /> Employee Details
