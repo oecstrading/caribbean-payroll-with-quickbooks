@@ -61,6 +61,7 @@ const AppRoutes = () => (
       <Route path="/portal" element={<PortalPage />} />
       <Route path="/geofencing" element={<GeofencingPage />} />
       <Route path="/leave-management" element={<LeaveManagementPage />} />
+      <Route path="/deductions" element={<DeductionsPage />} />
       <Route path="/users" element={<UserManagementPage />} />
       <Route path="/settings" element={<SettingsPage />} />
     </Route>
