@@ -10,19 +10,66 @@ import {
   UserPlus,
   PlayCircle,
   FileDown,
+  RefreshCw,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { sampleEmployees, sampleAttendance } from "@/lib/sample-data";
 import { calculatePayroll, formatCurrency, ST_LUCIA_CONFIG } from "@/lib/payroll-engine";
 import { useNavigate } from "react-router-dom";
+import { useRef, useState, useCallback } from "react";
 
 const fadeUp = {
   initial: { opacity: 0, y: 12 },
   animate: { opacity: 1, y: 0 },
 };
 
+function usePullToRefresh(onRefresh: () => Promise<void>) {
+  const [pulling, setPulling] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
+  const startY = useRef(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const threshold = 80;
+
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    if (containerRef.current && containerRef.current.scrollTop === 0) {
+      startY.current = e.touches[0].clientY;
+      setPulling(true);
+    }
+  }, []);
+
+  const onTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!pulling) return;
+    const delta = e.touches[0].clientY - startY.current;
+    if (delta > 0) {
+      setPullDistance(Math.min(delta * 0.5, 120));
+    }
+  }, [pulling]);
+
+  const onTouchEnd = useCallback(async () => {
+    if (pullDistance >= threshold && !refreshing) {
+      setRefreshing(true);
+      setPullDistance(threshold);
+      await onRefresh();
+      setRefreshing(false);
+    }
+    setPulling(false);
+    setPullDistance(0);
+  }, [pullDistance, refreshing, onRefresh, threshold]);
+
+  return { containerRef, pullDistance, refreshing, onTouchStart, onTouchMove, onTouchEnd, threshold };
+}
+
 export default function DashboardPage() {
   const navigate = useNavigate();
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleRefresh = useCallback(async () => {
+    await new Promise((r) => setTimeout(r, 800));
+    setRefreshKey((k) => k + 1);
+  }, []);
+
+  const { containerRef, pullDistance, refreshing, onTouchStart, onTouchMove, onTouchEnd, threshold } = usePullToRefresh(handleRefresh);
   const activeEmployees = sampleEmployees.filter((e) => e.status === "Active");
   const totalPayroll = activeEmployees.reduce((sum, e) => {
     const result = calculatePayroll(e.monthlySalary, ST_LUCIA_CONFIG);
@@ -48,7 +95,27 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-4 md:space-y-6">
+    <div
+      ref={containerRef}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      className="p-4 md:p-6 max-w-7xl mx-auto space-y-4 md:space-y-6 relative"
+    >
+      {/* Pull to refresh indicator */}
+      <div
+        className="flex items-center justify-center overflow-hidden transition-all duration-200 md:hidden"
+        style={{ height: pullDistance > 0 ? `${pullDistance}px` : 0 }}
+      >
+        <RefreshCw
+          size={22}
+          className={`text-primary transition-transform ${refreshing ? "animate-spin" : ""}`}
+          style={{ transform: `rotate(${(pullDistance / threshold) * 360}deg)` }}
+        />
+        <span className="ml-2 text-xs text-muted-foreground">
+          {refreshing ? "Refreshing…" : pullDistance >= threshold ? "Release to refresh" : "Pull to refresh"}
+        </span>
+      </div>
       {/* Page Header */}
       <motion.div {...fadeUp} transition={{ delay: 0 }}>
         <h1 className="text-2xl font-display font-bold text-foreground">Dashboard</h1>
