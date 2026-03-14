@@ -97,9 +97,9 @@ export default function PayrollPage() {
   const payrollData = sampleEmployees
     .filter((e) => e.status === "Active")
     .map((e) => {
-      // Try to match deductions by sample employee id (will be empty for sample data)
       const creditorDeductions = deductionsMap[e.id] || [];
-      const result = calculatePayroll(e.monthlySalary, ST_LUCIA_CONFIG, 0, creditorDeductions);
+      const additions = additionsMap[e.id] || [];
+      const result = calculatePayroll(e.monthlySalary, ST_LUCIA_CONFIG, 0, creditorDeductions, additions);
       const hourlyRate = e.monthlySalary / (e.stdHoursPerDay * 22);
       const compliance = checkMinimumWageCompliance(hourlyRate, ST_LUCIA_CONFIG);
       return { ...e, payroll: result, hourlyRate, compliance };
@@ -108,13 +108,14 @@ export default function PayrollPage() {
   const totals = payrollData.reduce(
     (acc, e) => ({
       gross: acc.gross + e.payroll.grossMonthly,
+      additions: acc.additions + e.payroll.totalAdditions,
       nicEmployee: acc.nicEmployee + e.payroll.employeeNIC,
       nicEmployer: acc.nicEmployer + e.payroll.employerNIC,
       paye: acc.paye + e.payroll.paye,
       creditor: acc.creditor + e.payroll.totalCreditorDeductions,
       net: acc.net + e.payroll.netPay,
     }),
-    { gross: 0, nicEmployee: 0, nicEmployer: 0, paye: 0, creditor: 0, net: 0 }
+    { gross: 0, additions: 0, nicEmployee: 0, nicEmployer: 0, paye: 0, creditor: 0, net: 0 }
   );
 
   const anomalies = payrollData.filter((e) => !e.compliance.compliant);
