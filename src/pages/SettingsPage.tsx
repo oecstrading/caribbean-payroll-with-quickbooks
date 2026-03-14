@@ -185,7 +185,7 @@ export default function SettingsPage() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Employer NIC Number</label>
-                    <input value={form.employer_nic_number} onChange={update("employer_nic_number")} disabled={!isAdmin} placeholder="e.g. EMP-NIC-2022-001" className={inputClass} />
+                    <input value={form.employer_nic_number} onChange={update("employer_nic_number")} disabled={!isAdminOrManager} placeholder="e.g. EMP-NIC-2022-001" className={inputClass} />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Tax ID</label>
