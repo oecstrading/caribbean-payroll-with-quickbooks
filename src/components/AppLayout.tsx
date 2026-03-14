@@ -72,18 +72,10 @@ export default function AppLayout() {
     return (first + last).toUpperCase();
   }, [user]);
 
-  // Search results based on nav items
-  const searchResults = useMemo(() => {
-    if (!searchQuery.trim()) return [];
-    const q = searchQuery.toLowerCase();
-    return visibleNavItems.filter((item) =>
-      item.label.toLowerCase().includes(q)
-    );
-  }, [searchQuery]);
-
   // Close mobile menu on route change
   useEffect(() => {
     setMobileOpen(false);
+    setSearchQuery("");
   }, [location.pathname]);
 
   const visibleNavItems = navItems.filter((item) => {
@@ -91,6 +83,15 @@ export default function AppLayout() {
     if (item.managerOnly && !isAdminOrManager) return false;
     return true;
   });
+
+  // Search results based on nav items
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase();
+    return visibleNavItems.filter((item) =>
+      item.label.toLowerCase().includes(q)
+    );
+  }, [searchQuery, visibleNavItems]);
 
   const bottomNavItems = visibleNavItems.filter((item) => item.bottomNav).slice(0, 5);
 
