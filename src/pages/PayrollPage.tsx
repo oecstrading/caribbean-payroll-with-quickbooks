@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle, ArrowRight, DollarSign, FileText, AlertCircle, Receipt } from "lucide-react";
+import { CheckCircle, ArrowRight, DollarSign, FileText, AlertCircle, Receipt, Mail, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { sampleEmployees } from "@/lib/sample-data";
@@ -12,7 +14,28 @@ const steps = ["Review & Sync", "Audit", "Approve & Run"];
 export default function PayrollPage() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
+  const [bulkEmailing, setBulkEmailing] = useState(false);
   const { deductionsMap } = useAllEmployeeDeductions();
+
+  const handleBulkEmail = async () => {
+    setBulkEmailing(true);
+    let sent = 0;
+    let failed = 0;
+    for (const emp of payrollData) {
+      try {
+        const { data, error } = await supabase.functions.invoke("email-payslip", {
+          body: { user_id: emp.id, payslip_html: `Payslip for ${emp.firstName} ${emp.lastName}`, period: "March 2026" },
+        });
+        if (error || data?.error) { failed++; } else { sent++; }
+      } catch { failed++; }
+    }
+    setBulkEmailing(false);
+    if (failed === 0) {
+      toast.success(`All ${sent} payslips emailed successfully`);
+    } else {
+      toast.warning(`${sent} sent, ${failed} failed`);
+    }
+  };
 
   const payrollData = sampleEmployees
     .filter((e) => e.status === "Active")
@@ -261,6 +284,14 @@ export default function PayrollPage() {
               Back
             </button>
             <div className="flex gap-2">
+              <button
+                onClick={handleBulkEmail}
+                disabled={bulkEmailing}
+                className="flex items-center gap-2 px-6 py-3 bg-secondary text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50"
+              >
+                {bulkEmailing ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
+                {bulkEmailing ? `Emailing ${payrollData.length}...` : `Email All Payslips (${payrollData.length})`}
+              </button>
               <button
                 onClick={() => navigate("/payslips")}
                 className="flex items-center gap-2 px-6 py-3 bg-secondary text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors"
