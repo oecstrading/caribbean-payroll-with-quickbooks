@@ -189,7 +189,7 @@ export default function SettingsPage() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Tax ID</label>
-                    <input value={form.tax_id} onChange={update("tax_id")} disabled={!isAdmin} placeholder="e.g. TID-LC-00123" className={inputClass} />
+                    <input value={form.tax_id} onChange={update("tax_id")} disabled={!isAdminOrManager} placeholder="e.g. TID-LC-00123" className={inputClass} />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
