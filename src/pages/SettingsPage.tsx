@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Globe, Building, Shield, Phone, Link, FileText, Save } from "lucide-react";
+import { Globe, Building, Shield, Phone, Link, FileText, Save, Upload, ImageIcon, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ST_LUCIA_CONFIG, formatCurrency } from "@/lib/payroll-engine";
 import { supabase } from "@/integrations/supabase/client";
