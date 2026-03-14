@@ -3,6 +3,8 @@ import { FileText, Download, Printer, Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { sampleEmployees } from "@/lib/sample-data";
 import { calculatePayroll, formatCurrency, ST_LUCIA_CONFIG } from "@/lib/payroll-engine";
+import { downloadCSV, downloadPDF } from "@/lib/export-utils";
+import { toast } from "sonner";
 
 export default function ReportsPage() {
   const payrollData = sampleEmployees.filter((e) => e.status === "Active").map((e) => ({
@@ -20,6 +22,61 @@ export default function ReportsPage() {
     { gross: 0, nicEmployee: 0, nicEmployer: 0, paye: 0 }
   );
 
+  const handleExportNICC3 = () => {
+    const headers = ["#", "Employee Name", "NIC Number", "Gross Earnings", "Employee NIC (5%)", "Employer NIC (5%)", "Total Contribution"];
+    const rows = payrollData.map((emp, i) => [
+      i + 1,
+      `${emp.firstName} ${emp.lastName}`,
+      emp.nicNumber,
+      emp.payroll.grossMonthly.toFixed(2),
+      emp.payroll.employeeNIC.toFixed(2),
+      emp.payroll.employerNIC.toFixed(2),
+      (emp.payroll.employeeNIC + emp.payroll.employerNIC).toFixed(2),
+    ]);
+    downloadPDF("NIC-C3-Schedule-March-2026", "NIC C3 Schedule — March 2026", headers, rows, {
+      subtitle: `${payrollData.length} employees — Generated ${new Date().toLocaleDateString()}`,
+      summaryRows: [
+        { label: "Total Employee NIC", value: formatCurrency(totals.nicEmployee) + " XCD" },
+        { label: "Total Employer NIC", value: formatCurrency(totals.nicEmployer) + " XCD" },
+        { label: "Total Contributions", value: formatCurrency(totals.nicEmployee + totals.nicEmployer) + " XCD" },
+      ],
+    });
+    toast.success("NIC C3 Schedule exported as PDF");
+  };
+
+  const handleExportPAYE = () => {
+    const headers = ["#", "Employee Name", "NIC Number", "Gross Earnings", "PAYE Tax"];
+    const rows = payrollData.map((emp, i) => [
+      i + 1,
+      `${emp.firstName} ${emp.lastName}`,
+      emp.nicNumber,
+      emp.payroll.grossMonthly.toFixed(2),
+      emp.payroll.paye.toFixed(2),
+    ]);
+    downloadPDF("PAYE-Remittance-March-2026", "PAYE Monthly Remittance — March 2026", headers, rows, {
+      subtitle: `${payrollData.length} employees — Generated ${new Date().toLocaleDateString()}`,
+      summaryRows: [
+        { label: "Total Gross", value: formatCurrency(totals.gross) + " XCD" },
+        { label: "Total PAYE", value: formatCurrency(totals.paye) + " XCD" },
+      ],
+    });
+    toast.success("PAYE Remittance exported as PDF");
+  };
+
+  const handleExportTD5 = () => {
+    const headers = ["Employee", "NIC Number", "Gross (YTD)", "NIC (YTD)", "PAYE (YTD)", "Net (YTD)"];
+    const rows = payrollData.map((emp) => [
+      `${emp.firstName} ${emp.lastName}`,
+      emp.nicNumber,
+      (emp.payroll.grossMonthly * 12).toFixed(2),
+      (emp.payroll.employeeNIC * 12).toFixed(2),
+      (emp.payroll.paye * 12).toFixed(2),
+      (emp.payroll.netPay * 12).toFixed(2),
+    ]);
+    downloadCSV("TD5-Annual-Certificates-FY2025-2026", headers, rows);
+    toast.success("TD5 Annual Certificates exported as CSV");
+  };
+
   const reports = [
     {
       title: "NIC C3 Schedule",
@@ -28,6 +85,8 @@ export default function ReportsPage() {
       period: "March 2026",
       dueDate: "April 15, 2026",
       status: "Ready",
+      onExport: handleExportNICC3,
+      onPrint: () => { handleExportNICC3(); },
     },
     {
       title: "PAYE Monthly Remittance",
@@ -36,6 +95,8 @@ export default function ReportsPage() {
       period: "March 2026",
       dueDate: "April 15, 2026",
       status: "Ready",
+      onExport: handleExportPAYE,
+      onPrint: () => { handleExportPAYE(); },
     },
     {
       title: "TD5 Annual Certificates",
@@ -44,6 +105,8 @@ export default function ReportsPage() {
       period: "FY 2025/2026",
       dueDate: "June 30, 2026",
       status: "In Progress",
+      onExport: handleExportTD5,
+      onPrint: () => { handleExportTD5(); },
     },
   ];
 
@@ -90,10 +153,16 @@ export default function ReportsPage() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors">
+                  <button
+                    onClick={report.onExport}
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors"
+                  >
                     <Download size={14} /> Export
                   </button>
-                  <button className="flex items-center justify-center gap-2 px-3 py-2 bg-secondary text-foreground rounded-lg text-xs font-medium hover:bg-muted transition-colors">
+                  <button
+                    onClick={report.onPrint}
+                    className="flex items-center justify-center gap-2 px-3 py-2 bg-secondary text-foreground rounded-lg text-xs font-medium hover:bg-muted transition-colors"
+                  >
                     <Printer size={14} />
                   </button>
                 </div>

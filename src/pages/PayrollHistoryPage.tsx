@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { History, ChevronDown, ChevronRight, Calendar, Users, DollarSign, FileText, Eye, Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -238,8 +238,11 @@ export default function PayrollHistoryPage() {
               </thead>
               <tbody>
                 {runs.map((run, i) => (
-                  <motion.tbody key={run.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }}>
-                    <tr
+                  <React.Fragment key={run.id}>
+                    <motion.tr
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: i * 0.03 }}
                       onClick={() => toggleRun(run.id)}
                       className="border-b border-border/50 hover:bg-secondary/30 transition-colors cursor-pointer"
                     >
@@ -259,7 +262,7 @@ export default function PayrollHistoryPage() {
                       <td className="py-3 px-4 text-right font-mono text-foreground">{formatCurrency(Number(run.total_gross))}</td>
                       <td className="py-3 px-4 text-right font-mono text-destructive">{formatCurrency(Number(run.total_deductions))}</td>
                       <td className="py-3 px-4 text-right font-mono font-semibold text-success">{formatCurrency(Number(run.total_net))}</td>
-                    </tr>
+                    </motion.tr>
 
                     {/* Expanded Payslips */}
                     {expandedRun === run.id && (
@@ -336,7 +339,7 @@ export default function PayrollHistoryPage() {
                         </td>
                       </tr>
                     )}
-                  </motion.tbody>
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>
