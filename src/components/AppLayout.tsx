@@ -23,6 +23,7 @@ import {
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRole } from "@/hooks/useRole";
+import { useCompany } from "@/hooks/useCompany";
 import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 
@@ -56,6 +57,7 @@ export default function AppLayout() {
   const navigate = useNavigate();
   const { role, isAdmin, isAdminOrManager } = useRole();
   const { signOut } = useAuth();
+  const company = useCompany();
 
   const visibleNavItems = navItems.filter((item) => {
     if (item.adminOnly && !isAdmin) return false;
@@ -73,8 +75,12 @@ export default function AppLayout() {
       >
         {/* Logo */}
         <div className="flex items-center gap-3 px-4 h-16 border-b border-sidebar-border">
-          <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
-            <span className="font-display font-bold text-primary-foreground text-sm">OE</span>
+          <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-primary flex items-center justify-center overflow-hidden">
+            {company.logo_url ? (
+              <img src={company.logo_url} alt="Logo" className="w-full h-full object-contain" />
+            ) : (
+              <span className="font-display font-bold text-primary-foreground text-sm">OE</span>
+            )}
           </div>
           <AnimatePresence>
             {!collapsed && (
@@ -85,7 +91,7 @@ export default function AppLayout() {
                 className="overflow-hidden"
               >
                 <h1 className="font-display font-bold text-sidebar-foreground text-sm whitespace-nowrap">
-                  OECS HR & Payroll
+                  {company.company_name || "OECS HR & Payroll"}
                 </h1>
                 <p className="text-[10px] text-sidebar-muted whitespace-nowrap">Saint Lucia</p>
               </motion.div>
