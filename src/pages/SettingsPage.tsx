@@ -17,6 +17,7 @@ interface CompanySettings {
   telephone: string;
   website: string;
   address: string;
+  logo_url: string;
 }
 
 const defaultSettings: Omit<CompanySettings, "id"> = {
@@ -27,6 +28,7 @@ const defaultSettings: Omit<CompanySettings, "id"> = {
   telephone: "",
   website: "",
   address: "",
+  logo_url: "",
 };
 
 export default function SettingsPage() {
