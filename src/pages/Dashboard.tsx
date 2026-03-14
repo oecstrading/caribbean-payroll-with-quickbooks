@@ -116,18 +116,24 @@ export default function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-warning/10 border border-warning/20">
+              <div
+                className="flex items-start gap-3 p-3 rounded-lg bg-warning/10 border border-warning/20 cursor-pointer hover:bg-warning/15 transition-colors"
+                onClick={() => navigate("/attendance")}
+              >
                 <AlertTriangle size={16} className="text-warning mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="text-sm font-medium text-foreground">{lateToday} late arrivals this week</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Review attendance records</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Review attendance records →</p>
                 </div>
               </div>
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-primary/5 border border-primary/10">
+              <div
+                className="flex items-start gap-3 p-3 rounded-lg bg-primary/5 border border-primary/10 cursor-pointer hover:bg-primary/10 transition-colors"
+                onClick={() => navigate("/reports")}
+              >
                 <TrendingUp size={16} className="text-primary mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="text-sm font-medium text-foreground">NIC remittance due Mar 15</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Generate C3 report before deadline</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Generate C3 report →</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 p-3 rounded-lg bg-success/5 border border-success/10">

@@ -28,6 +28,7 @@ const App = () => (
             <Route path="/attendance" element={<AttendancePage />} />
             <Route path="/payroll" element={<PayrollPage />} />
             <Route path="/reports" element={<ReportsPage />} />
+            <Route path="/payslips" element={<PayslipPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />
