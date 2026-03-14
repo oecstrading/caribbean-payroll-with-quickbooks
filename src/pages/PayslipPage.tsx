@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Printer, ArrowLeft, Building, User, Calendar, DollarSign, Mail, Loader2 } from "lucide-react";
+import { Printer, ArrowLeft, Building, User, Calendar, DollarSign, Mail, Loader2, Download } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -9,6 +9,7 @@ import { calculatePayroll, formatCurrency, ST_LUCIA_CONFIG } from "@/lib/payroll
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCompany } from "@/hooks/useCompany";
 import { useAllEmployeeDeductions } from "@/hooks/useEmployeeDeductions";
+import { downloadCSV, downloadPDF } from "@/lib/export-utils";
 
 export default function PayslipPage() {
   const navigate = useNavigate();
@@ -26,6 +27,54 @@ export default function PayslipPage() {
   const payroll = employee ? calculatePayroll(employee.monthlySalary, ST_LUCIA_CONFIG, 0, creditorDeductions) : null;
 
   const handlePrint = () => window.print();
+
+  const handleExportCSV = () => {
+    if (!employee || !payroll) return;
+    const headers = ["Description", "Current (XCD)", "YTD (XCD)"];
+    const rows: (string | number)[][] = [
+      ["Basic Salary", payroll.basicPay.toFixed(2), (payroll.basicPay * 3).toFixed(2)],
+      ["Overtime Pay", payroll.overtimePay.toFixed(2), (payroll.overtimePay * 3).toFixed(2)],
+      ["Total Earnings", payroll.grossMonthly.toFixed(2), (payroll.grossMonthly * 3).toFixed(2)],
+      ["NIC Employee (5%)", payroll.employeeNIC.toFixed(2), (payroll.employeeNIC * 3).toFixed(2)],
+      ["PAYE Income Tax", payroll.paye.toFixed(2), (payroll.paye * 3).toFixed(2)],
+      ...payroll.creditorDeductions.map((d) => [d.creditorName, d.amount.toFixed(2), (d.amount * 3).toFixed(2)]),
+      ["Total Deductions", payroll.totalDeductions.toFixed(2), (payroll.totalDeductions * 3).toFixed(2)],
+      ["Net Pay", payroll.netPay.toFixed(2), (payroll.netPay * 3).toFixed(2)],
+    ];
+    downloadCSV(`payslip-${employee.firstName}-${employee.lastName}-${payPeriod}`, headers, rows);
+    toast.success("Payslip CSV exported");
+  };
+
+  const handleExportPDF = () => {
+    if (!employee || !payroll) return;
+    const headers = ["Description", "Current (XCD)", "YTD (XCD)"];
+    const rows: (string | number)[][] = [
+      ["Basic Salary", payroll.basicPay.toFixed(2), (payroll.basicPay * 3).toFixed(2)],
+      ["Overtime Pay", payroll.overtimePay.toFixed(2), (payroll.overtimePay * 3).toFixed(2)],
+      ["--- Total Earnings ---", payroll.grossMonthly.toFixed(2), (payroll.grossMonthly * 3).toFixed(2)],
+      ["NIC Employee (5%)", payroll.employeeNIC.toFixed(2), (payroll.employeeNIC * 3).toFixed(2)],
+      ["PAYE Income Tax", payroll.paye.toFixed(2), (payroll.paye * 3).toFixed(2)],
+      ...payroll.creditorDeductions.map((d) => [d.creditorName, d.amount.toFixed(2), (d.amount * 3).toFixed(2)]),
+      ["--- Total Deductions ---", payroll.totalDeductions.toFixed(2), (payroll.totalDeductions * 3).toFixed(2)],
+      ["NET PAY", payroll.netPay.toFixed(2), (payroll.netPay * 3).toFixed(2)],
+    ];
+    downloadPDF(
+      `payslip-${employee.firstName}-${employee.lastName}-${payPeriod}`,
+      `Payslip — ${employee.firstName} ${employee.lastName}`,
+      headers,
+      rows,
+      {
+        subtitle: `${company.company_name || "OECS HR & Payroll"} • ${payPeriod} • Employee #${employee.personId}`,
+        orientation: "portrait",
+        summaryRows: [
+          { label: "NIC No.", value: employee.nicNumber },
+          { label: "Department", value: employee.department },
+          { label: "Employer NIC", value: formatCurrency(payroll.employerNIC) + " XCD" },
+        ],
+      }
+    );
+    toast.success("Payslip PDF exported");
+  };
 
   const handleEmailPayslip = async () => {
     if (!employee) return;
@@ -67,12 +116,24 @@ export default function PayslipPage() {
         </div>
         <div className="flex gap-2">
           <button
+            onClick={handleExportCSV}
+            className="flex items-center gap-2 px-4 py-2.5 bg-secondary text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors"
+          >
+            <Download size={14} /> CSV
+          </button>
+          <button
+            onClick={handleExportPDF}
+            className="flex items-center gap-2 px-4 py-2.5 bg-secondary text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors"
+          >
+            <Download size={14} /> PDF
+          </button>
+          <button
             onClick={handleEmailPayslip}
             disabled={emailing}
             className="flex items-center gap-2 px-4 py-2.5 bg-secondary text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50"
           >
             {emailing ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
-            {emailing ? "Sending..." : "Email Payslip"}
+            {emailing ? "Sending..." : "Email"}
           </button>
           <button
             onClick={handlePrint}
