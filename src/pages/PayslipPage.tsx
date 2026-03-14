@@ -126,12 +126,18 @@ export default function PayslipPage() {
           <div className="bg-primary px-6 py-5 text-primary-foreground">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary-foreground/20 flex items-center justify-center">
-                  <Building size={20} />
+                <div className="w-10 h-10 rounded-lg bg-primary-foreground/20 flex items-center justify-center overflow-hidden">
+                  {company.logo_url ? (
+                    <img src={company.logo_url} alt="Logo" className="w-full h-full object-contain" />
+                  ) : (
+                    <Building size={20} />
+                  )}
                 </div>
                 <div>
-                  <h2 className="font-display font-bold text-lg">Promotech Solutions Ltd.</h2>
-                  <p className="text-primary-foreground/70 text-xs">Castries, Saint Lucia • EMP-NIC-2022-001</p>
+                  <h2 className="font-display font-bold text-lg">{company.company_name || "Promotech Solutions Ltd."}</h2>
+                  <p className="text-primary-foreground/70 text-xs">
+                    {company.address || "Castries, Saint Lucia"} • {company.employer_nic_number || "EMP-NIC-2022-001"}
+                  </p>
                 </div>
               </div>
               <div className="text-right">
