@@ -31,7 +31,7 @@ const defaultSettings: Omit<CompanySettings, "id"> = {
 
 export default function SettingsPage() {
   const config = ST_LUCIA_CONFIG;
-  const { isAdmin } = useRole();
+  const { isAdmin, isAdminOrManager } = useRole();
   const { user } = useAuth();
   const [settings, setSettings] = useState<CompanySettings | null>(null);
   const [form, setForm] = useState(defaultSettings);
