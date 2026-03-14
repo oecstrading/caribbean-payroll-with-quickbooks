@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Building2, Plus, Trash2, Edit2, DollarSign, Users, Search, Save, X } from "lucide-react";
+import { Building2, Plus, Trash2, Edit2, DollarSign, Users, Search, Save, X, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -29,6 +29,18 @@ interface EmployeeDeduction {
   notes: string;
 }
 
+interface EmployeeAddition {
+  id: string;
+  user_id: string;
+  addition_type: string;
+  description: string;
+  amount: number;
+  frequency: string;
+  is_active: boolean;
+  period: string | null;
+  notes: string;
+}
+
 interface Profile {
   user_id: string;
   first_name: string;
@@ -46,6 +58,16 @@ const creditorTypes = [
   { value: "other", label: "Other" },
 ];
 
+const additionTypes = [
+  { value: "bonus", label: "Bonus" },
+  { value: "overtime", label: "Overtime" },
+  { value: "double_time", label: "Double Time" },
+  { value: "vacation_pay", label: "Vacation Pay" },
+  { value: "commission", label: "Commission" },
+  { value: "allowance", label: "Allowance" },
+  { value: "other", label: "Other" },
+];
+
 const typeColors: Record<string, string> = {
   bank: "bg-primary/10 text-primary",
   credit_union: "bg-success/10 text-success",
@@ -55,11 +77,22 @@ const typeColors: Record<string, string> = {
   other: "bg-muted text-muted-foreground",
 };
 
+const additionTypeColors: Record<string, string> = {
+  bonus: "bg-success/10 text-success",
+  overtime: "bg-primary/10 text-primary",
+  double_time: "bg-warning/10 text-warning",
+  vacation_pay: "bg-accent/20 text-accent-foreground",
+  commission: "bg-primary/10 text-primary",
+  allowance: "bg-success/10 text-success",
+  other: "bg-muted text-muted-foreground",
+};
+
 export default function DeductionsPage() {
   const { isAdminOrManager } = useRole();
-  const [tab, setTab] = useState<"creditors" | "deductions">("creditors");
+  const [tab, setTab] = useState<"creditors" | "deductions" | "additions">("creditors");
   const [creditors, setCreditors] = useState<Creditor[]>([]);
   const [deductions, setDeductions] = useState<EmployeeDeduction[]>([]);
+  const [additions, setAdditions] = useState<EmployeeAddition[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -75,14 +108,21 @@ export default function DeductionsPage() {
   const [deductionForm, setDeductionForm] = useState({ user_id: "", creditor_id: "", amount: 0, frequency: "monthly", notes: "" });
   const [savingDeduction, setSavingDeduction] = useState(false);
 
+  // Addition form
+  const [showAdditionForm, setShowAdditionForm] = useState(false);
+  const [additionForm, setAdditionForm] = useState({ user_id: "", addition_type: "bonus", description: "", amount: 0, frequency: "one-time", notes: "" });
+  const [savingAddition, setSavingAddition] = useState(false);
+
   const fetchData = async () => {
-    const [credRes, dedRes, profRes] = await Promise.all([
+    const [credRes, dedRes, addRes, profRes] = await Promise.all([
       supabase.from("creditors").select("*").order("name"),
       supabase.from("employee_deductions").select("*").order("created_at", { ascending: false }),
+      supabase.from("employee_additions").select("*").order("created_at", { ascending: false }),
       supabase.from("profiles").select("user_id, first_name, last_name, email, department"),
     ]);
     setCreditors((credRes.data as Creditor[]) || []);
     setDeductions((dedRes.data as EmployeeDeduction[]) || []);
+    setAdditions((addRes.data as unknown as EmployeeAddition[]) || []);
     setProfiles((profRes.data as Profile[]) || []);
     setLoading(false);
   };
@@ -140,6 +180,42 @@ export default function DeductionsPage() {
     else { toast.success("Deduction removed"); fetchData(); }
   };
 
+  const handleSaveAddition = async () => {
+    if (!additionForm.user_id || additionForm.amount <= 0) {
+      toast.error("Employee and amount are required");
+      return;
+    }
+    setSavingAddition(true);
+    try {
+      const { error } = await supabase.from("employee_additions").insert({
+        user_id: additionForm.user_id,
+        addition_type: additionForm.addition_type as any,
+        description: additionForm.description || additionTypes.find(t => t.value === additionForm.addition_type)?.label || "",
+        amount: additionForm.amount,
+        frequency: additionForm.frequency,
+        notes: additionForm.notes,
+      } as any);
+      if (error) throw error;
+      toast.success("Addition added");
+      setShowAdditionForm(false);
+      setAdditionForm({ user_id: "", addition_type: "bonus", description: "", amount: 0, frequency: "one-time", notes: "" });
+      fetchData();
+    } catch (err: any) { toast.error(err.message); }
+    finally { setSavingAddition(false); }
+  };
+
+  const handleDeleteAddition = async (id: string) => {
+    const { error } = await supabase.from("employee_additions").delete().eq("id", id);
+    if (error) toast.error(error.message);
+    else { toast.success("Addition removed"); fetchData(); }
+  };
+
+  const handleToggleAddition = async (id: string, isActive: boolean) => {
+    const { error } = await supabase.from("employee_additions").update({ is_active: !isActive }).eq("id", id);
+    if (error) toast.error(error.message);
+    else { toast.success(isActive ? "Addition deactivated" : "Addition activated"); fetchData(); }
+  };
+
   const filteredCreditors = creditors.filter(c =>
     c.name.toLowerCase().includes(search.toLowerCase()) || c.type.includes(search.toLowerCase())
   );
@@ -149,7 +225,7 @@ export default function DeductionsPage() {
   if (!isAdminOrManager) {
     return (
       <div className="p-6 text-center">
-        <p className="text-muted-foreground">You don't have permission to manage deductions.</p>
+        <p className="text-muted-foreground">You don't have permission to manage deductions and additions.</p>
       </div>
     );
   }
@@ -158,13 +234,13 @@ export default function DeductionsPage() {
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-4 md:space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-display font-bold text-foreground">Deductions Management</h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage creditors and employee deductions</p>
+          <h1 className="text-2xl font-display font-bold text-foreground">Deductions & Additions</h1>
+          <p className="text-sm text-muted-foreground mt-1">Manage creditors, employee deductions, and pay additions</p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex rounded-lg bg-secondary p-1 w-fit">
+      <div className="flex flex-wrap rounded-lg bg-secondary p-1 w-fit gap-1">
         <button
           onClick={() => setTab("creditors")}
           className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -181,15 +257,24 @@ export default function DeductionsPage() {
           }`}
         >
           <DollarSign size={14} />
-          Employee Deductions ({deductions.length})
+          Deductions ({deductions.length})
+        </button>
+        <button
+          onClick={() => setTab("additions")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            tab === "additions" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+          }`}
+        >
+          <TrendingUp size={14} />
+          Additions ({additions.length})
         </button>
       </div>
 
       {/* Creditors Tab */}
       {tab === "creditors" && (
         <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="relative flex-1">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative flex-1 min-w-[200px]">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
@@ -328,6 +413,85 @@ export default function DeductionsPage() {
         </div>
       )}
 
+      {/* Additions Tab */}
+      {tab === "additions" && (
+        <div className="space-y-4">
+          <div className="flex justify-end">
+            <button
+              onClick={() => { setAdditionForm({ user_id: "", addition_type: "bonus", description: "", amount: 0, frequency: "one-time", notes: "" }); setShowAdditionForm(true); }}
+              className="flex items-center gap-2 px-4 py-2.5 bg-success text-success-foreground rounded-lg text-sm font-medium hover:bg-success/90 transition-colors"
+            >
+              <Plus size={16} />
+              Add Addition
+            </button>
+          </div>
+
+          <Card className="shadow-card border-border/60 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-secondary/50">
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Employee</th>
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Type</th>
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Description</th>
+                    <th className="text-right py-3 px-4 font-medium text-muted-foreground">Amount</th>
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Frequency</th>
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Status</th>
+                    <th className="text-right py-3 px-4 font-medium text-muted-foreground">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr><td colSpan={7} className="py-8 text-center text-muted-foreground">Loading...</td></tr>
+                  ) : additions.length === 0 ? (
+                    <tr><td colSpan={7} className="py-8 text-center text-muted-foreground">No additions configured. Add bonuses, overtime, vacation pay, etc.</td></tr>
+                  ) : (
+                    additions.map((a) => {
+                      const profile = profiles.find(p => p.user_id === a.user_id);
+                      return (
+                        <tr key={a.id} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
+                          <td className="py-3 px-4">
+                            <p className="font-medium text-foreground">
+                              {profile ? `${profile.first_name} ${profile.last_name}` : "Unknown"}
+                            </p>
+                            <p className="text-xs text-muted-foreground">{profile?.email}</p>
+                          </td>
+                          <td className="py-3 px-4">
+                            <Badge variant="secondary" className={`${additionTypeColors[a.addition_type] || additionTypeColors.other} text-[10px]`}>
+                              {additionTypes.find(t => t.value === a.addition_type)?.label || a.addition_type}
+                            </Badge>
+                          </td>
+                          <td className="py-3 px-4 text-foreground text-xs">{a.description || "—"}</td>
+                          <td className="py-3 px-4 text-right font-mono font-semibold text-success">+${Number(a.amount).toFixed(2)}</td>
+                          <td className="py-3 px-4">
+                            <Badge variant="secondary" className="text-[10px]">{a.frequency}</Badge>
+                          </td>
+                          <td className="py-3 px-4">
+                            <button
+                              onClick={() => handleToggleAddition(a.id, a.is_active)}
+                              className={`text-xs px-2 py-1 rounded-full font-medium transition-colors ${
+                                a.is_active ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
+                              }`}
+                            >
+                              {a.is_active ? "Active" : "Inactive"}
+                            </button>
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <button onClick={() => handleDeleteAddition(a.id)} className="p-1.5 rounded-md hover:bg-secondary transition-colors">
+                              <Trash2 size={14} className="text-destructive" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </div>
+      )}
+
       {/* Creditor Form Dialog */}
       <Dialog open={showCreditorForm} onOpenChange={setShowCreditorForm}>
         <DialogContent className="sm:max-w-md">
@@ -406,6 +570,57 @@ export default function DeductionsPage() {
             </div>
             <button onClick={handleSaveDeduction} disabled={savingDeduction} className="w-full px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50">
               {savingDeduction ? "Saving..." : "Add Deduction"}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Addition Form Dialog */}
+      <Dialog open={showAdditionForm} onOpenChange={setShowAdditionForm}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display flex items-center gap-2">
+              <TrendingUp size={18} className="text-success" />
+              Add Employee Addition
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Employee</label>
+              <select value={additionForm.user_id} onChange={(e) => setAdditionForm({ ...additionForm, user_id: e.target.value })} className={inputClass}>
+                <option value="">Select employee...</option>
+                {profiles.map(p => <option key={p.user_id} value={p.user_id}>{p.first_name} {p.last_name} — {p.email}</option>)}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Type</label>
+              <select value={additionForm.addition_type} onChange={(e) => setAdditionForm({ ...additionForm, addition_type: e.target.value })} className={inputClass}>
+                {additionTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Description</label>
+              <input value={additionForm.description} onChange={(e) => setAdditionForm({ ...additionForm, description: e.target.value })} placeholder="e.g. Q1 Performance Bonus" className={inputClass} />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Amount (XCD)</label>
+              <input type="number" step="0.01" value={additionForm.amount || ""} onChange={(e) => setAdditionForm({ ...additionForm, amount: Number(e.target.value) })} placeholder="0.00" className={inputClass} />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Frequency</label>
+              <select value={additionForm.frequency} onChange={(e) => setAdditionForm({ ...additionForm, frequency: e.target.value })} className={inputClass}>
+                <option value="one-time">One-Time</option>
+                <option value="monthly">Monthly (Recurring)</option>
+                <option value="bi-weekly">Bi-Weekly</option>
+                <option value="weekly">Weekly</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Notes (optional)</label>
+              <input value={additionForm.notes} onChange={(e) => setAdditionForm({ ...additionForm, notes: e.target.value })} placeholder="e.g. Approved by HR Manager" className={inputClass} />
+            </div>
+            <button onClick={handleSaveAddition} disabled={savingAddition} className="w-full px-4 py-2.5 bg-success text-success-foreground rounded-lg text-sm font-medium hover:bg-success/90 transition-colors disabled:opacity-50">
+              <span className="flex items-center justify-center gap-2"><TrendingUp size={14} />{savingAddition ? "Saving..." : "Add Addition"}</span>
             </button>
           </div>
         </DialogContent>

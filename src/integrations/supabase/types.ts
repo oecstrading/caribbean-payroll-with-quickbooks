@@ -133,6 +133,48 @@ export type Database = {
         }
         Relationships: []
       }
+      employee_additions: {
+        Row: {
+          addition_type: Database["public"]["Enums"]["addition_type"]
+          amount: number
+          created_at: string
+          description: string | null
+          frequency: string
+          id: string
+          is_active: boolean
+          notes: string | null
+          period: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          addition_type?: Database["public"]["Enums"]["addition_type"]
+          amount?: number
+          created_at?: string
+          description?: string | null
+          frequency?: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          period?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          addition_type?: Database["public"]["Enums"]["addition_type"]
+          amount?: number
+          created_at?: string
+          description?: string | null
+          frequency?: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          period?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       employee_bank_info: {
         Row: {
           account_number: string | null
@@ -533,6 +575,14 @@ export type Database = {
       is_admin_or_manager: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
+      addition_type:
+        | "bonus"
+        | "overtime"
+        | "double_time"
+        | "vacation_pay"
+        | "commission"
+        | "allowance"
+        | "other"
       app_role: "admin" | "manager" | "employee"
       leave_status: "pending" | "approved" | "rejected"
       leave_type:
@@ -669,6 +719,15 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      addition_type: [
+        "bonus",
+        "overtime",
+        "double_time",
+        "vacation_pay",
+        "commission",
+        "allowance",
+        "other",
+      ],
       app_role: ["admin", "manager", "employee"],
       leave_status: ["pending", "approved", "rejected"],
       leave_type: [
