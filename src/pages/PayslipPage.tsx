@@ -9,6 +9,7 @@ import { calculatePayroll, formatCurrency, ST_LUCIA_CONFIG } from "@/lib/payroll
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCompany } from "@/hooks/useCompany";
 import { useAllEmployeeDeductions } from "@/hooks/useEmployeeDeductions";
+import { downloadCSV, downloadPDF } from "@/lib/export-utils";
 
 export default function PayslipPage() {
   const navigate = useNavigate();
