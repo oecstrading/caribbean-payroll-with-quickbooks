@@ -115,26 +115,12 @@ export default function UserManagementPage() {
     if (!inviteEmail.trim()) return;
     setInviting(true);
     try {
-      // Create user via signup (they'll receive email verification)
-      const { data, error } = await supabase.auth.signUp({
-        email: inviteEmail.trim(),
-        password: Math.random().toString(36).slice(-12) + "A1!", // temp password
-        options: {
-          data: { first_name: "", last_name: "" },
-          emailRedirectTo: window.location.origin,
-        },
+      const { data, error } = await supabase.functions.invoke("invite-user", {
+        body: { email: inviteEmail.trim(), role: inviteRole, first_name: "", last_name: "" },
       });
-      if (error) throw error;
+      if (error || data?.error) throw new Error(data?.error || error?.message || "Failed to invite");
 
-      // Update role if not default employee
-      if (data.user && inviteRole !== "employee") {
-        await supabase
-          .from("user_roles")
-          .update({ role: inviteRole })
-          .eq("user_id", data.user.id);
-      }
-
-      toast.success(`Invitation sent to ${inviteEmail}`);
+      toast.success(`Employee ${inviteEmail} created successfully`);
       setShowInvite(false);
       setInviteEmail("");
       setInviteRole("employee");
