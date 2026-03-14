@@ -203,7 +203,7 @@ export default function SettingsPage() {
                       <Phone size={12} />
                       Telephone
                     </label>
-                    <input value={form.telephone} onChange={update("telephone")} disabled={!isAdmin} placeholder="e.g. +1 (758) 123-4567" className={inputClass} />
+                    <input value={form.telephone} onChange={update("telephone")} disabled={!isAdminOrManager} placeholder="e.g. +1 (758) 123-4567" className={inputClass} />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
