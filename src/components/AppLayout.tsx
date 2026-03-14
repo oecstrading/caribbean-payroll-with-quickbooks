@@ -50,6 +50,14 @@ export default function AppLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { role, isAdmin, isAdminOrManager } = useRole();
+  const { signOut } = useAuth();
+
+  const visibleNavItems = navItems.filter((item) => {
+    if (item.adminOnly && !isAdmin) return false;
+    if (item.managerOnly && !isAdminOrManager) return false;
+    return true;
+  });
 
   return (
     <div className="flex h-screen overflow-hidden">
