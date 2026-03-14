@@ -297,8 +297,16 @@ export default function PayrollPage() {
                   <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Earnings</h3>
                   <div className="space-y-2">
                     <div className="flex justify-between py-2 border-b border-border/50">
-                      <span className="text-sm text-foreground">Total Gross Pay</span>
-                      <span className="font-semibold font-mono text-foreground">{formatCurrency(totals.gross)} XCD</span>
+                      <span className="text-sm text-foreground">Basic Pay</span>
+                      <span className="font-semibold font-mono text-foreground">{formatCurrency(totals.gross - totals.additions)} XCD</span>
+                    </div>
+                    <div className="flex justify-between py-2 border-b border-border/50">
+                      <span className="text-sm text-success">Additions (Bonus, OT, etc.)</span>
+                      <span className="font-semibold font-mono text-success">+{formatCurrency(totals.additions)} XCD</span>
+                    </div>
+                    <div className="flex justify-between py-2 border-b border-border/50">
+                      <span className="text-sm font-medium text-foreground">Total Gross Pay</span>
+                      <span className="font-bold font-mono text-foreground">{formatCurrency(totals.gross)} XCD</span>
                     </div>
                     <div className="flex justify-between py-2 border-b border-border/50">
                       <span className="text-sm text-foreground">Employees Paid</span>
