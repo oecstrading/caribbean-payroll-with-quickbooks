@@ -14,18 +14,35 @@ import {
   Search,
   UserCircle,
   Receipt,
+  MapPin,
+  Shield,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRole } from "@/hooks/useRole";
+import { useAuth } from "@/hooks/useAuth";
+import { Badge } from "@/components/ui/badge";
 
-const navItems = [
+interface NavItem {
+  path: string;
+  label: string;
+  icon: any;
+  adminOnly?: boolean;
+  managerOnly?: boolean;
+  separator?: boolean;
+}
+
+const navItems: NavItem[] = [
   { path: "/", label: "Dashboard", icon: LayoutDashboard },
   { path: "/employees", label: "Employees", icon: Users },
   { path: "/attendance", label: "Attendance", icon: Clock },
   { path: "/payroll", label: "Payroll", icon: DollarSign },
   { path: "/payslips", label: "Payslips", icon: Receipt },
   { path: "/reports", label: "Reports", icon: FileText },
-  { path: "/portal", label: "My Portal", icon: UserCircle },
+  { path: "/geofencing", label: "Geofencing", icon: MapPin },
+  { path: "/portal", label: "My Portal", icon: UserCircle, separator: true },
+  { path: "/users", label: "User Management", icon: Shield, adminOnly: true },
   { path: "/settings", label: "Settings", icon: Settings },
 ];
 
