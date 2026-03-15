@@ -72,11 +72,13 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const fetchFieldOps = async () => {
-      const [{ count: activeProjects }, { data: payments }, { count: checkedOut }, { count: totalEquipment }] = await Promise.all([
+      const today = new Date().toISOString().split("T")[0];
+      const [{ count: activeProjects }, { data: payments }, { count: checkedOut }, { count: totalEquipment }, { count: todayReports }] = await Promise.all([
         supabase.from("projects").select("*", { count: "exact", head: true }).eq("status", "active"),
         supabase.from("contractor_payments").select("amount").eq("status", "pending"),
         supabase.from("equipment_checkouts").select("*", { count: "exact", head: true }).is("returned_at", null),
         supabase.from("equipment").select("*", { count: "exact", head: true }),
+        supabase.from("daily_reports").select("*", { count: "exact", head: true }).eq("report_date", today),
       ]);
       setFieldOps({
         activeProjects: activeProjects || 0,
@@ -84,6 +86,7 @@ export default function DashboardPage() {
         pendingAmount: payments?.reduce((s, p) => s + Number(p.amount), 0) || 0,
         checkedOut: checkedOut || 0,
         totalEquipment: totalEquipment || 0,
+        todayReports: todayReports || 0,
       });
     };
     fetchFieldOps();
