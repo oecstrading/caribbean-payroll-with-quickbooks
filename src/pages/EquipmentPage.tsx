@@ -11,16 +11,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { useRole } from "@/hooks/useRole";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface Equipment {
   id: string; name: string; type: string; serial_number: string; status: string; condition: string;
   purchase_date: string | null; purchase_cost: number; notes: string;
 }
-
 interface Checkout {
   id: string; equipment_id: string; user_id: string; project_id: string | null;
   checked_out_at: string; returned_at: string | null; condition_on_return: string; notes: string;
 }
+
+type EquipFilter = "all" | "available" | "checked-out" | "maintenance";
 
 export default function EquipmentPage() {
   const { isAdminOrManager } = useRole();
@@ -28,6 +30,7 @@ export default function EquipmentPage() {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<EquipFilter>("all");
   const [showAdd, setShowAdd] = useState(false);
   const [showCheckout, setShowCheckout] = useState<Equipment | null>(null);
   const [profiles, setProfiles] = useState<any[]>([]);
@@ -60,26 +63,19 @@ export default function EquipmentPage() {
       purchase_cost: parseFloat(form.purchase_cost) || 0, notes: form.notes,
     } as any);
     if (error) { toast.error(error.message); return; }
-    toast.success("Equipment added");
-    setShowAdd(false);
-    setForm({ name: "", type: "tool", serial_number: "", purchase_cost: "", notes: "" });
-    fetchAll();
+    toast.success("Equipment added"); setShowAdd(false);
+    setForm({ name: "", type: "tool", serial_number: "", purchase_cost: "", notes: "" }); fetchAll();
   };
 
   const handleCheckout = async () => {
     if (!showCheckout || !checkoutForm.user_id) { toast.error("Select an employee"); return; }
     const { error } = await supabase.from("equipment_checkouts").insert({
-      equipment_id: showCheckout.id, user_id: checkoutForm.user_id,
-      project_id: checkoutForm.project_id || null,
+      equipment_id: showCheckout.id, user_id: checkoutForm.user_id, project_id: checkoutForm.project_id || null,
     } as any);
-    if (!error) {
-      await supabase.from("equipment").update({ status: "checked-out" } as any).eq("id", showCheckout.id);
-    }
+    if (!error) await supabase.from("equipment").update({ status: "checked-out" } as any).eq("id", showCheckout.id);
     if (error) { toast.error(error.message); return; }
-    toast.success("Checked out");
-    setShowCheckout(null);
-    setCheckoutForm({ user_id: "", project_id: "" });
-    fetchAll();
+    toast.success("Checked out"); setShowCheckout(null);
+    setCheckoutForm({ user_id: "", project_id: "" }); fetchAll();
   };
 
   const handleReturn = async (equipId: string) => {
@@ -87,11 +83,14 @@ export default function EquipmentPage() {
     if (!checkout) return;
     await supabase.from("equipment_checkouts").update({ returned_at: new Date().toISOString() } as any).eq("id", checkout.id);
     await supabase.from("equipment").update({ status: "available" } as any).eq("id", equipId);
-    toast.success("Returned");
-    fetchAll();
+    toast.success("Returned"); fetchAll();
   };
 
-  const filtered = equipment.filter(e => !search || e.name.toLowerCase().includes(search.toLowerCase()) || e.type.toLowerCase().includes(search.toLowerCase()));
+  const filtered = equipment.filter(e => {
+    if (search && !e.name.toLowerCase().includes(search.toLowerCase()) && !e.type.toLowerCase().includes(search.toLowerCase())) return false;
+    if (statusFilter !== "all" && e.status !== statusFilter) return false;
+    return true;
+  });
 
   const stats = {
     total: equipment.length,
@@ -107,6 +106,13 @@ export default function EquipmentPage() {
     return profile ? `${profile.first_name} ${profile.last_name}` : "Unknown";
   };
 
+  const statCards: { key: EquipFilter; label: string; value: number; icon: any; color: string; bg: string }[] = [
+    { key: "all", label: "Total Items", value: stats.total, icon: Wrench, color: "text-primary", bg: "bg-primary/10" },
+    { key: "available", label: "Available", value: stats.available, icon: PackageCheck, color: "text-success", bg: "bg-success/10" },
+    { key: "checked-out", label: "Checked Out", value: stats.checkedOut, icon: ArrowLeftRight, color: "text-warning", bg: "bg-warning/10" },
+    { key: "maintenance", label: "Maintenance", value: stats.maintenance, icon: AlertTriangle, color: "text-destructive", bg: "bg-destructive/10" },
+  ];
+
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-4 md:space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -118,13 +124,10 @@ export default function EquipmentPage() {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {[
-          { label: "Total Items", value: stats.total, icon: Wrench, color: "text-primary", bg: "bg-primary/10" },
-          { label: "Available", value: stats.available, icon: PackageCheck, color: "text-success", bg: "bg-success/10" },
-          { label: "Checked Out", value: stats.checkedOut, icon: ArrowLeftRight, color: "text-warning", bg: "bg-warning/10" },
-          { label: "Maintenance", value: stats.maintenance, icon: AlertTriangle, color: "text-destructive", bg: "bg-destructive/10" },
-        ].map(s => (
-          <Card key={s.label} className="shadow-card border-border/60">
+        {statCards.map(s => (
+          <Card key={s.key} onClick={() => setStatusFilter(statusFilter === s.key ? "all" : s.key)}
+            className={cn("shadow-card border-border/60 cursor-pointer transition-all hover:shadow-md",
+              statusFilter === s.key && s.key !== "all" && "ring-2 ring-primary border-primary/40")}>
             <CardContent className="p-4 flex items-center gap-3">
               <div className={`p-2 rounded-lg ${s.bg}`}><s.icon size={18} className={s.color} /></div>
               <div>
@@ -135,6 +138,13 @@ export default function EquipmentPage() {
           </Card>
         ))}
       </div>
+
+      {statusFilter !== "all" && (
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="text-xs capitalize">Filtered: {statusFilter}</Badge>
+          <Button variant="ghost" size="sm" onClick={() => setStatusFilter("all")} className="text-xs h-6">Clear</Button>
+        </div>
+      )}
 
       <div className="relative max-w-xs">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -168,8 +178,7 @@ export default function EquipmentPage() {
                   <td className="py-3 px-4">
                     <Badge variant="secondary" className={
                       item.status === "available" ? "bg-success/10 text-success" :
-                      item.status === "checked-out" ? "bg-warning/10 text-warning" :
-                      "bg-destructive/10 text-destructive"
+                      item.status === "checked-out" ? "bg-warning/10 text-warning" : "bg-destructive/10 text-destructive"
                     }>{item.status}</Badge>
                   </td>
                   <td className="py-3 px-4 text-foreground text-xs">{getCheckoutUser(item.id) || "—"}</td>
@@ -188,7 +197,6 @@ export default function EquipmentPage() {
         </div>
       </Card>
 
-      {/* Add Equipment Dialog */}
       <Dialog open={showAdd} onOpenChange={setShowAdd}>
         <DialogContent>
           <DialogHeader><DialogTitle className="font-display">Add Equipment</DialogTitle></DialogHeader>
@@ -211,22 +219,17 @@ export default function EquipmentPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Checkout Dialog */}
       <Dialog open={!!showCheckout} onOpenChange={open => !open && setShowCheckout(null)}>
         <DialogContent>
           <DialogHeader><DialogTitle className="font-display">Check Out: {showCheckout?.name}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <Select value={checkoutForm.user_id} onValueChange={v => setCheckoutForm({...checkoutForm, user_id: v})}>
               <SelectTrigger><SelectValue placeholder="Select employee *" /></SelectTrigger>
-              <SelectContent>
-                {profiles.map(p => <SelectItem key={p.user_id} value={p.user_id}>{p.first_name} {p.last_name}</SelectItem>)}
-              </SelectContent>
+              <SelectContent>{profiles.map(p => <SelectItem key={p.user_id} value={p.user_id}>{p.first_name} {p.last_name}</SelectItem>)}</SelectContent>
             </Select>
             <Select value={checkoutForm.project_id} onValueChange={v => setCheckoutForm({...checkoutForm, project_id: v})}>
               <SelectTrigger><SelectValue placeholder="Assign to project (optional)" /></SelectTrigger>
-              <SelectContent>
-                {projects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-              </SelectContent>
+              <SelectContent>{projects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
             </Select>
             <Button onClick={handleCheckout} className="w-full">Confirm Checkout</Button>
           </div>
