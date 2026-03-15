@@ -22,6 +22,11 @@ import {
   History,
   Menu,
   X,
+  FolderKanban,
+  Wrench,
+  ClipboardList,
+  UsersRound,
+  Briefcase,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
