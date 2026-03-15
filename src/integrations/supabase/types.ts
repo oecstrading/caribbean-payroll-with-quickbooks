@@ -303,6 +303,7 @@ export type Database = {
           id: string
           issues: string | null
           materials_used: string | null
+          photo_urls: string[] | null
           project_id: string
           report_date: string
           safety_notes: string | null
@@ -318,6 +319,7 @@ export type Database = {
           id?: string
           issues?: string | null
           materials_used?: string | null
+          photo_urls?: string[] | null
           project_id: string
           report_date?: string
           safety_notes?: string | null
@@ -333,6 +335,7 @@ export type Database = {
           id?: string
           issues?: string | null
           materials_used?: string | null
+          photo_urls?: string[] | null
           project_id?: string
           report_date?: string
           safety_notes?: string | null
@@ -852,6 +855,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "project_assignments_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_time_logs: {
+        Row: {
+          created_at: string
+          description: string | null
+          hours: number
+          id: string
+          log_date: string
+          project_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          hours?: number
+          id?: string
+          log_date?: string
+          project_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          hours?: number
+          id?: string
+          log_date?: string
+          project_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_time_logs_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"

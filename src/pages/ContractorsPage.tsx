@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Briefcase, Plus, DollarSign, Search, Eye, FileText } from "lucide-react";
+import { Briefcase, Plus, DollarSign, Search, FileText } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,16 +11,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useRole } from "@/hooks/useRole";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface Contractor {
   id: string; company_name: string; contact_name: string; email: string; phone: string;
   trade: string; tax_id: string; bank_name: string; account_number: string; status: string;
 }
-
 interface Payment {
   id: string; contractor_id: string; project_id: string | null; amount: number;
   description: string; payment_date: string; status: string; invoice_number: string;
 }
+
+type ContractorFilter = "all" | "active" | "paid" | "pending";
 
 export default function ContractorsPage() {
   const { isAdminOrManager } = useRole();
@@ -29,6 +31,8 @@ export default function ContractorsPage() {
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<ContractorFilter>("all");
+  const [activeTab, setActiveTab] = useState("contractors");
   const [showAddContractor, setShowAddContractor] = useState(false);
   const [showAddPayment, setShowAddPayment] = useState(false);
   const [selected, setSelected] = useState<Contractor | null>(null);
@@ -42,10 +46,8 @@ export default function ContractorsPage() {
       supabase.from("contractor_payments").select("*").order("payment_date", { ascending: false }),
       supabase.from("projects").select("id, name"),
     ]);
-    setContractors((ct as any[]) || []);
-    setPayments((py as any[]) || []);
-    setProjects((pr as any[]) || []);
-    setLoading(false);
+    setContractors((ct as any[]) || []); setPayments((py as any[]) || []);
+    setProjects((pr as any[]) || []); setLoading(false);
   };
 
   useEffect(() => { fetchAll(); }, []);
@@ -54,8 +56,7 @@ export default function ContractorsPage() {
     if (!contractorForm.company_name.trim()) { toast.error("Company name required"); return; }
     const { error } = await supabase.from("contractors").insert(contractorForm as any);
     if (error) { toast.error(error.message); return; }
-    toast.success("Contractor added");
-    setShowAddContractor(false);
+    toast.success("Contractor added"); setShowAddContractor(false);
     setContractorForm({ company_name: "", contact_name: "", email: "", phone: "", trade: "", tax_id: "", bank_name: "", account_number: "" });
     fetchAll();
   };
@@ -68,19 +69,21 @@ export default function ContractorsPage() {
       invoice_number: paymentForm.invoice_number, payment_date: paymentForm.payment_date,
     } as any);
     if (error) { toast.error(error.message); return; }
-    toast.success("Payment recorded");
-    setShowAddPayment(false);
+    toast.success("Payment recorded"); setShowAddPayment(false);
     setPaymentForm({ contractor_id: "", project_id: "", amount: "", description: "", invoice_number: "", payment_date: new Date().toISOString().split("T")[0] });
     fetchAll();
   };
 
   const handlePaymentStatus = async (paymentId: string, status: string) => {
     await supabase.from("contractor_payments").update({ status } as any).eq("id", paymentId);
-    fetchAll();
-    toast.success("Payment status updated");
+    fetchAll(); toast.success("Payment status updated");
   };
 
-  const filtered = contractors.filter(c => !search || c.company_name.toLowerCase().includes(search.toLowerCase()) || c.trade.toLowerCase().includes(search.toLowerCase()));
+  const filtered = contractors.filter(c => {
+    if (search && !c.company_name.toLowerCase().includes(search.toLowerCase()) && !c.trade.toLowerCase().includes(search.toLowerCase())) return false;
+    if (filter === "active") return c.status === "active";
+    return true;
+  });
 
   const stats = {
     total: contractors.length,
@@ -91,6 +94,19 @@ export default function ContractorsPage() {
 
   const getContractorName = (id: string) => contractors.find(c => c.id === id)?.company_name || "Unknown";
   const getProjectName = (id: string | null) => id ? (projects.find(p => p.id === id)?.name || "—") : "—";
+
+  const statCards: { key: ContractorFilter; label: string; value: string | number; icon: any; color: string; bg: string; tab?: string }[] = [
+    { key: "all", label: "Contractors", value: stats.total, icon: Briefcase, color: "text-primary", bg: "bg-primary/10" },
+    { key: "active", label: "Active", value: stats.active, icon: Briefcase, color: "text-success", bg: "bg-success/10" },
+    { key: "paid", label: "Total Paid", value: `$${stats.totalPaid.toLocaleString()}`, icon: DollarSign, color: "text-foreground", bg: "bg-secondary", tab: "payments" },
+    { key: "pending", label: "Pending", value: `$${stats.pending.toLocaleString()}`, icon: FileText, color: "text-warning", bg: "bg-warning/10", tab: "payments" },
+  ];
+
+  const handleCardClick = (card: typeof statCards[0]) => {
+    if (card.tab) setActiveTab(card.tab);
+    else setActiveTab("contractors");
+    setFilter(filter === card.key ? "all" : card.key);
+  };
 
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-4 md:space-y-6">
@@ -108,13 +124,10 @@ export default function ContractorsPage() {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {[
-          { label: "Contractors", value: stats.total, icon: Briefcase, color: "text-primary", bg: "bg-primary/10" },
-          { label: "Active", value: stats.active, icon: Briefcase, color: "text-success", bg: "bg-success/10" },
-          { label: "Total Paid", value: `$${stats.totalPaid.toLocaleString()}`, icon: DollarSign, color: "text-foreground", bg: "bg-secondary" },
-          { label: "Pending", value: `$${stats.pending.toLocaleString()}`, icon: FileText, color: "text-warning", bg: "bg-warning/10" },
-        ].map(s => (
-          <Card key={s.label} className="shadow-card border-border/60">
+        {statCards.map(s => (
+          <Card key={s.key} onClick={() => handleCardClick(s)}
+            className={cn("shadow-card border-border/60 cursor-pointer transition-all hover:shadow-md",
+              filter === s.key && s.key !== "all" && "ring-2 ring-primary border-primary/40")}>
             <CardContent className="p-4 flex items-center gap-3">
               <div className={`p-2 rounded-lg ${s.bg}`}><s.icon size={18} className={s.color} /></div>
               <div>
@@ -126,7 +139,14 @@ export default function ContractorsPage() {
         ))}
       </div>
 
-      <Tabs defaultValue="contractors">
+      {filter !== "all" && (
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="text-xs capitalize">Filtered: {filter}</Badge>
+          <Button variant="ghost" size="sm" onClick={() => setFilter("all")} className="text-xs h-6">Clear</Button>
+        </div>
+      )}
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList><TabsTrigger value="contractors">Contractors</TabsTrigger><TabsTrigger value="payments">Payments</TabsTrigger></TabsList>
 
         <TabsContent value="contractors" className="space-y-4">
@@ -185,35 +205,38 @@ export default function ContractorsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {payments.length === 0 ? <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">No payments</td></tr> :
-                    payments.map((p, i) => (
-                      <motion.tr key={p.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }}
-                        className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
-                        <td className="py-3 px-4 text-foreground">{new Date(p.payment_date).toLocaleDateString()}</td>
-                        <td className="py-3 px-4 text-foreground">{getContractorName(p.contractor_id)}</td>
-                        <td className="py-3 px-4 text-muted-foreground">{getProjectName(p.project_id)}</td>
-                        <td className="py-3 px-4 font-mono text-muted-foreground text-xs">{p.invoice_number || "—"}</td>
-                        <td className="py-3 px-4 text-right font-mono font-semibold text-foreground">${p.amount.toLocaleString()}</td>
-                        <td className="py-3 px-4">
-                          {isAdminOrManager ? (
-                            <Select value={p.status} onValueChange={v => handlePaymentStatus(p.id, v)}>
-                              <SelectTrigger className="h-7 w-24 text-xs"><SelectValue /></SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="pending">Pending</SelectItem>
-                                <SelectItem value="paid">Paid</SelectItem>
-                                <SelectItem value="cancelled">Cancelled</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            <Badge variant="secondary" className={
-                              p.status === "paid" ? "bg-success/10 text-success" :
-                              p.status === "pending" ? "bg-warning/10 text-warning" :
-                              "bg-muted text-muted-foreground"
-                            }>{p.status}</Badge>
-                          )}
-                        </td>
-                      </motion.tr>
-                    ))}
+                  {(() => {
+                    const filteredPayments = filter === "paid" ? payments.filter(p => p.status === "paid") :
+                      filter === "pending" ? payments.filter(p => p.status === "pending") : payments;
+                    return filteredPayments.length === 0 ? <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">No payments</td></tr> :
+                      filteredPayments.map((p, i) => (
+                        <motion.tr key={p.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }}
+                          className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
+                          <td className="py-3 px-4 text-foreground">{new Date(p.payment_date).toLocaleDateString()}</td>
+                          <td className="py-3 px-4 text-foreground">{getContractorName(p.contractor_id)}</td>
+                          <td className="py-3 px-4 text-muted-foreground">{getProjectName(p.project_id)}</td>
+                          <td className="py-3 px-4 font-mono text-muted-foreground text-xs">{p.invoice_number || "—"}</td>
+                          <td className="py-3 px-4 text-right font-mono font-semibold text-foreground">${p.amount.toLocaleString()}</td>
+                          <td className="py-3 px-4">
+                            {isAdminOrManager ? (
+                              <Select value={p.status} onValueChange={v => handlePaymentStatus(p.id, v)}>
+                                <SelectTrigger className="h-7 w-24 text-xs"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="pending">Pending</SelectItem>
+                                  <SelectItem value="paid">Paid</SelectItem>
+                                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <Badge variant="secondary" className={
+                                p.status === "paid" ? "bg-success/10 text-success" :
+                                p.status === "pending" ? "bg-warning/10 text-warning" : "bg-muted text-muted-foreground"
+                              }>{p.status}</Badge>
+                            )}
+                          </td>
+                        </motion.tr>
+                      ));
+                  })()}
                 </tbody>
               </table>
             </div>

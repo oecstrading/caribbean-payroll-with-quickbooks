@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useRole } from "@/hooks/useRole";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface Crew {
   id: string; name: string; lead_user_id: string | null; project_id: string | null; status: string;
@@ -17,6 +18,8 @@ interface Crew {
 interface CrewMember {
   id: string; crew_id: string; user_id: string;
 }
+
+type CrewFilter = "all" | "active" | "inactive";
 
 export default function CrewsPage() {
   const { isAdminOrManager } = useRole();
@@ -27,6 +30,7 @@ export default function CrewsPage() {
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [selectedCrew, setSelectedCrew] = useState<Crew | null>(null);
+  const [filter, setFilter] = useState<CrewFilter>("all");
 
   const [form, setForm] = useState({ name: "", lead_user_id: "", project_id: "" });
 
@@ -37,11 +41,8 @@ export default function CrewsPage() {
       supabase.from("profiles").select("user_id, first_name, last_name"),
       supabase.from("projects").select("id, name"),
     ]);
-    setCrews((cr as any[]) || []);
-    setMembers((cm as any[]) || []);
-    setProfiles(pf || []);
-    setProjects((pr as any[]) || []);
-    setLoading(false);
+    setCrews((cr as any[]) || []); setMembers((cm as any[]) || []);
+    setProfiles(pf || []); setProjects((pr as any[]) || []); setLoading(false);
   };
 
   useEffect(() => { fetchAll(); }, []);
@@ -52,28 +53,35 @@ export default function CrewsPage() {
       name: form.name, lead_user_id: form.lead_user_id || null, project_id: form.project_id || null,
     } as any);
     if (error) { toast.error(error.message); return; }
-    toast.success("Crew created");
-    setShowAdd(false);
-    setForm({ name: "", lead_user_id: "", project_id: "" });
-    fetchAll();
+    toast.success("Crew created"); setShowAdd(false);
+    setForm({ name: "", lead_user_id: "", project_id: "" }); fetchAll();
   };
 
   const handleAddMember = async (crewId: string, userId: string) => {
     const { error } = await supabase.from("crew_members").insert({ crew_id: crewId, user_id: userId } as any);
     if (error) { toast.error(error.message); return; }
-    toast.success("Member added");
-    fetchAll();
+    toast.success("Member added"); fetchAll();
   };
-
   const handleRemoveMember = async (memberId: string) => {
     await supabase.from("crew_members").delete().eq("id", memberId);
-    toast.success("Member removed");
-    fetchAll();
+    toast.success("Member removed"); fetchAll();
   };
 
   const getProfile = (uid: string) => profiles.find(p => p.user_id === uid);
   const getCrewMembers = (crewId: string) => members.filter(m => m.crew_id === crewId);
   const getProjectName = (id: string | null) => id ? (projects.find(p => p.id === id)?.name || "—") : "Unassigned";
+
+  const filteredCrews = crews.filter(c => {
+    if (filter === "active") return c.status === "active";
+    if (filter === "inactive") return c.status !== "active";
+    return true;
+  });
+
+  const statCards: { key: CrewFilter; label: string; value: number; icon: any; color: string; bg: string }[] = [
+    { key: "all", label: "Total Crews", value: crews.length, icon: UsersRound, color: "text-primary", bg: "bg-primary/10" },
+    { key: "active", label: "Active", value: crews.filter(c => c.status === "active").length, icon: UsersRound, color: "text-success", bg: "bg-success/10" },
+    { key: "all", label: "Total Members", value: members.length, icon: UserPlus, color: "text-warning", bg: "bg-warning/10" },
+  ];
 
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-4 md:space-y-6">
@@ -86,12 +94,11 @@ export default function CrewsPage() {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        {[
-          { label: "Total Crews", value: crews.length, icon: UsersRound, color: "text-primary", bg: "bg-primary/10" },
-          { label: "Active", value: crews.filter(c => c.status === "active").length, icon: UsersRound, color: "text-success", bg: "bg-success/10" },
-          { label: "Total Members", value: members.length, icon: UserPlus, color: "text-warning", bg: "bg-warning/10" },
-        ].map(s => (
-          <Card key={s.label} className="shadow-card border-border/60">
+        {statCards.map((s, i) => (
+          <Card key={`${s.key}-${i}`} onClick={() => { if (i < 2) setFilter(filter === s.key ? "all" : s.key); }}
+            className={cn("shadow-card border-border/60 transition-all",
+              i < 2 && "cursor-pointer hover:shadow-md",
+              filter === s.key && s.key !== "all" && i < 2 && "ring-2 ring-primary border-primary/40")}>
             <CardContent className="p-4 flex items-center gap-3">
               <div className={`p-2 rounded-lg ${s.bg}`}><s.icon size={18} className={s.color} /></div>
               <div>
@@ -103,11 +110,17 @@ export default function CrewsPage() {
         ))}
       </div>
 
-      {/* Crew Cards */}
+      {filter !== "all" && (
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="text-xs capitalize">Filtered: {filter}</Badge>
+          <Button variant="ghost" size="sm" onClick={() => setFilter("all")} className="text-xs h-6">Clear</Button>
+        </div>
+      )}
+
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {loading ? <p className="col-span-full text-center text-muted-foreground py-12">Loading...</p> :
-          crews.length === 0 ? <p className="col-span-full text-center text-muted-foreground py-12">No crews yet</p> :
-          crews.map((crew, i) => {
+          filteredCrews.length === 0 ? <p className="col-span-full text-center text-muted-foreground py-12">No crews found</p> :
+          filteredCrews.map((crew, i) => {
             const crewMembers = getCrewMembers(crew.id);
             const lead = crew.lead_user_id ? getProfile(crew.lead_user_id) : null;
             return (
@@ -124,7 +137,6 @@ export default function CrewsPage() {
                       <span className="flex items-center gap-1"><UsersRound size={12} /> {crewMembers.length} members</span>
                       <span className="flex items-center gap-1"><FolderKanban size={12} /> {getProjectName(crew.project_id)}</span>
                     </div>
-                    {/* Member avatars */}
                     <div className="flex -space-x-2">
                       {crewMembers.slice(0, 6).map(m => {
                         const p = getProfile(m.user_id);
@@ -143,7 +155,6 @@ export default function CrewsPage() {
           })}
       </div>
 
-      {/* Add Crew Dialog */}
       <Dialog open={showAdd} onOpenChange={setShowAdd}>
         <DialogContent>
           <DialogHeader><DialogTitle className="font-display">New Crew</DialogTitle></DialogHeader>
@@ -162,7 +173,6 @@ export default function CrewsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Crew Detail Dialog */}
       <Dialog open={!!selectedCrew} onOpenChange={open => !open && setSelectedCrew(null)}>
         <DialogContent className="sm:max-w-lg">
           {selectedCrew && (() => {
