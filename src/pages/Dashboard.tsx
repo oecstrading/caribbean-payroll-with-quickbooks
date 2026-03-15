@@ -355,9 +355,30 @@ export default function DashboardPage() {
                 <div className="p-2 rounded-lg bg-success/10">
                   <ClipboardList size={18} className="text-success" />
                 </div>
-                <div>
-                  <p className="text-2xl font-display font-bold text-foreground">{fieldOps.todayReports}</p>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-2xl font-display font-bold text-foreground">{fieldOps.todayReports}</p>
+                    {fieldOps.weeklyReports.length > 0 && (() => {
+                      const max = Math.max(...fieldOps.weeklyReports, 1);
+                      return (
+                        <svg viewBox="0 0 48 20" className="w-12 h-5 flex-shrink-0" fill="none">
+                          <polyline
+                            points={fieldOps.weeklyReports.map((v, i) => `${i * 8},${20 - (v / max) * 16}`).join(" ")}
+                            stroke="hsl(var(--success))"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            fill="none"
+                          />
+                          {fieldOps.weeklyReports.map((v, i) => (
+                            <circle key={i} cx={i * 8} cy={20 - (v / max) * 16} r="1.2" fill="hsl(var(--success))" />
+                          ))}
+                        </svg>
+                      );
+                    })()}
+                  </div>
                   <p className="text-xs text-muted-foreground">Reports Today</p>
+                  <p className="text-[10px] text-muted-foreground">{fieldOps.weeklyReports.reduce((s, v) => s + v, 0)} this week</p>
                 </div>
               </div>
             </div>
