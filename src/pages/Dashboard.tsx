@@ -68,15 +68,17 @@ function usePullToRefresh(onRefresh: () => Promise<void>) {
 export default function DashboardPage() {
   const navigate = useNavigate();
   const [refreshKey, setRefreshKey] = useState(0);
-  const [fieldOps, setFieldOps] = useState({ activeProjects: 0, pendingPayments: 0, pendingAmount: 0, checkedOut: 0, totalEquipment: 0 });
+  const [fieldOps, setFieldOps] = useState({ activeProjects: 0, pendingPayments: 0, pendingAmount: 0, checkedOut: 0, totalEquipment: 0, todayReports: 0 });
 
   useEffect(() => {
     const fetchFieldOps = async () => {
-      const [{ count: activeProjects }, { data: payments }, { count: checkedOut }, { count: totalEquipment }] = await Promise.all([
+      const today = new Date().toISOString().split("T")[0];
+      const [{ count: activeProjects }, { data: payments }, { count: checkedOut }, { count: totalEquipment }, { count: todayReports }] = await Promise.all([
         supabase.from("projects").select("*", { count: "exact", head: true }).eq("status", "active"),
         supabase.from("contractor_payments").select("amount").eq("status", "pending"),
         supabase.from("equipment_checkouts").select("*", { count: "exact", head: true }).is("returned_at", null),
         supabase.from("equipment").select("*", { count: "exact", head: true }),
+        supabase.from("daily_reports").select("*", { count: "exact", head: true }).eq("report_date", today),
       ]);
       setFieldOps({
         activeProjects: activeProjects || 0,
@@ -84,6 +86,7 @@ export default function DashboardPage() {
         pendingAmount: payments?.reduce((s, p) => s + Number(p.amount), 0) || 0,
         checkedOut: checkedOut || 0,
         totalEquipment: totalEquipment || 0,
+        todayReports: todayReports || 0,
       });
     };
     fetchFieldOps();
@@ -280,7 +283,7 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div
                 className="flex items-center gap-3 p-4 rounded-lg bg-primary/5 border border-primary/10 cursor-pointer hover:bg-primary/10 transition-colors"
                 onClick={() => navigate("/projects")}
@@ -325,6 +328,19 @@ export default function DashboardPage() {
                   <Badge variant="secondary" className="mt-1 text-[10px]">
                     of {fieldOps.totalEquipment} total
                   </Badge>
+                </div>
+              </div>
+
+              <div
+                className="flex items-center gap-3 p-4 rounded-lg bg-success/5 border border-success/10 cursor-pointer hover:bg-success/10 transition-colors"
+                onClick={() => navigate("/daily-reports")}
+              >
+                <div className="p-2 rounded-lg bg-success/10">
+                  <ClipboardList size={18} className="text-success" />
+                </div>
+                <div>
+                  <p className="text-2xl font-display font-bold text-foreground">{fieldOps.todayReports}</p>
+                  <p className="text-xs text-muted-foreground">Reports Today</p>
                 </div>
               </div>
             </div>
