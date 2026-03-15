@@ -89,10 +89,18 @@ export default function ProjectsPage() {
     fetchProjects();
   };
 
+  const [assignRate, setAssignRate] = useState("");
   const handleAssign = async (projectId: string, userId: string) => {
-    const { error } = await supabase.from("project_assignments").insert({ project_id: projectId, user_id: userId } as any);
+    const rate = parseFloat(assignRate) || 0;
+    const { error } = await supabase.from("project_assignments").insert({ project_id: projectId, user_id: userId, hourly_rate: rate } as any);
     if (error) { toast.error(error.message); return; }
-    toast.success("Employee assigned"); fetchAssignments(projectId);
+    toast.success("Employee assigned"); setAssignRate(""); fetchAssignments(projectId);
+  };
+  const handleUpdateRate = async (assignmentId: string, newRate: number) => {
+    const { error } = await supabase.from("project_assignments").update({ hourly_rate: newRate } as any).eq("id", assignmentId);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Rate updated");
+    if (selectedProject) fetchAssignments(selectedProject.id);
   };
   const handleUnassign = async (assignmentId: string) => {
     await supabase.from("project_assignments").delete().eq("id", assignmentId);
