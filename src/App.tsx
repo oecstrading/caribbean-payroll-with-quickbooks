@@ -71,6 +71,11 @@ const AppRoutes = () => (
       <Route path="/leave-management" element={<LeaveManagementPage />} />
       <Route path="/deductions" element={<DeductionsPage />} />
       <Route path="/users" element={<UserManagementPage />} />
+      <Route path="/projects" element={<ProjectsPage />} />
+      <Route path="/equipment" element={<EquipmentPage />} />
+      <Route path="/daily-reports" element={<DailyReportsPage />} />
+      <Route path="/crews" element={<CrewsPage />} />
+      <Route path="/contractors" element={<ContractorsPage />} />
       <Route path="/settings" element={<SettingsPage />} />
     </Route>
     <Route path="*" element={<NotFound />} />
