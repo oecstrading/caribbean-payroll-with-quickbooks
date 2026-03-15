@@ -27,6 +27,7 @@ import {
   ClipboardList,
   UsersRound,
   Briefcase,
+  TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -60,6 +61,7 @@ const navItems: NavItem[] = [
   { path: "/equipment", label: "Equipment", icon: Wrench },
   { path: "/daily-reports", label: "Field Reports", icon: ClipboardList },
   { path: "/contractors", label: "Contractors", icon: Briefcase, managerOnly: true },
+  { path: "/project-profitability", label: "Profitability", icon: TrendingUp, managerOnly: true },
   { path: "/portal", label: "My Portal", icon: UserCircle, separator: true, bottomNav: true },
   { path: "/users", label: "User Management", icon: Shield, adminOnly: true },
   { path: "/settings", label: "Settings", icon: Settings, bottomNav: true },
