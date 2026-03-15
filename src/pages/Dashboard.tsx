@@ -68,7 +68,7 @@ function usePullToRefresh(onRefresh: () => Promise<void>) {
 export default function DashboardPage() {
   const navigate = useNavigate();
   const [refreshKey, setRefreshKey] = useState(0);
-  const [fieldOps, setFieldOps] = useState({ activeProjects: 0, pendingPayments: 0, pendingAmount: 0, checkedOut: 0, totalEquipment: 0 });
+  const [fieldOps, setFieldOps] = useState({ activeProjects: 0, pendingPayments: 0, pendingAmount: 0, checkedOut: 0, totalEquipment: 0, todayReports: 0 });
 
   useEffect(() => {
     const fetchFieldOps = async () => {
