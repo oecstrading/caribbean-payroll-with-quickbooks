@@ -330,6 +330,19 @@ export default function DashboardPage() {
                   </Badge>
                 </div>
               </div>
+
+              <div
+                className="flex items-center gap-3 p-4 rounded-lg bg-success/5 border border-success/10 cursor-pointer hover:bg-success/10 transition-colors"
+                onClick={() => navigate("/daily-reports")}
+              >
+                <div className="p-2 rounded-lg bg-success/10">
+                  <ClipboardList size={18} className="text-success" />
+                </div>
+                <div>
+                  <p className="text-2xl font-display font-bold text-foreground">{fieldOps.todayReports}</p>
+                  <p className="text-xs text-muted-foreground">Reports Today</p>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
