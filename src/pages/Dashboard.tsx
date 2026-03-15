@@ -72,14 +72,30 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const fetchFieldOps = async () => {
-      const today = new Date().toISOString().split("T")[0];
-      const [{ count: activeProjects }, { data: payments }, { count: checkedOut }, { count: totalEquipment }, { count: todayReports }] = await Promise.all([
+      const today = new Date();
+      const todayStr = today.toISOString().split("T")[0];
+      const weekAgo = new Date(today);
+      weekAgo.setDate(weekAgo.getDate() - 6);
+      const weekAgoStr = weekAgo.toISOString().split("T")[0];
+
+      const [{ count: activeProjects }, { data: payments }, { count: checkedOut }, { count: totalEquipment }, { count: todayReports }, { data: weekReports }] = await Promise.all([
         supabase.from("projects").select("*", { count: "exact", head: true }).eq("status", "active"),
         supabase.from("contractor_payments").select("amount").eq("status", "pending"),
         supabase.from("equipment_checkouts").select("*", { count: "exact", head: true }).is("returned_at", null),
         supabase.from("equipment").select("*", { count: "exact", head: true }),
-        supabase.from("daily_reports").select("*", { count: "exact", head: true }).eq("report_date", today),
+        supabase.from("daily_reports").select("*", { count: "exact", head: true }).eq("report_date", todayStr),
+        supabase.from("daily_reports").select("report_date").gte("report_date", weekAgoStr).lte("report_date", todayStr),
       ]);
+
+      // Build 7-day counts array
+      const dayCounts: number[] = [];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(weekAgo);
+        d.setDate(d.getDate() + i);
+        const ds = d.toISOString().split("T")[0];
+        dayCounts.push((weekReports || []).filter(r => r.report_date === ds).length);
+      }
+
       setFieldOps({
         activeProjects: activeProjects || 0,
         pendingPayments: payments?.length || 0,
@@ -87,6 +103,7 @@ export default function DashboardPage() {
         checkedOut: checkedOut || 0,
         totalEquipment: totalEquipment || 0,
         todayReports: todayReports || 0,
+        weeklyReports: dayCounts,
       });
     };
     fetchFieldOps();
