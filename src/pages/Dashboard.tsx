@@ -68,18 +68,34 @@ function usePullToRefresh(onRefresh: () => Promise<void>) {
 export default function DashboardPage() {
   const navigate = useNavigate();
   const [refreshKey, setRefreshKey] = useState(0);
-  const [fieldOps, setFieldOps] = useState({ activeProjects: 0, pendingPayments: 0, pendingAmount: 0, checkedOut: 0, totalEquipment: 0, todayReports: 0 });
+  const [fieldOps, setFieldOps] = useState({ activeProjects: 0, pendingPayments: 0, pendingAmount: 0, checkedOut: 0, totalEquipment: 0, todayReports: 0, weeklyReports: [] as number[] });
 
   useEffect(() => {
     const fetchFieldOps = async () => {
-      const today = new Date().toISOString().split("T")[0];
-      const [{ count: activeProjects }, { data: payments }, { count: checkedOut }, { count: totalEquipment }, { count: todayReports }] = await Promise.all([
+      const today = new Date();
+      const todayStr = today.toISOString().split("T")[0];
+      const weekAgo = new Date(today);
+      weekAgo.setDate(weekAgo.getDate() - 6);
+      const weekAgoStr = weekAgo.toISOString().split("T")[0];
+
+      const [{ count: activeProjects }, { data: payments }, { count: checkedOut }, { count: totalEquipment }, { count: todayReports }, { data: weekReports }] = await Promise.all([
         supabase.from("projects").select("*", { count: "exact", head: true }).eq("status", "active"),
         supabase.from("contractor_payments").select("amount").eq("status", "pending"),
         supabase.from("equipment_checkouts").select("*", { count: "exact", head: true }).is("returned_at", null),
         supabase.from("equipment").select("*", { count: "exact", head: true }),
-        supabase.from("daily_reports").select("*", { count: "exact", head: true }).eq("report_date", today),
+        supabase.from("daily_reports").select("*", { count: "exact", head: true }).eq("report_date", todayStr),
+        supabase.from("daily_reports").select("report_date").gte("report_date", weekAgoStr).lte("report_date", todayStr),
       ]);
+
+      // Build 7-day counts array
+      const dayCounts: number[] = [];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(weekAgo);
+        d.setDate(d.getDate() + i);
+        const ds = d.toISOString().split("T")[0];
+        dayCounts.push((weekReports || []).filter(r => r.report_date === ds).length);
+      }
+
       setFieldOps({
         activeProjects: activeProjects || 0,
         pendingPayments: payments?.length || 0,
@@ -87,6 +103,7 @@ export default function DashboardPage() {
         checkedOut: checkedOut || 0,
         totalEquipment: totalEquipment || 0,
         todayReports: todayReports || 0,
+        weeklyReports: dayCounts,
       });
     };
     fetchFieldOps();
@@ -338,9 +355,30 @@ export default function DashboardPage() {
                 <div className="p-2 rounded-lg bg-success/10">
                   <ClipboardList size={18} className="text-success" />
                 </div>
-                <div>
-                  <p className="text-2xl font-display font-bold text-foreground">{fieldOps.todayReports}</p>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-2xl font-display font-bold text-foreground">{fieldOps.todayReports}</p>
+                    {fieldOps.weeklyReports.length > 0 && (() => {
+                      const max = Math.max(...fieldOps.weeklyReports, 1);
+                      return (
+                        <svg viewBox="0 0 48 20" className="w-12 h-5 flex-shrink-0" fill="none">
+                          <polyline
+                            points={fieldOps.weeklyReports.map((v, i) => `${i * 8},${20 - (v / max) * 16}`).join(" ")}
+                            stroke="hsl(var(--success))"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            fill="none"
+                          />
+                          {fieldOps.weeklyReports.map((v, i) => (
+                            <circle key={i} cx={i * 8} cy={20 - (v / max) * 16} r="1.2" fill="hsl(var(--success))" />
+                          ))}
+                        </svg>
+                      );
+                    })()}
+                  </div>
                   <p className="text-xs text-muted-foreground">Reports Today</p>
+                  <p className="text-[10px] text-muted-foreground">{fieldOps.weeklyReports.reduce((s, v) => s + v, 0)} this week</p>
                 </div>
               </div>
             </div>
