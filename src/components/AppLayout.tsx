@@ -22,6 +22,11 @@ import {
   History,
   Menu,
   X,
+  FolderKanban,
+  Wrench,
+  ClipboardList,
+  UsersRound,
+  Briefcase,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -50,6 +55,11 @@ const navItems: NavItem[] = [
   { path: "/geofencing", label: "Geofencing", icon: MapPin },
   { path: "/leave-management", label: "Leave Approvals", icon: CalendarDays, managerOnly: true },
   { path: "/deductions", label: "Deductions", icon: Landmark, managerOnly: true },
+  { path: "/projects", label: "Projects", icon: FolderKanban, separator: true },
+  { path: "/crews", label: "Crews", icon: UsersRound },
+  { path: "/equipment", label: "Equipment", icon: Wrench },
+  { path: "/daily-reports", label: "Field Reports", icon: ClipboardList },
+  { path: "/contractors", label: "Contractors", icon: Briefcase, managerOnly: true },
   { path: "/portal", label: "My Portal", icon: UserCircle, separator: true, bottomNav: true },
   { path: "/users", label: "User Management", icon: Shield, adminOnly: true },
   { path: "/settings", label: "Settings", icon: Settings, bottomNav: true },

@@ -21,6 +21,11 @@ import GeofencingPage from "@/pages/GeofencingPage";
 import LeaveManagementPage from "@/pages/LeaveManagementPage";
 import DeductionsPage from "@/pages/DeductionsPage";
 import PayrollHistoryPage from "@/pages/PayrollHistoryPage";
+import ProjectsPage from "@/pages/ProjectsPage";
+import EquipmentPage from "@/pages/EquipmentPage";
+import DailyReportsPage from "@/pages/DailyReportsPage";
+import CrewsPage from "@/pages/CrewsPage";
+import ContractorsPage from "@/pages/ContractorsPage";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -66,6 +71,11 @@ const AppRoutes = () => (
       <Route path="/leave-management" element={<LeaveManagementPage />} />
       <Route path="/deductions" element={<DeductionsPage />} />
       <Route path="/users" element={<UserManagementPage />} />
+      <Route path="/projects" element={<ProjectsPage />} />
+      <Route path="/equipment" element={<EquipmentPage />} />
+      <Route path="/daily-reports" element={<DailyReportsPage />} />
+      <Route path="/crews" element={<CrewsPage />} />
+      <Route path="/contractors" element={<ContractorsPage />} />
       <Route path="/settings" element={<SettingsPage />} />
     </Route>
     <Route path="*" element={<NotFound />} />
