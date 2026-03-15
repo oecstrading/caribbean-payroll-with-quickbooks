@@ -284,18 +284,42 @@ export default function ProjectsPage() {
                         <span className="text-sm text-foreground">{a.profile ? `${a.profile.first_name} ${a.profile.last_name}` : "Unknown"}</span>
                         <Badge variant="secondary" className="text-[10px]">{a.role}</Badge>
                       </div>
-                      {isAdminOrManager && <Button variant="ghost" size="sm" onClick={() => handleUnassign(a.id)}><X size={14} /></Button>}
+                      <div className="flex items-center gap-2">
+                        {isAdminOrManager ? (
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs text-muted-foreground">$/hr</span>
+                            <Input
+                              type="number"
+                              className="w-20 h-7 text-xs font-mono"
+                              defaultValue={a.hourly_rate || ""}
+                              placeholder="0"
+                              onBlur={e => {
+                                const val = parseFloat(e.target.value) || 0;
+                                if (val !== (a.hourly_rate || 0)) handleUpdateRate(a.id, val);
+                              }}
+                            />
+                          </div>
+                        ) : (
+                          a.hourly_rate > 0 && <Badge variant="outline" className="text-[10px] font-mono">${a.hourly_rate}/hr</Badge>
+                        )}
+                        {isAdminOrManager && <Button variant="ghost" size="sm" onClick={() => handleUnassign(a.id)}><X size={14} /></Button>}
+                      </div>
                     </div>
                   ))}
                   {isAdminOrManager && (
-                    <Select onValueChange={v => handleAssign(selectedProject.id, v)}>
-                      <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="+ Assign employee..." /></SelectTrigger>
-                      <SelectContent>
-                        {profiles.filter(p => !assignments.find(a => a.user_id === p.user_id)).map(p => (
-                          <SelectItem key={p.user_id} value={p.user_id}>{p.first_name} {p.last_name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex gap-2 items-end">
+                      <div className="flex-1">
+                        <Select onValueChange={v => handleAssign(selectedProject.id, v)}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="+ Assign employee..." /></SelectTrigger>
+                          <SelectContent>
+                            {profiles.filter(p => !assignments.find(a => a.user_id === p.user_id)).map(p => (
+                              <SelectItem key={p.user_id} value={p.user_id}>{p.first_name} {p.last_name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <Input type="number" placeholder="$/hr" className="w-20 h-8 text-xs" value={assignRate} onChange={e => setAssignRate(e.target.value)} />
+                    </div>
                   )}
                 </TabsContent>
 
