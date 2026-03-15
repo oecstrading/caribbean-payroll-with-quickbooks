@@ -77,6 +77,7 @@ const AppRoutes = () => (
       <Route path="/daily-reports" element={<DailyReportsPage />} />
       <Route path="/crews" element={<CrewsPage />} />
       <Route path="/contractors" element={<ContractorsPage />} />
+      <Route path="/project-profitability" element={<ProjectProfitabilityPage />} />
       <Route path="/settings" element={<SettingsPage />} />
     </Route>
     <Route path="*" element={<NotFound />} />
