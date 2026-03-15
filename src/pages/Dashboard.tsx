@@ -269,6 +269,68 @@ export default function DashboardPage() {
           </Card>
         </motion.div>
       </div>
+
+      {/* Field Operations Widget */}
+      <motion.div {...fadeUp} transition={{ delay: 0.4 }}>
+        <Card className="shadow-card border-border/60">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-display flex items-center gap-2">
+              <Briefcase size={16} className="text-primary" />
+              Field Operations
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div
+                className="flex items-center gap-3 p-4 rounded-lg bg-primary/5 border border-primary/10 cursor-pointer hover:bg-primary/10 transition-colors"
+                onClick={() => navigate("/projects")}
+              >
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Briefcase size={18} className="text-primary" />
+                </div>
+                <div>
+                  <p className="text-2xl font-display font-bold text-foreground">{fieldOps.activeProjects}</p>
+                  <p className="text-xs text-muted-foreground">Active Projects</p>
+                </div>
+              </div>
+
+              <div
+                className="flex items-center gap-3 p-4 rounded-lg bg-warning/5 border border-warning/10 cursor-pointer hover:bg-warning/10 transition-colors"
+                onClick={() => navigate("/contractors")}
+              >
+                <div className="p-2 rounded-lg bg-warning/10">
+                  <DollarSign size={18} className="text-warning" />
+                </div>
+                <div>
+                  <p className="text-2xl font-display font-bold text-foreground">{fieldOps.pendingPayments}</p>
+                  <p className="text-xs text-muted-foreground">Pending Payments</p>
+                  {fieldOps.pendingAmount > 0 && (
+                    <Badge variant="secondary" className="mt-1 text-[10px] bg-warning/10 text-warning">
+                      {formatCurrency(fieldOps.pendingAmount)} due
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              <div
+                className="flex items-center gap-3 p-4 rounded-lg bg-accent/10 border border-accent/10 cursor-pointer hover:bg-accent/20 transition-colors"
+                onClick={() => navigate("/equipment")}
+              >
+                <div className="p-2 rounded-lg bg-accent/20">
+                  <Wrench size={18} className="text-accent-foreground" />
+                </div>
+                <div>
+                  <p className="text-2xl font-display font-bold text-foreground">{fieldOps.checkedOut}</p>
+                  <p className="text-xs text-muted-foreground">Equipment Out</p>
+                  <Badge variant="secondary" className="mt-1 text-[10px]">
+                    of {fieldOps.totalEquipment} total
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
     </div>
   );
 }
