@@ -67,7 +67,26 @@ function usePullToRefresh(onRefresh: () => Promise<void>) {
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [fieldOps, setFieldOps] = useState({ activeProjects: 0, pendingPayments: 0, pendingAmount: 0, checkedOut: 0, totalEquipment: 0 });
+
+  useEffect(() => {
+    const fetchFieldOps = async () => {
+      const [{ count: activeProjects }, { data: payments }, { count: checkedOut }, { count: totalEquipment }] = await Promise.all([
+        supabase.from("projects").select("*", { count: "exact", head: true }).eq("status", "active"),
+        supabase.from("contractor_payments").select("amount").eq("status", "pending"),
+        supabase.from("equipment_checkouts").select("*", { count: "exact", head: true }).is("returned_at", null),
+        supabase.from("equipment").select("*", { count: "exact", head: true }),
+      ]);
+      setFieldOps({
+        activeProjects: activeProjects || 0,
+        pendingPayments: payments?.length || 0,
+        pendingAmount: payments?.reduce((s, p) => s + Number(p.amount), 0) || 0,
+        checkedOut: checkedOut || 0,
+        totalEquipment: totalEquipment || 0,
+      });
+    };
+    fetchFieldOps();
+  }, [refreshKey]);
 
   const handleRefresh = useCallback(async () => {
     await new Promise((r) => setTimeout(r, 800));
