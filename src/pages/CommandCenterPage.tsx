@@ -144,6 +144,83 @@ export default function CommandCenterPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Fetch active emergency alerts
+  useEffect(() => {
+    const fetchEmergencies = async () => {
+      const { data } = await supabase
+        .from("emergency_alerts")
+        .select("*")
+        .eq("status", "active")
+        .order("created_at", { ascending: false });
+      setEmergencyAlerts(data || []);
+    };
+    fetchEmergencies();
+  }, []);
+
+  // Emergency alerts realtime
+  useEffect(() => {
+    const channel = supabase
+      .channel("live-emergencies")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "emergency_alerts" }, (payload) => {
+        const alert = payload.new as any;
+        const guardName = profiles[alert.user_id] || "Guard";
+
+        // Play alarm sound
+        try {
+          const audioCtx = new AudioContext();
+          for (let i = 0; i < 5; i++) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.frequency.value = i % 2 === 0 ? 1200 : 800;
+            osc.type = "square";
+            gain.gain.value = 0.4;
+            osc.start(audioCtx.currentTime + i * 0.3);
+            osc.stop(audioCtx.currentTime + i * 0.3 + 0.2);
+          }
+        } catch {}
+
+        toast.error(`🚨 EMERGENCY: ${guardName} triggered PANIC ALERT!`, {
+          duration: 30000,
+          description: "Tap to view on map",
+        });
+
+        setEmergencyAlerts((prev) => [{ ...alert, guard_name: guardName }, ...prev]);
+
+        // Auto-center map on the emergency
+        if (alert.latitude && alert.longitude) {
+          setSelectedGuard({ lat: alert.latitude, lng: alert.longitude });
+        }
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "emergency_alerts" }, (payload) => {
+        const updated = payload.new as any;
+        if (updated.status !== "active") {
+          setEmergencyAlerts((prev) => prev.filter((a) => a.id !== updated.id));
+        }
+      })
+      .subscribe();
+    emergencyChannelRef.current = channel;
+    return () => { supabase.removeChannel(channel); };
+  }, [profiles]);
+
+  const resolveEmergency = async (alertId: string) => {
+    const { error } = await supabase
+      .from("emergency_alerts")
+      .update({
+        status: "resolved",
+        resolved_by: (await supabase.auth.getUser()).data.user?.id,
+        resolved_at: new Date().toISOString(),
+        resolution_notes: resolveNotes,
+      })
+      .eq("id", alertId);
+    if (error) { toast.error("Failed to resolve alert"); return; }
+    setEmergencyAlerts((prev) => prev.filter((a) => a.id !== alertId));
+    setResolveAlertId(null);
+    setResolveNotes("");
+    toast.success("Emergency alert resolved");
+  };
+
   // Realtime
   useEffect(() => {
     if (!isLive) {
