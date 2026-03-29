@@ -364,7 +364,7 @@ export default function AppLayout() {
         </nav>
       </div>
     </div>
-      <VoiceCommandListener />
-    </div>
+    <VoiceCommandListener />
+    </>
   );
 }
