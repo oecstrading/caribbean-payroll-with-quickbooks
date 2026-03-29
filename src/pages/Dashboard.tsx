@@ -81,14 +81,20 @@ export default function DashboardPage() {
       const weekAgo = new Date(today);
       weekAgo.setDate(weekAgo.getDate() - 6);
       const weekAgoStr = weekAgo.toISOString().split("T")[0];
+      const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+      const todayDay = dayNames[today.getDay()];
 
-      const [{ count: activeProjects }, { data: payments }, { count: checkedOut }, { count: totalEquipment }, { count: todayReports }, { data: weekReports }] = await Promise.all([
+      const [{ count: activeProjects }, { data: payments }, { count: checkedOut }, { count: totalEquipment }, { count: todayReports }, { data: weekReports }, { data: todayAssignments }, { data: allProfiles }, { data: allSites }, { data: todayPunches }] = await Promise.all([
         supabase.from("projects").select("*", { count: "exact", head: true }).eq("status", "active"),
         supabase.from("contractor_payments").select("amount").eq("status", "pending"),
         supabase.from("equipment_checkouts").select("*", { count: "exact", head: true }).is("returned_at", null),
         supabase.from("equipment").select("*", { count: "exact", head: true }),
         supabase.from("daily_reports").select("*", { count: "exact", head: true }).eq("report_date", todayStr),
         supabase.from("daily_reports").select("report_date").gte("report_date", weekAgoStr).lte("report_date", todayStr),
+        supabase.from("guard_assignments").select("user_id, site_id, shift_start, shift_end, days_of_week").eq("is_active", true),
+        supabase.from("profiles").select("user_id, first_name, last_name").eq("status", "Active"),
+        supabase.from("client_sites").select("id, name"),
+        supabase.from("clock_punches").select("user_id, punch_type").gte("punched_at", todayStr).lte("punched_at", todayStr + "T23:59:59"),
       ]);
 
       // Build 7-day counts array
@@ -99,6 +105,23 @@ export default function DashboardPage() {
         const ds = d.toISOString().split("T")[0];
         dayCounts.push((weekReports || []).filter(r => r.report_date === ds).length);
       }
+
+      // Build roster for today
+      const roster = (todayAssignments || [])
+        .filter(a => !a.days_of_week || a.days_of_week.length === 0 || a.days_of_week.includes(todayDay))
+        .map(a => {
+          const p = (allProfiles || []).find(p => p.user_id === a.user_id);
+          const s = (allSites || []).find(s => s.id === a.site_id);
+          const hasClockedIn = (todayPunches || []).some(tp => tp.user_id === a.user_id && tp.punch_type === "clock_in");
+          return {
+            name: p ? `${p.first_name} ${p.last_name}` : "Unknown",
+            siteName: s?.name || "Unknown",
+            shiftStart: a.shift_start,
+            shiftEnd: a.shift_end,
+            clockedIn: hasClockedIn,
+          };
+        });
+      setRosterData(roster);
 
       setFieldOps({
         activeProjects: activeProjects || 0,
