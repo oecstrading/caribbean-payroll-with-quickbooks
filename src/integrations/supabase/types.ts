@@ -461,6 +461,56 @@ export type Database = {
           },
         ]
       }
+      emergency_alerts: {
+        Row: {
+          created_at: string
+          id: string
+          latitude: number
+          location: unknown
+          longitude: number
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          site_id: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          latitude: number
+          location?: unknown
+          longitude: number
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          site_id?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          latitude?: number
+          location?: unknown
+          longitude?: number
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          site_id?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emergency_alerts_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "client_sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_additions: {
         Row: {
           addition_type: Database["public"]["Enums"]["addition_type"]
