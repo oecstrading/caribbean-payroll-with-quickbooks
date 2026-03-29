@@ -36,13 +36,22 @@ export default function EmployeesPage() {
           <h1 className="text-xl md:text-2xl font-display font-bold text-foreground">Employees</h1>
           <p className="text-sm text-muted-foreground mt-1">{sampleEmployees.length} team members</p>
         </div>
-        <button
-          onClick={() => navigate("/users")}
-          className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
-        >
-          <UserPlus size={16} />
-          Add Employee
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowImport(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-secondary text-secondary-foreground rounded-lg text-sm font-medium hover:bg-secondary/80 transition-colors"
+          >
+            <Upload size={16} />
+            Import CSV
+          </button>
+          <button
+            onClick={() => navigate("/users")}
+            className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+          >
+            <UserPlus size={16} />
+            Add Employee
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
