@@ -95,7 +95,7 @@ export default function DashboardPage() {
         supabase.from("guard_assignments").select("user_id, site_id, shift_start, shift_end, days_of_week").eq("is_active", true),
         supabase.from("profiles").select("user_id, first_name, last_name").eq("status", "Active"),
         supabase.from("client_sites").select("id, name"),
-        supabase.from("clock_punches").select("user_id, punch_type").gte("punched_at", todayStr).lte("punched_at", todayStr + "T23:59:59"),
+        supabase.from("clock_punches").select("user_id, punch_type, punched_at").gte("punched_at", todayStr).lte("punched_at", todayStr + "T23:59:59"),
       ]);
 
       // Build 7-day counts array
