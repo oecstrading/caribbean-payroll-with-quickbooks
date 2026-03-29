@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
-import { MapPin, Clock, Shield, Users, RefreshCw, Radio, ChevronRight, Filter, Route } from "lucide-react";
+import { MapPin, Clock, Shield, Users, RefreshCw, Radio, ChevronRight, Filter, Route, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useRole } from "@/hooks/useRole";
@@ -94,6 +94,7 @@ export default function CommandCenterPage() {
   const [selectedGuard, setSelectedGuard] = useState<{ lat: number; lng: number } | null>(null);
   const [isLive, setIsLive] = useState(true);
   const [filterJurisdiction, setFilterJurisdiction] = useState<string>("all");
+  const [recentViolations, setRecentViolations] = useState<ActivePunch[]>([]);
   // Trail/breadcrumb state
   const [trailGuardId, setTrailGuardId] = useState<string>("");
   const [trailDate, setTrailDate] = useState(new Date().toISOString().split("T")[0]);
@@ -149,9 +150,20 @@ export default function CommandCenterPage() {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "clock_punches" }, (payload) => {
         const newPunch = payload.new as any;
         const guardName = profiles[newPunch.user_id] || "Guard";
-        toast.info(`${newPunch.punch_type === "clock_in" ? "🟢" : "🔴"} ${guardName} ${newPunch.punch_type.replace("_", " ")}`, {
-          description: newPunch.address_label || "Unknown site",
-        });
+        
+        // Check for geofence violation
+        if (newPunch.within_geofence === false) {
+          toast.error(`⚠️ GEOFENCE VIOLATION: ${guardName}`, {
+            description: `Attempted clock-in outside zone at ${newPunch.address_label || "Unknown site"}`,
+            duration: 15000,
+          });
+          setRecentViolations((prev) => [{ ...newPunch, guard_name: guardName }, ...prev].slice(0, 10));
+        } else {
+          toast.info(`${newPunch.punch_type === "clock_in" ? "🟢" : "🔴"} ${guardName} ${newPunch.punch_type.replace("_", " ")}`, {
+            description: newPunch.address_label || "Unknown site",
+          });
+        }
+        
         setPunches((prev) => {
           const filtered = prev.filter((p) => p.user_id !== newPunch.user_id);
           return [{ ...newPunch, guard_name: guardName }, ...filtered];
@@ -280,6 +292,28 @@ export default function CommandCenterPage() {
           <div><p className="text-xs text-muted-foreground">Total Sites</p><p className="text-base font-display font-bold text-foreground">{filteredSites.length}</p></div>
         </div>
       </div>
+
+      {/* Violation Alert Banner */}
+      {recentViolations.length > 0 && (
+        <div className="px-4 md:px-6 py-2 bg-destructive/10 border-b border-destructive/30">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={16} className="text-destructive animate-pulse" />
+            <p className="text-sm font-semibold text-destructive">
+              {recentViolations.length} Geofence Violation{recentViolations.length > 1 ? "s" : ""} Detected
+            </p>
+            <button onClick={() => setRecentViolations([])} className="ml-auto text-xs text-destructive/70 hover:text-destructive underline">
+              Dismiss
+            </button>
+          </div>
+          <div className="mt-1 space-y-1">
+            {recentViolations.slice(0, 3).map((v) => (
+              <p key={v.id} className="text-xs text-destructive/80">
+                ⚠️ {v.guard_name} — {v.address_label || "Unknown"} — {timeSince(v.punched_at)}
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Map + Sidebar */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
