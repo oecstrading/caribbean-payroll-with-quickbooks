@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Globe, Building, Shield, Phone, Link, FileText, Save, Upload, ImageIcon, Trash2 } from "lucide-react";
+import { Globe, Building, Shield, Phone, Link, FileText, Save, Upload, ImageIcon, Trash2, Bell, BellOff } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 import { ST_LUCIA_CONFIG, formatCurrency } from "@/lib/payroll-engine";
 import { supabase } from "@/integrations/supabase/client";
 import { useRole } from "@/hooks/useRole";
@@ -43,6 +44,17 @@ export default function SettingsPage() {
   const [logoUrl, setLogoUrl] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Notification settings
+  const [notifSettings, setNotifSettings] = useState({
+    enable_push: true,
+    enable_email: false,
+    alert_on_geofence_violation: true,
+    alert_on_late_clock_in: true,
+    alert_on_panic_button: true,
+  });
+  const [notifLoading, setNotifLoading] = useState(true);
+  const [notifSaving, setNotifSaving] = useState(false);
+
   useEffect(() => {
     const fetch = async () => {
       const { data } = await supabase
@@ -68,6 +80,48 @@ export default function SettingsPage() {
     };
     fetch();
   }, []);
+
+  // Fetch notification settings
+  useEffect(() => {
+    const fetchNotif = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from("notification_settings")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (data) {
+        setNotifSettings({
+          enable_push: data.enable_push ?? true,
+          enable_email: data.enable_email ?? false,
+          alert_on_geofence_violation: data.alert_on_geofence_violation ?? true,
+          alert_on_late_clock_in: data.alert_on_late_clock_in ?? true,
+          alert_on_panic_button: data.alert_on_panic_button ?? true,
+        });
+      }
+      setNotifLoading(false);
+    };
+    fetchNotif();
+  }, [user]);
+
+  const handleNotifToggle = async (field: string, value: boolean) => {
+    if (!user) return;
+    const updated = { ...notifSettings, [field]: value };
+    setNotifSettings(updated);
+    setNotifSaving(true);
+    try {
+      const { error } = await supabase
+        .from("notification_settings")
+        .upsert({ user_id: user.id, ...updated, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+      if (error) throw error;
+      toast.success("Notification preference updated");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save");
+      setNotifSettings({ ...notifSettings, [field]: !value }); // revert
+    } finally {
+      setNotifSaving(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!isAdminOrManager || !user) {
@@ -323,6 +377,106 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* Notification Preferences - Only for Admins/Managers */}
+        {isAdminOrManager && (
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="md:col-span-2">
+            <Card className="shadow-card border-border/60">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-display flex items-center gap-2">
+                  <Bell size={16} className="text-primary" />
+                  Notification Preferences
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {notifLoading ? (
+                  <p className="text-sm text-muted-foreground py-4">Loading preferences...</p>
+                ) : (
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground mb-4">
+                      Control which alerts you receive. Changes save automatically.
+                    </p>
+
+                    {/* Delivery Channels */}
+                    <div className="pb-3 mb-3 border-b border-border/50">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Delivery Channels</p>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Bell size={14} className="text-primary" />
+                            <div>
+                              <p className="text-sm font-medium text-foreground">Push Notifications</p>
+                              <p className="text-xs text-muted-foreground">Real-time alerts on your device</p>
+                            </div>
+                          </div>
+                          <Switch
+                            checked={notifSettings.enable_push}
+                            onCheckedChange={(v) => handleNotifToggle("enable_push", v)}
+                            disabled={notifSaving}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <BellOff size={14} className="text-muted-foreground" />
+                            <div>
+                              <p className="text-sm font-medium text-foreground">Email Alerts</p>
+                              <p className="text-xs text-muted-foreground">Receive alerts via email</p>
+                            </div>
+                          </div>
+                          <Switch
+                            checked={notifSettings.enable_email}
+                            onCheckedChange={(v) => handleNotifToggle("enable_email", v)}
+                            disabled={notifSaving}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Alert Types */}
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Alert Types</p>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-foreground">⚠️ Geofence Violations</p>
+                            <p className="text-xs text-muted-foreground">Guard clocks in outside allowed zone</p>
+                          </div>
+                          <Switch
+                            checked={notifSettings.alert_on_geofence_violation}
+                            onCheckedChange={(v) => handleNotifToggle("alert_on_geofence_violation", v)}
+                            disabled={notifSaving}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-foreground">🕐 Late Clock-Ins</p>
+                            <p className="text-xs text-muted-foreground">Guard clocks in after scheduled start</p>
+                          </div>
+                          <Switch
+                            checked={notifSettings.alert_on_late_clock_in}
+                            onCheckedChange={(v) => handleNotifToggle("alert_on_late_clock_in", v)}
+                            disabled={notifSaving}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-foreground">🚨 Panic Button</p>
+                            <p className="text-xs text-muted-foreground">Guard triggers emergency alert</p>
+                          </div>
+                          <Switch
+                            checked={notifSettings.alert_on_panic_button}
+                            onCheckedChange={(v) => handleNotifToggle("alert_on_panic_button", v)}
+                            disabled={notifSaving}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
         {/* OECS Countries */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }} className="md:col-span-2">
