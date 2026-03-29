@@ -78,6 +78,8 @@ const navItems: NavItem[] = [
   { path: "/compliance", label: "Compliance", icon: Shield, managerOnly: true },
   { path: "/guard-performance", label: "Performance", icon: TrendingUp, managerOnly: true },
   { path: "/late-clockin-report", label: "Late Report", icon: Clock, managerOnly: true },
+  { path: "/applicants", label: "Recruitment", icon: UserCheck, managerOnly: true },
+  { path: "/invoicing", label: "Client Invoicing", icon: FileSpreadsheet, managerOnly: true },
   { path: "/portal", label: "My Portal", icon: UserCircle, separator: true, bottomNav: true },
   { path: "/users", label: "User Management", icon: Shield, adminOnly: true },
   { path: "/settings", label: "Settings", icon: Settings, bottomNav: true },

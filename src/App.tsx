@@ -99,6 +99,8 @@ const AppRoutes = () => (
       <Route path="/late-clockin-report" element={<LateClockInReportPage />} />
       <Route path="/compliance" element={<ComplianceTrackingPage />} />
       <Route path="/guard-performance" element={<GuardPerformancePage />} />
+      <Route path="/applicants" element={<ApplicantTrackingPage />} />
+      <Route path="/invoicing" element={<InvoicingPage />} />
       <Route path="/settings" element={<SettingsPage />} />
     </Route>
     <Route path="/client-portal" element={<ClientPortalPage />} />
