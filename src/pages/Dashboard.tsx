@@ -275,11 +275,14 @@ export default function DashboardPage() {
                   <p className="text-xs text-muted-foreground mt-0.5">Generate C3 report →</p>
                 </div>
               </div>
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-success/5 border border-success/10">
+              <div
+                className="flex items-start gap-3 p-3 rounded-lg bg-success/5 border border-success/10 cursor-pointer hover:bg-success/10 transition-colors"
+                onClick={() => navigate("/employees")}
+              >
                 <DollarSign size={16} className="text-success mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="text-sm font-medium text-foreground">All salaries above minimum wage</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">$6.52 XCD/hr threshold met</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">$6.52 XCD/hr threshold met — View employees →</p>
                 </div>
               </div>
             </CardContent>
