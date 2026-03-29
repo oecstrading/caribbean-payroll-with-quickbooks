@@ -293,6 +293,28 @@ export default function CommandCenterPage() {
         </div>
       </div>
 
+      {/* Violation Alert Banner */}
+      {recentViolations.length > 0 && (
+        <div className="px-4 md:px-6 py-2 bg-destructive/10 border-b border-destructive/30">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={16} className="text-destructive animate-pulse" />
+            <p className="text-sm font-semibold text-destructive">
+              {recentViolations.length} Geofence Violation{recentViolations.length > 1 ? "s" : ""} Detected
+            </p>
+            <button onClick={() => setRecentViolations([])} className="ml-auto text-xs text-destructive/70 hover:text-destructive underline">
+              Dismiss
+            </button>
+          </div>
+          <div className="mt-1 space-y-1">
+            {recentViolations.slice(0, 3).map((v) => (
+              <p key={v.id} className="text-xs text-destructive/80">
+                ⚠️ {v.guard_name} — {v.address_label || "Unknown"} — {timeSince(v.punched_at)}
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Map + Sidebar */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         {/* Map */}
