@@ -415,6 +415,64 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </motion.div>
+
+      {/* Today's Roster Widget */}
+      <motion.div {...fadeUp} transition={{ delay: 0.45 }}>
+        <Card className="shadow-card border-border/60">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base font-display flex items-center gap-2">
+                <Shield size={16} className="text-primary" />
+                Today's Guard Roster
+              </CardTitle>
+              <button
+                onClick={() => navigate("/roster")}
+                className="text-xs text-primary font-medium hover:underline"
+              >
+                View full roster →
+              </button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {rosterData.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">No guards scheduled today</p>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex items-center gap-4 mb-3 text-xs text-muted-foreground">
+                  <span>{rosterData.length} scheduled</span>
+                  <span className="flex items-center gap-1"><CheckCircle size={12} className="text-success" /> {rosterData.filter(r => r.clockedIn).length} clocked in</span>
+                  <span className="flex items-center gap-1"><XCircle size={12} className="text-destructive" /> {rosterData.filter(r => !r.clockedIn).length} not yet</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {rosterData.slice(0, 9).map((guard, i) => (
+                    <div key={i} className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${guard.clockedIn ? "bg-success/5 border-success/20" : "bg-destructive/5 border-destructive/20"}`}>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{guard.name}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{guard.siteName}</p>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {guard.shiftStart && (
+                          <span className="text-[10px] text-muted-foreground">{guard.shiftStart}</span>
+                        )}
+                        {guard.clockedIn ? (
+                          <CheckCircle size={16} className="text-success" />
+                        ) : (
+                          <XCircle size={16} className="text-destructive/60" />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {rosterData.length > 9 && (
+                  <button onClick={() => navigate("/roster")} className="w-full text-center text-xs text-primary font-medium hover:underline mt-2">
+                    +{rosterData.length - 9} more guards →
+                  </button>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
     </div>
   );
 }
