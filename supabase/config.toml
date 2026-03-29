@@ -1,1 +1,5 @@
 project_id = "bmhqsmygcnpekzdhtbed"
+
+[auth.hook.custom_access_token]
+enabled = true
+uri = "pg-functions://postgres/public/custom_access_token_hook"
