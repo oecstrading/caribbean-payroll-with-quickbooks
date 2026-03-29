@@ -1,5 +1,4 @@
-// St. Lucia Payroll Calculation Engine
-// Configurable for other OECS countries
+// OECS Multi-Island Payroll Calculation Engine
 
 export interface CountryTaxConfig {
   countryCode: string;
@@ -25,8 +24,15 @@ export interface CountryTaxConfig {
     weeklyThreshold: number;
     standardMultiplier: number;
     nightMultiplier: number;
-    nightStart: number; // 22 = 10 PM
-    nightEnd: number;   // 6 = 6 AM
+    nightStart: number;
+    nightEnd: number;
+    sundayMultiplier: number;
+    holidayMultiplier: number;
+    holidayOvertimeMultiplier: number;
+  };
+  taxIdLabels: {
+    nicLabel: string;
+    taxLabel: string;
   };
 }
 
@@ -60,8 +66,184 @@ export const ST_LUCIA_CONFIG: CountryTaxConfig = {
     nightMultiplier: 1.25,
     nightStart: 22,
     nightEnd: 6,
+    sundayMultiplier: 2.0,
+    holidayMultiplier: 2.0,
+    holidayOvertimeMultiplier: 2.5,
+  },
+  taxIdLabels: {
+    nicLabel: "NIC Number",
+    taxLabel: "TAN Number",
   },
 };
+
+export const ANTIGUA_CONFIG: CountryTaxConfig = {
+  countryCode: "AG",
+  countryName: "Antigua and Barbuda",
+  currency: "XCD",
+  currencySymbol: "$",
+  nic: {
+    employeeRate: 0.06,
+    employerRate: 0.075,
+    monthlyCeiling: 6500,
+    maxContribution: 390,
+  },
+  paye: {
+    annualAllowance: 42000,
+    brackets: [
+      { min: 0, max: Infinity, rate: 0.25 },
+    ],
+  },
+  minimumWage: {
+    hourly: 8.20,
+    daily: 65,
+    monthly: 1414,
+  },
+  overtime: {
+    weeklyThreshold: 40,
+    standardMultiplier: 1.5,
+    nightMultiplier: 1.25,
+    nightStart: 22,
+    nightEnd: 6,
+    sundayMultiplier: 2.0,
+    holidayMultiplier: 2.0,
+    holidayOvertimeMultiplier: 2.5,
+  },
+  taxIdLabels: {
+    nicLabel: "Social Security Number",
+    taxLabel: "Tax ID",
+  },
+};
+
+export const ST_KITTS_CONFIG: CountryTaxConfig = {
+  countryCode: "KN",
+  countryName: "Saint Kitts and Nevis",
+  currency: "XCD",
+  currencySymbol: "$",
+  nic: {
+    employeeRate: 0.05,
+    employerRate: 0.05,
+    monthlyCeiling: 6000,
+    maxContribution: 300,
+  },
+  paye: {
+    annualAllowance: 40000,
+    brackets: [
+      { min: 0, max: 10000, rate: 0.15 },
+      { min: 10000, max: 20000, rate: 0.20 },
+      { min: 20000, max: Infinity, rate: 0.30 },
+    ],
+  },
+  minimumWage: {
+    hourly: 9.00,
+    daily: 72,
+    monthly: 1566,
+  },
+  overtime: {
+    weeklyThreshold: 40,
+    standardMultiplier: 1.5,
+    nightMultiplier: 1.25,
+    nightStart: 22,
+    nightEnd: 6,
+    sundayMultiplier: 2.0,
+    holidayMultiplier: 2.0,
+    holidayOvertimeMultiplier: 2.5,
+  },
+  taxIdLabels: {
+    nicLabel: "Social Security Number",
+    taxLabel: "Tax ID",
+  },
+};
+
+export const DOMINICA_CONFIG: CountryTaxConfig = {
+  countryCode: "DM",
+  countryName: "Commonwealth of Dominica",
+  currency: "XCD",
+  currencySymbol: "$",
+  nic: {
+    employeeRate: 0.0525,
+    employerRate: 0.0725,
+    monthlyCeiling: 5000,
+    maxContribution: 262.50,
+  },
+  paye: {
+    annualAllowance: 25000,
+    brackets: [
+      { min: 0, max: 20000, rate: 0.15 },
+      { min: 20000, max: 30000, rate: 0.25 },
+      { min: 30000, max: Infinity, rate: 0.35 },
+    ],
+  },
+  minimumWage: {
+    hourly: 5.50,
+    daily: 44,
+    monthly: 957,
+  },
+  overtime: {
+    weeklyThreshold: 40,
+    standardMultiplier: 1.5,
+    nightMultiplier: 1.25,
+    nightStart: 22,
+    nightEnd: 6,
+    sundayMultiplier: 2.0,
+    holidayMultiplier: 2.0,
+    holidayOvertimeMultiplier: 2.5,
+  },
+  taxIdLabels: {
+    nicLabel: "Social Security Number",
+    taxLabel: "Tax ID",
+  },
+};
+
+export const GRENADA_CONFIG: CountryTaxConfig = {
+  countryCode: "GD",
+  countryName: "Grenada",
+  currency: "XCD",
+  currencySymbol: "$",
+  nic: {
+    employeeRate: 0.05,
+    employerRate: 0.05,
+    monthlyCeiling: 5000,
+    maxContribution: 250,
+  },
+  paye: {
+    annualAllowance: 36000,
+    brackets: [
+      { min: 0, max: 24000, rate: 0.15 },
+      { min: 24000, max: Infinity, rate: 0.28 },
+    ],
+  },
+  minimumWage: {
+    hourly: 6.00,
+    daily: 48,
+    monthly: 1044,
+  },
+  overtime: {
+    weeklyThreshold: 40,
+    standardMultiplier: 1.5,
+    nightMultiplier: 1.25,
+    nightStart: 22,
+    nightEnd: 6,
+    sundayMultiplier: 2.0,
+    holidayMultiplier: 2.0,
+    holidayOvertimeMultiplier: 2.5,
+  },
+  taxIdLabels: {
+    nicLabel: "NIS Number",
+    taxLabel: "Tax ID",
+  },
+};
+
+export const OECS_CONFIGS: Record<string, CountryTaxConfig> = {
+  LC: ST_LUCIA_CONFIG,
+  AG: ANTIGUA_CONFIG,
+  KN: ST_KITTS_CONFIG,
+  DM: DOMINICA_CONFIG,
+  GD: GRENADA_CONFIG,
+};
+
+export function getConfigByJurisdiction(code: string): CountryTaxConfig {
+  return OECS_CONFIGS[code] || ST_LUCIA_CONFIG;
+}
 
 export interface CreditorDeduction {
   creditorName: string;
@@ -87,19 +269,21 @@ export interface PayrollResult {
   netPay: number;
   overtimePay: number;
   basicPay: number;
+  sundayPay: number;
+  holidayPay: number;
 }
 
-// Net Pay = (Basic + OT + Additions) - (NIC + PAYE + Creditor Deductions)
-// Gross = Basic + OT + Additions (taxable gross)
 export function calculatePayroll(
   grossMonthly: number,
   config: CountryTaxConfig = ST_LUCIA_CONFIG,
   overtimePay: number = 0,
   creditorDeductions: CreditorDeduction[] = [],
-  additions: PayrollAddition[] = []
+  additions: PayrollAddition[] = [],
+  sundayPay: number = 0,
+  holidayPay: number = 0
 ): PayrollResult {
   const totalAdditions = additions.reduce((sum, a) => sum + a.amount, 0);
-  const totalGross = grossMonthly + overtimePay + totalAdditions;
+  const totalGross = grossMonthly + overtimePay + totalAdditions + sundayPay + holidayPay;
 
   // NIC Calculation
   const employeeNIC = Math.min(totalGross * config.nic.employeeRate, config.nic.maxContribution);
@@ -133,6 +317,8 @@ export function calculatePayroll(
     grossMonthly: totalGross,
     basicPay: grossMonthly,
     overtimePay,
+    sundayPay: Math.round(sundayPay * 100) / 100,
+    holidayPay: Math.round(holidayPay * 100) / 100,
     additions,
     totalAdditions: Math.round(totalAdditions * 100) / 100,
     employeeNIC: Math.round(employeeNIC * 100) / 100,
@@ -160,4 +346,21 @@ export function checkMinimumWageCompliance(
 
 export function formatCurrency(amount: number, symbol: string = "$"): string {
   return `${symbol}${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+// Calculate overtime pay for different shift types
+export function calculateShiftPay(
+  hourlyRate: number,
+  hours: number,
+  shiftType: 'standard' | 'night' | 'sunday' | 'holiday' | 'holiday_overtime',
+  config: CountryTaxConfig = ST_LUCIA_CONFIG
+): number {
+  const multipliers: Record<string, number> = {
+    standard: config.overtime.standardMultiplier,
+    night: config.overtime.nightMultiplier,
+    sunday: config.overtime.sundayMultiplier,
+    holiday: config.overtime.holidayMultiplier,
+    holiday_overtime: config.overtime.holidayOvertimeMultiplier,
+  };
+  return Math.round(hourlyRate * hours * (multipliers[shiftType] || 1) * 100) / 100;
 }
