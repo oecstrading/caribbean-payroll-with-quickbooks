@@ -110,7 +110,11 @@ export default function CommandCenterPage() {
 
   const fetchData = useCallback(async () => {
     const today = new Date().toISOString().split("T")[0];
-    const [punchesRes, sitesRes, profilesRes, jurRes] = await Promise.all([
+    const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const todayDay = dayNames[new Date().getDay()];
+    const now = new Date();
+
+    const [punchesRes, sitesRes, profilesRes, jurRes, assignmentsRes] = await Promise.all([
       supabase
         .from("clock_punches")
         .select("id, user_id, punch_type, latitude, longitude, within_geofence, punched_at, address_label")
@@ -122,6 +126,7 @@ export default function CommandCenterPage() {
         .eq("status", "active"),
       supabase.from("profiles").select("user_id, first_name, last_name"),
       supabase.from("jurisdictions").select("id, code, name"),
+      supabase.from("guard_assignments").select("user_id, site_id, shift_start, days_of_week").eq("is_active", true),
     ]);
 
     const profMap: Record<string, string> = {};
@@ -133,13 +138,40 @@ export default function CommandCenterPage() {
     setSites(sitesRes.data || []);
     setJurisdictions((jurRes.data as any[]) || []);
 
+    const allPunches = punchesRes.data || [];
     const latestByUser = new Map<string, ActivePunch>();
-    (punchesRes.data || []).forEach((p: any) => {
+    allPunches.forEach((p: any) => {
       if (!latestByUser.has(p.user_id)) {
         latestByUser.set(p.user_id, { ...p, guard_name: profMap[p.user_id] || "Unknown" });
       }
     });
     setPunches(Array.from(latestByUser.values()));
+
+    // Late clock-in detection
+    const siteMap = new Map((sitesRes.data || []).map(s => [s.id, s.name]));
+    const todayAssignments = (assignmentsRes.data || [])
+      .filter((a: any) => !a.days_of_week || a.days_of_week.length === 0 || a.days_of_week.includes(todayDay));
+    
+    const late: typeof lateGuards = [];
+    for (const a of todayAssignments) {
+      if (!a.shift_start) continue;
+      const [h, m] = (a.shift_start as string).split(":").map(Number);
+      const shiftTime = new Date(now);
+      shiftTime.setHours(h, m, 0, 0);
+      if (now.getTime() <= shiftTime.getTime() + 5 * 60 * 1000) continue; // not past grace period
+      
+      const clockIn = allPunches.find((p: any) => p.user_id === a.user_id && p.punch_type === "clock_in");
+      if (clockIn) {
+        const diffMs = new Date(clockIn.punched_at).getTime() - shiftTime.getTime();
+        if (diffMs > 5 * 60 * 1000) {
+          late.push({ name: profMap[a.user_id] || "Unknown", siteName: siteMap.get(a.site_id) || "Unknown", lateMinutes: Math.floor(diffMs / 60000), noShow: false });
+        }
+      } else {
+        late.push({ name: profMap[a.user_id] || "Unknown", siteName: siteMap.get(a.site_id) || "Unknown", lateMinutes: Math.floor((now.getTime() - shiftTime.getTime()) / 60000), noShow: true });
+      }
+    }
+    setLateGuards(late.sort((a, b) => b.lateMinutes - a.lateMinutes));
+
     setLoading(false);
   }, []);
 
