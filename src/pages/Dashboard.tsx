@@ -543,18 +543,31 @@ export default function DashboardPage() {
                   <span>{rosterData.length} scheduled</span>
                   <span className="flex items-center gap-1"><CheckCircle size={12} className="text-success" /> {rosterData.filter(r => r.clockedIn).length} clocked in</span>
                   <span className="flex items-center gap-1"><XCircle size={12} className="text-destructive" /> {rosterData.filter(r => !r.clockedIn).length} not yet</span>
+                  {lateAlerts.length > 0 && (
+                    <span className="flex items-center gap-1"><TimerOff size={12} className="text-destructive" /> {lateAlerts.length} late</span>
+                  )}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                   {rosterData.slice(0, 9).map((guard, i) => (
-                    <div key={i} className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${guard.clockedIn ? "bg-success/5 border-success/20" : "bg-destructive/5 border-destructive/20"}`}>
+                    <div key={i} className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
+                      guard.lateMinutes && guard.lateMinutes > 0
+                        ? "bg-destructive/10 border-destructive/30"
+                        : guard.clockedIn
+                          ? "bg-success/5 border-success/20"
+                          : "bg-destructive/5 border-destructive/20"
+                    }`}>
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-foreground truncate">{guard.name}</p>
                         <p className="text-[10px] text-muted-foreground truncate">{guard.siteName}</p>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        {guard.shiftStart && (
+                        {guard.lateMinutes && guard.lateMinutes > 0 ? (
+                          <Badge variant="destructive" className="text-[9px] px-1.5 py-0">
+                            {guard.lateMinutes}m late
+                          </Badge>
+                        ) : guard.shiftStart ? (
                           <span className="text-[10px] text-muted-foreground">{guard.shiftStart}</span>
-                        )}
+                        ) : null}
                         {guard.clockedIn ? (
                           <CheckCircle size={16} className="text-success" />
                         ) : (
