@@ -90,6 +90,7 @@ const AppRoutes = () => (
       <Route path="/incidents" element={<IncidentReportsPage />} />
       <Route path="/command-center" element={<CommandCenterPage />} />
       <Route path="/violations" element={<ViolationReportPage />} />
+      <Route path="/roster" element={<RosterPage />} />
       <Route path="/settings" element={<SettingsPage />} />
     </Route>
     <Route path="/client-portal" element={<ClientPortalPage />} />
