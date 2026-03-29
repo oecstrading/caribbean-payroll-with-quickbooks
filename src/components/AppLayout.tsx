@@ -132,6 +132,7 @@ export default function AppLayout() {
   };
 
   return (
+    <>
     <div className="flex h-screen overflow-hidden">
       {/* Mobile Overlay */}
       <AnimatePresence>
