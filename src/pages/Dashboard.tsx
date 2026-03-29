@@ -107,22 +107,57 @@ export default function DashboardPage() {
         dayCounts.push((weekReports || []).filter(r => r.report_date === ds).length);
       }
 
-      // Build roster for today
+      const now = new Date();
       const roster = (todayAssignments || [])
         .filter(a => !a.days_of_week || a.days_of_week.length === 0 || a.days_of_week.includes(todayDay))
         .map(a => {
           const p = (allProfiles || []).find(p => p.user_id === a.user_id);
           const s = (allSites || []).find(s => s.id === a.site_id);
-          const hasClockedIn = (todayPunches || []).some(tp => tp.user_id === a.user_id && tp.punch_type === "clock_in");
+          const clockInPunch = (todayPunches || []).find(tp => tp.user_id === a.user_id && tp.punch_type === "clock_in");
+          const hasClockedIn = !!clockInPunch;
+          
+          // Calculate late minutes
+          let lateMinutes: number | null = null;
+          if (a.shift_start) {
+            const [shiftH, shiftM] = a.shift_start.split(":").map(Number);
+            const shiftTime = new Date(today);
+            shiftTime.setHours(shiftH, shiftM, 0, 0);
+            
+            if (hasClockedIn && clockInPunch.punched_at) {
+              const clockInTime = new Date(clockInPunch.punched_at);
+              const diffMs = clockInTime.getTime() - shiftTime.getTime();
+              if (diffMs > 5 * 60 * 1000) { // 5 min grace period
+                lateMinutes = Math.floor(diffMs / 60000);
+              }
+            } else if (now.getTime() > shiftTime.getTime() + 5 * 60 * 1000) {
+              // Not clocked in and past shift start + grace
+              lateMinutes = Math.floor((now.getTime() - shiftTime.getTime()) / 60000);
+            }
+          }
+          
           return {
             name: p ? `${p.first_name} ${p.last_name}` : "Unknown",
             siteName: s?.name || "Unknown",
             shiftStart: a.shift_start,
             shiftEnd: a.shift_end,
             clockedIn: hasClockedIn,
+            lateMinutes,
           };
         });
       setRosterData(roster);
+
+      // Build late alerts (only guards who are late or were late)
+      const late = roster
+        .filter(g => g.lateMinutes !== null && g.lateMinutes > 0 && g.shiftStart)
+        .map(g => ({
+          name: g.name,
+          siteName: g.siteName,
+          shiftStart: g.shiftStart!,
+          lateMinutes: g.lateMinutes!,
+          clockedInAt: g.clockedIn ? "Arrived late" : null,
+        }))
+        .sort((a, b) => b.lateMinutes - a.lateMinutes);
+      setLateAlerts(late);
 
       setFieldOps({
         activeProjects: activeProjects || 0,
