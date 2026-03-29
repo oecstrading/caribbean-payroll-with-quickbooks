@@ -335,6 +335,7 @@ export default function SiteManagementPage() {
           )}
         </DialogContent>
       </Dialog>
+      <CSVImportDialog open={showImport} onOpenChange={setShowImport} type="clients" onSuccess={fetchAll} />
     </motion.div>
   );
 }
