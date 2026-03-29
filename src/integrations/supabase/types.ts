@@ -1321,6 +1321,10 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_manager: { Args: { _user_id: string }; Returns: boolean }
+      verify_guard_location: {
+        Args: { _lat: number; _lon: number; _site_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       addition_type:
