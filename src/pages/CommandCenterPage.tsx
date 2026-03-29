@@ -389,7 +389,7 @@ export default function CommandCenterPage() {
       </div>
 
       {/* Stats bar */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 px-4 md:px-6 py-3 bg-card/50 border-b border-border">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 px-4 md:px-6 py-3 bg-card/50 border-b border-border">
         <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary/50">
           <Users size={14} className="text-primary" />
           <div><p className="text-xs text-muted-foreground">Active Guards</p><p className="text-base font-display font-bold text-foreground">{clockedIn.length}</p></div>
@@ -402,11 +402,45 @@ export default function CommandCenterPage() {
           <MapPin size={14} className="text-destructive" />
           <div><p className="text-xs text-muted-foreground">Outside Zone</p><p className="text-base font-display font-bold text-destructive">{outsideGeofence.length}</p></div>
         </div>
+        <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${lateGuards.length > 0 ? "bg-destructive/10 border border-destructive/20" : "bg-secondary/50"}`}>
+          <Clock size={14} className={lateGuards.length > 0 ? "text-destructive" : "text-muted-foreground"} />
+          <div>
+            <p className="text-xs text-muted-foreground">Late Clock-Ins</p>
+            <p className={`text-base font-display font-bold ${lateGuards.length > 0 ? "text-destructive" : "text-foreground"}`}>{lateGuards.length}</p>
+          </div>
+        </div>
         <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary/50">
           <Shield size={14} className="text-primary" />
           <div><p className="text-xs text-muted-foreground">Total Sites</p><p className="text-base font-display font-bold text-foreground">{filteredSites.length}</p></div>
         </div>
       </div>
+
+      {/* Late Clock-In Alert Banner */}
+      {lateGuards.length > 0 && (
+        <div className="px-4 md:px-6 py-3 bg-warning/10 border-b border-warning/30">
+          <div className="flex items-center gap-2 mb-2">
+            <Clock size={16} className="text-warning" />
+            <p className="text-sm font-semibold text-warning">
+              ⏰ {lateGuards.length} Late Clock-In{lateGuards.length > 1 ? "s" : ""} Detected
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {lateGuards.slice(0, 8).map((g, i) => (
+              <div key={i} className="flex items-center gap-2 bg-background rounded-lg px-3 py-1.5 border border-warning/20 text-xs">
+                <span className="font-medium text-foreground">{g.name}</span>
+                <span className="text-muted-foreground">@ {g.siteName}</span>
+                <span className="font-semibold text-destructive">
+                  {g.lateMinutes >= 60 ? `${Math.floor(g.lateMinutes / 60)}h ${g.lateMinutes % 60}m` : `${g.lateMinutes}m`}
+                </span>
+                {g.noShow && <span className="text-[10px] text-destructive font-bold">NO SHOW</span>}
+              </div>
+            ))}
+            {lateGuards.length > 8 && (
+              <span className="text-xs text-warning self-center">+{lateGuards.length - 8} more</span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Emergency Alert Banner */}
       {emergencyAlerts.length > 0 && (
