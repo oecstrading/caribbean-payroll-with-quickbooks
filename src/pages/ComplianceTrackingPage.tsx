@@ -85,7 +85,7 @@ export default function ComplianceTrackingPage() {
     if (!form.user_id || !form.license_number || !form.expiry_date) {
       toast.error("Fill required fields"); return;
     }
-    const { error } = await supabase.from("guard_licenses").insert({
+    const { error } = await supabase.from("guard_licenses" as any).insert({
       user_id: form.user_id,
       license_type: form.license_type,
       license_number: form.license_number,
