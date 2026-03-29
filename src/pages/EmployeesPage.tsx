@@ -18,6 +18,7 @@ export default function EmployeesPage() {
   const [search, setSearch] = useState("");
   const [filterDept, setFilterDept] = useState("All");
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [showImport, setShowImport] = useState(false);
   const navigate = useNavigate();
 
   const departments = ["All", ...new Set(sampleEmployees.map((e) => e.department))];
