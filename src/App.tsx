@@ -27,6 +27,10 @@ import DailyReportsPage from "@/pages/DailyReportsPage";
 import CrewsPage from "@/pages/CrewsPage";
 import ContractorsPage from "@/pages/ContractorsPage";
 import ProjectProfitabilityPage from "@/pages/ProjectProfitabilityPage";
+import SiteManagementPage from "@/pages/SiteManagementPage";
+import GuardTourPage from "@/pages/GuardTourPage";
+import IncidentReportsPage from "@/pages/IncidentReportsPage";
+import ClientPortalPage from "@/pages/ClientPortalPage";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
