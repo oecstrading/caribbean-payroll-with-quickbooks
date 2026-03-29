@@ -86,6 +86,7 @@ const AppRoutes = () => (
       <Route path="/sites" element={<SiteManagementPage />} />
       <Route path="/guard-tour" element={<GuardTourPage />} />
       <Route path="/incidents" element={<IncidentReportsPage />} />
+      <Route path="/command-center" element={<CommandCenterPage />} />
       <Route path="/settings" element={<SettingsPage />} />
     </Route>
     <Route path="/client-portal" element={<ClientPortalPage />} />
