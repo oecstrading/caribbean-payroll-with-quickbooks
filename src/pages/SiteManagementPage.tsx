@@ -53,7 +53,8 @@ export default function SiteManagementPage() {
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [selectedSite, setSelectedSite] = useState<ClientSite | null>(null);
-  const [form, setForm] = useState({ name: "", address: "", latitude: "", longitude: "", radius_meters: "200", post_orders: "", client_name: "", client_email: "", client_phone: "" });
+  const [form, setForm] = useState({ name: "", address: "", latitude: "", longitude: "", radius_meters: "200", post_orders: "", client_name: "", client_email: "", client_phone: "", jurisdiction_id: "" });
+  const [jurisdictions, setJurisdictions] = useState<{ id: string; code: string; name: string }[]>([]);
   const [assignUserId, setAssignUserId] = useState("");
   const [assignShiftStart, setAssignShiftStart] = useState("18:00");
   const [assignShiftEnd, setAssignShiftEnd] = useState("06:00");
