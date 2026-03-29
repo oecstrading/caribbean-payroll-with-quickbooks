@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
-import { MapPin, Navigation, CheckCircle, AlertCircle, Clock, Shield, RefreshCw } from "lucide-react";
+import { MapPin, Navigation, CheckCircle, AlertCircle, Clock, Shield, RefreshCw, Mic } from "lucide-react";
+import VoiceInput from "@/components/VoiceInput";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
