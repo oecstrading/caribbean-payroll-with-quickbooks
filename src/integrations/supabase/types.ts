@@ -802,11 +802,17 @@ export type Database = {
       }
       incident_reports: {
         Row: {
+          ai_draft: string | null
+          audio_url: string | null
           description: string | null
           id: string
+          is_ai_generated: boolean | null
           photo_urls: string[] | null
+          raw_transcript: string | null
           reported_at: string
           resolved_at: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           severity: string
           site_id: string
           status: string
@@ -814,11 +820,17 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          ai_draft?: string | null
+          audio_url?: string | null
           description?: string | null
           id?: string
+          is_ai_generated?: boolean | null
           photo_urls?: string[] | null
+          raw_transcript?: string | null
           reported_at?: string
           resolved_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           severity?: string
           site_id: string
           status?: string
@@ -826,11 +838,17 @@ export type Database = {
           user_id: string
         }
         Update: {
+          ai_draft?: string | null
+          audio_url?: string | null
           description?: string | null
           id?: string
+          is_ai_generated?: boolean | null
           photo_urls?: string[] | null
+          raw_transcript?: string | null
           reported_at?: string
           resolved_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           severity?: string
           site_id?: string
           status?: string
