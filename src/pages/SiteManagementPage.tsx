@@ -236,6 +236,10 @@ export default function SiteManagementPage() {
           <div className="space-y-3 mt-2">
             <Input placeholder="Site Name *" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
             <Input placeholder="Address" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} />
+            <select value={form.jurisdiction_id} onChange={e => setForm(f => ({ ...f, jurisdiction_id: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background">
+              <option value="">Select Jurisdiction (Island)...</option>
+              {jurisdictions.map(j => <option key={j.id} value={j.id}>{j.name} ({j.code})</option>)}
+            </select>
             <div className="grid grid-cols-2 gap-2">
               <Input placeholder="Latitude" type="number" step="any" value={form.latitude} onChange={e => setForm(f => ({ ...f, latitude: e.target.value }))} />
               <Input placeholder="Longitude" type="number" step="any" value={form.longitude} onChange={e => setForm(f => ({ ...f, longitude: e.target.value }))} />
