@@ -79,7 +79,7 @@ export default function SiteManagementPage() {
 
   const handleAddSite = async () => {
     if (!form.name.trim()) { toast.error("Site name is required"); return; }
-    const { error } = await supabase.from("client_sites").insert({
+    const insertData: any = {
       name: form.name,
       address: form.address,
       latitude: form.latitude ? parseFloat(form.latitude) : null,
@@ -89,11 +89,13 @@ export default function SiteManagementPage() {
       client_name: form.client_name,
       client_email: form.client_email,
       client_phone: form.client_phone,
-    });
+    };
+    if (form.jurisdiction_id) insertData.jurisdiction_id = form.jurisdiction_id;
+    const { error } = await supabase.from("client_sites").insert(insertData);
     if (error) { toast.error("Failed to add site"); return; }
     toast.success("Client site added");
     setShowAdd(false);
-    setForm({ name: "", address: "", latitude: "", longitude: "", radius_meters: "200", post_orders: "", client_name: "", client_email: "", client_phone: "" });
+    setForm({ name: "", address: "", latitude: "", longitude: "", radius_meters: "200", post_orders: "", client_name: "", client_email: "", client_phone: "", jurisdiction_id: "" });
     fetchAll();
   };
 
