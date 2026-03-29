@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { MapPin, Plus, Shield, FileText, Users, CheckCircle, Clock, Edit, Trash2 } from "lucide-react";
+import { MapPin, Plus, Shield, FileText, Users, CheckCircle, Clock, Edit, Trash2, Upload } from "lucide-react";
+import CSVImportDialog from "@/components/CSVImportDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
