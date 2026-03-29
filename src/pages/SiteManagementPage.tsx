@@ -59,6 +59,7 @@ export default function SiteManagementPage() {
   const [assignUserId, setAssignUserId] = useState("");
   const [assignShiftStart, setAssignShiftStart] = useState("18:00");
   const [assignShiftEnd, setAssignShiftEnd] = useState("06:00");
+  const [showImport, setShowImport] = useState(false);
 
   const fetchAll = async () => {
     const [sitesRes, assignRes, signoffsRes, profilesRes, jurRes] = await Promise.all([
