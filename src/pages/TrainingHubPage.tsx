@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { BookOpen, Upload, Download, Trash2, FileText, Search, Filter } from "lucide-react";
+import { BookOpen, Upload, Download, Trash2, FileText, Search, Filter, Sparkles } from "lucide-react";
 import { format } from "date-fns";
 
 const CATEGORIES = [
