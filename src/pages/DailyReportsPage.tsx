@@ -214,16 +214,20 @@ export default function DailyReportsPage() {
               </div>
               <div><label className="text-xs text-muted-foreground">Crew Size</label><Input type="number" value={form.crew_size} onChange={e => setForm({...form, crew_size: e.target.value})} /></div>
             </div>
-            <div><label className="text-xs text-muted-foreground">Work Completed *</label>
+            <div>
+              <div className="flex items-center gap-2"><label className="text-xs text-muted-foreground">Work Completed *</label><VoiceInput onTranscript={(t) => setForm(f => ({...f, work_completed: f.work_completed ? f.work_completed + " " + t : t}))} /></div>
               <textarea value={form.work_completed} onChange={e => setForm({...form, work_completed: e.target.value})} rows={3}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" /></div>
-            <div><label className="text-xs text-muted-foreground">Safety Notes</label>
+            <div>
+              <div className="flex items-center gap-2"><label className="text-xs text-muted-foreground">Safety Notes</label><VoiceInput onTranscript={(t) => setForm(f => ({...f, safety_notes: f.safety_notes ? f.safety_notes + " " + t : t}))} /></div>
               <textarea value={form.safety_notes} onChange={e => setForm({...form, safety_notes: e.target.value})} rows={2}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" /></div>
-            <div><label className="text-xs text-muted-foreground">Issues / Delays</label>
+            <div>
+              <div className="flex items-center gap-2"><label className="text-xs text-muted-foreground">Issues / Delays</label><VoiceInput onTranscript={(t) => setForm(f => ({...f, issues: f.issues ? f.issues + " " + t : t}))} /></div>
               <textarea value={form.issues} onChange={e => setForm({...form, issues: e.target.value})} rows={2}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" /></div>
-            <div><label className="text-xs text-muted-foreground">Materials Used</label>
+            <div>
+              <div className="flex items-center gap-2"><label className="text-xs text-muted-foreground">Materials Used</label><VoiceInput onTranscript={(t) => setForm(f => ({...f, materials_used: f.materials_used ? f.materials_used + " " + t : t}))} /></div>
               <Input value={form.materials_used} onChange={e => setForm({...form, materials_used: e.target.value})} /></div>
 
             {/* Photo Upload */}

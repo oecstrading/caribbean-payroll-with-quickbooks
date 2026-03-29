@@ -449,6 +449,7 @@ export default function GuardTourPage() {
                           onChange={(e) => setCheckpointName(e.target.value)}
                           className="text-sm"
                         />
+                        <VoiceInput onTranscript={(t) => setCheckpointName(t)} />
                         <button
                           onClick={() => handleCheckpoint(site.id)}
                           disabled={!userPos}
@@ -457,12 +458,15 @@ export default function GuardTourPage() {
                           Log
                         </button>
                       </div>
-                      <Input
-                        placeholder="Notes (optional)"
-                        value={checkpointNotes}
-                        onChange={(e) => setCheckpointNotes(e.target.value)}
-                        className="text-sm"
-                      />
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Notes (optional)"
+                          value={checkpointNotes}
+                          onChange={(e) => setCheckpointNotes(e.target.value)}
+                          className="text-sm"
+                        />
+                        <VoiceInput onTranscript={(t) => setCheckpointNotes(t)} />
+                      </div>
                     </div>
                   </div>
                 )}
