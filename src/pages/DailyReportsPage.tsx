@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { ClipboardList, Plus, Cloud, Sun, CloudRain, Snowflake, Wind, Eye, Camera, Image, X } from "lucide-react";
+import { ClipboardList, Plus, Cloud, Sun, CloudRain, Snowflake, Wind, Eye, Camera, Image, X, Mic } from "lucide-react";
+import VoiceInput from "@/components/VoiceInput";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
