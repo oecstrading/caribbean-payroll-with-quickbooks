@@ -153,9 +153,14 @@ export default function SiteManagementPage() {
           <p className="text-sm text-muted-foreground">Manage client sites, post orders, and guard assignments</p>
         </div>
         {isAdminOrManager && (
-          <button onClick={() => setShowAdd(true)} className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
-            <Plus size={16} /> Add Site
-          </button>
+          <div className="flex gap-2">
+            <button onClick={() => setShowImport(true)} className="flex items-center gap-2 px-4 py-2.5 bg-secondary text-secondary-foreground rounded-lg text-sm font-medium hover:bg-secondary/80 transition-colors">
+              <Upload size={16} /> Import CSV
+            </button>
+            <button onClick={() => setShowAdd(true)} className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
+              <Plus size={16} /> Add Site
+            </button>
+          </div>
         )}
       </div>
 
