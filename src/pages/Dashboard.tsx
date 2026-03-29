@@ -412,8 +412,8 @@ export default function DashboardPage() {
                 ))}
               </div>
               {lateAlerts.length > 6 && (
-                <button onClick={() => navigate("/attendance")} className="w-full text-center text-xs text-destructive font-medium hover:underline mt-2">
-                  +{lateAlerts.length - 6} more late guards →
+                <button onClick={() => navigate("/late-clockin-report")} className="w-full text-center text-xs text-destructive font-medium hover:underline mt-2">
+                  +{lateAlerts.length - 6} more late guards — View Report →
                 </button>
               )}
             </CardContent>
