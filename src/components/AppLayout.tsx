@@ -41,6 +41,7 @@ import { useRole } from "@/hooks/useRole";
 import { useCompany } from "@/hooks/useCompany";
 import { useAuth } from "@/hooks/useAuth";
 import PanicButton from "@/components/PanicButton";
+import VoiceCommandListener from "@/components/VoiceCommandListener";
 
 interface NavItem {
   path: string;
