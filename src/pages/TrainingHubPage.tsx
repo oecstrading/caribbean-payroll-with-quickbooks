@@ -34,6 +34,7 @@ export default function TrainingHubPage() {
   const [uploadForm, setUploadForm] = useState({ title: "", description: "", category: "general" });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [seeding, setSeeding] = useState(false);
 
   const { data: documents = [], isLoading } = useQuery({
     queryKey: ["training-documents"],
