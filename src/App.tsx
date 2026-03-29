@@ -33,6 +33,7 @@ import IncidentReportsPage from "@/pages/IncidentReportsPage";
 import ClientPortalPage from "@/pages/ClientPortalPage";
 import CommandCenterPage from "@/pages/CommandCenterPage";
 import ViolationReportPage from "@/pages/ViolationReportPage";
+import RosterPage from "@/pages/RosterPage";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
