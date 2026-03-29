@@ -19,13 +19,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Use service role for PostGIS queries (anon role can't call ST_DWithin)
     const adminClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Verify the JWT to get user id
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
@@ -50,16 +48,20 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Use PostGIS ST_DWithin for server-side geofence check
+    // Try PostGIS RPC first, fallback to Haversine
+    let distance = 0;
+    let withinGeofence = false;
+    let siteName = "";
+    let radiusMeters = 200;
+
     const { data: verifyResult, error: verifyError } = await adminClient.rpc("verify_guard_location", {
       _site_id: site_id,
       _lat: latitude,
       _lon: longitude,
     });
 
-    // Fallback: if the RPC doesn't exist yet, do a manual check
     if (verifyError) {
-      // Fetch site and do Haversine fallback
+      // Fallback: Haversine
       const { data: site, error: siteError } = await adminClient
         .from("client_sites")
         .select("id, name, latitude, longitude, radius_meters")
@@ -80,7 +82,6 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Haversine fallback
       const R = 6371e3;
       const dLat = ((site.latitude - latitude) * Math.PI) / 180;
       const dLon = ((site.longitude - longitude) * Math.PI) / 180;
@@ -89,68 +90,26 @@ Deno.serve(async (req) => {
         Math.cos((latitude * Math.PI) / 180) *
           Math.cos((site.latitude * Math.PI) / 180) *
           Math.sin(dLon / 2) ** 2;
-      const distance = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-      if (distance > site.radius_meters) {
-        return new Response(
-          JSON.stringify({
-            error: `You are ${Math.round(distance)}m from the site. Must be within ${site.radius_meters}m.`,
-            distance: Math.round(distance),
-            within_geofence: false,
-          }),
-          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      // Insert punch
-      const { data: punch, error: punchError } = await adminClient
-        .from("clock_punches")
-        .insert({
-          user_id: userId,
-          punch_type,
-          latitude,
-          longitude,
-          within_geofence: true,
-          address_label: site.name,
-        })
-        .select()
-        .single();
-
-      if (punchError) {
-        return new Response(JSON.stringify({ error: "Failed to save clock punch" }), {
+      distance = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      withinGeofence = distance <= site.radius_meters;
+      siteName = site.name;
+      radiusMeters = site.radius_meters;
+    } else {
+      // PostGIS succeeded
+      const result = verifyResult;
+      if (!result) {
+        return new Response(JSON.stringify({ error: "Location verification failed" }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-
-      return new Response(
-        JSON.stringify({
-          success: true,
-          distance: Math.round(distance),
-          within_geofence: true,
-          punch_id: punch.id,
-          site_name: site.name,
-        }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      distance = result.distance_meters ?? 0;
+      withinGeofence = result.within_geofence ?? false;
+      siteName = result.site_name ?? "";
+      radiusMeters = result.radius_meters ?? 200;
     }
 
-    // PostGIS RPC succeeded
-    const result = verifyResult;
-    if (!result || !result.within_geofence) {
-      const dist = result?.distance_meters ?? 0;
-      const radius = result?.radius_meters ?? 200;
-      return new Response(
-        JSON.stringify({
-          error: `You are ${Math.round(dist)}m from the site. Must be within ${radius}m.`,
-          distance: Math.round(dist),
-          within_geofence: false,
-        }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Verified — save the clock punch
+    // ALWAYS record the punch — even violations (marked with within_geofence = false)
     const { data: punch, error: punchError } = await adminClient
       .from("clock_punches")
       .insert({
@@ -158,8 +117,8 @@ Deno.serve(async (req) => {
         punch_type,
         latitude,
         longitude,
-        within_geofence: true,
-        address_label: result.site_name,
+        within_geofence: withinGeofence,
+        address_label: siteName,
       })
       .select()
       .single();
@@ -171,13 +130,28 @@ Deno.serve(async (req) => {
       });
     }
 
+    // If outside geofence, return 403 but the punch IS recorded for auditing
+    if (!withinGeofence) {
+      return new Response(
+        JSON.stringify({
+          error: `You are ${Math.round(distance)}m from the site. Must be within ${radiusMeters}m. This attempt has been recorded.`,
+          distance: Math.round(distance),
+          within_geofence: false,
+          punch_id: punch.id,
+          site_name: siteName,
+          recorded: true,
+        }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
-        distance: Math.round(result.distance_meters),
+        distance: Math.round(distance),
         within_geofence: true,
         punch_id: punch.id,
-        site_name: result.site_name,
+        site_name: siteName,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
