@@ -371,6 +371,56 @@ export default function DashboardPage() {
         </motion.div>
       </div>
 
+      {/* Late Clock-In Alerts */}
+      {lateAlerts.length > 0 && (
+        <motion.div {...fadeUp} transition={{ delay: 0.38 }}>
+          <Card className="shadow-card border-destructive/30 bg-destructive/5">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base font-display flex items-center gap-2">
+                  <TimerOff size={16} className="text-destructive" />
+                  Late Clock-In Alerts
+                  <Badge variant="destructive" className="text-[10px]">{lateAlerts.length}</Badge>
+                </CardTitle>
+                <button
+                  onClick={() => navigate("/attendance")}
+                  className="text-xs text-destructive font-medium hover:underline"
+                >
+                  View attendance →
+                </button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                {lateAlerts.slice(0, 6).map((alert, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-background border border-destructive/20">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{alert.name}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">{alert.siteName}</p>
+                    </div>
+                    <div className="flex flex-col items-end flex-shrink-0">
+                      <Badge variant="destructive" className="text-[10px]">
+                        {alert.lateMinutes >= 60
+                          ? `${Math.floor(alert.lateMinutes / 60)}h ${alert.lateMinutes % 60}m late`
+                          : `${alert.lateMinutes}m late`}
+                      </Badge>
+                      <span className="text-[10px] text-muted-foreground mt-0.5">
+                        Shift: {alert.shiftStart} • {alert.clockedInAt || "No show"}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {lateAlerts.length > 6 && (
+                <button onClick={() => navigate("/attendance")} className="w-full text-center text-xs text-destructive font-medium hover:underline mt-2">
+                  +{lateAlerts.length - 6} more late guards →
+                </button>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
       {/* Field Operations Widget */}
       <motion.div {...fadeUp} transition={{ delay: 0.4 }}>
         <Card className="shadow-card border-border/60">
