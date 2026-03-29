@@ -95,6 +95,7 @@ export default function CommandCenterPage() {
   const [isLive, setIsLive] = useState(true);
   const [filterJurisdiction, setFilterJurisdiction] = useState<string>("all");
   const [recentViolations, setRecentViolations] = useState<ActivePunch[]>([]);
+  const [lateGuards, setLateGuards] = useState<{ name: string; siteName: string; lateMinutes: number; noShow: boolean }[]>([]);
   // Emergency alerts
   const [emergencyAlerts, setEmergencyAlerts] = useState<any[]>([]);
   const [resolveAlertId, setResolveAlertId] = useState<string | null>(null);
@@ -109,7 +110,11 @@ export default function CommandCenterPage() {
 
   const fetchData = useCallback(async () => {
     const today = new Date().toISOString().split("T")[0];
-    const [punchesRes, sitesRes, profilesRes, jurRes] = await Promise.all([
+    const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const todayDay = dayNames[new Date().getDay()];
+    const now = new Date();
+
+    const [punchesRes, sitesRes, profilesRes, jurRes, assignmentsRes] = await Promise.all([
       supabase
         .from("clock_punches")
         .select("id, user_id, punch_type, latitude, longitude, within_geofence, punched_at, address_label")
@@ -121,6 +126,7 @@ export default function CommandCenterPage() {
         .eq("status", "active"),
       supabase.from("profiles").select("user_id, first_name, last_name"),
       supabase.from("jurisdictions").select("id, code, name"),
+      supabase.from("guard_assignments").select("user_id, site_id, shift_start, days_of_week").eq("is_active", true),
     ]);
 
     const profMap: Record<string, string> = {};
@@ -132,13 +138,40 @@ export default function CommandCenterPage() {
     setSites(sitesRes.data || []);
     setJurisdictions((jurRes.data as any[]) || []);
 
+    const allPunches = punchesRes.data || [];
     const latestByUser = new Map<string, ActivePunch>();
-    (punchesRes.data || []).forEach((p: any) => {
+    allPunches.forEach((p: any) => {
       if (!latestByUser.has(p.user_id)) {
         latestByUser.set(p.user_id, { ...p, guard_name: profMap[p.user_id] || "Unknown" });
       }
     });
     setPunches(Array.from(latestByUser.values()));
+
+    // Late clock-in detection
+    const siteMap = new Map((sitesRes.data || []).map(s => [s.id, s.name]));
+    const todayAssignments = (assignmentsRes.data || [])
+      .filter((a: any) => !a.days_of_week || a.days_of_week.length === 0 || a.days_of_week.includes(todayDay));
+    
+    const late: typeof lateGuards = [];
+    for (const a of todayAssignments) {
+      if (!a.shift_start) continue;
+      const [h, m] = (a.shift_start as string).split(":").map(Number);
+      const shiftTime = new Date(now);
+      shiftTime.setHours(h, m, 0, 0);
+      if (now.getTime() <= shiftTime.getTime() + 5 * 60 * 1000) continue; // not past grace period
+      
+      const clockIn = allPunches.find((p: any) => p.user_id === a.user_id && p.punch_type === "clock_in");
+      if (clockIn) {
+        const diffMs = new Date(clockIn.punched_at).getTime() - shiftTime.getTime();
+        if (diffMs > 5 * 60 * 1000) {
+          late.push({ name: profMap[a.user_id] || "Unknown", siteName: siteMap.get(a.site_id) || "Unknown", lateMinutes: Math.floor(diffMs / 60000), noShow: false });
+        }
+      } else {
+        late.push({ name: profMap[a.user_id] || "Unknown", siteName: siteMap.get(a.site_id) || "Unknown", lateMinutes: Math.floor((now.getTime() - shiftTime.getTime()) / 60000), noShow: true });
+      }
+    }
+    setLateGuards(late.sort((a, b) => b.lateMinutes - a.lateMinutes));
+
     setLoading(false);
   }, []);
 
@@ -356,7 +389,7 @@ export default function CommandCenterPage() {
       </div>
 
       {/* Stats bar */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 px-4 md:px-6 py-3 bg-card/50 border-b border-border">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 px-4 md:px-6 py-3 bg-card/50 border-b border-border">
         <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary/50">
           <Users size={14} className="text-primary" />
           <div><p className="text-xs text-muted-foreground">Active Guards</p><p className="text-base font-display font-bold text-foreground">{clockedIn.length}</p></div>
@@ -369,11 +402,45 @@ export default function CommandCenterPage() {
           <MapPin size={14} className="text-destructive" />
           <div><p className="text-xs text-muted-foreground">Outside Zone</p><p className="text-base font-display font-bold text-destructive">{outsideGeofence.length}</p></div>
         </div>
+        <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${lateGuards.length > 0 ? "bg-destructive/10 border border-destructive/20" : "bg-secondary/50"}`}>
+          <Clock size={14} className={lateGuards.length > 0 ? "text-destructive" : "text-muted-foreground"} />
+          <div>
+            <p className="text-xs text-muted-foreground">Late Clock-Ins</p>
+            <p className={`text-base font-display font-bold ${lateGuards.length > 0 ? "text-destructive" : "text-foreground"}`}>{lateGuards.length}</p>
+          </div>
+        </div>
         <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary/50">
           <Shield size={14} className="text-primary" />
           <div><p className="text-xs text-muted-foreground">Total Sites</p><p className="text-base font-display font-bold text-foreground">{filteredSites.length}</p></div>
         </div>
       </div>
+
+      {/* Late Clock-In Alert Banner */}
+      {lateGuards.length > 0 && (
+        <div className="px-4 md:px-6 py-3 bg-warning/10 border-b border-warning/30">
+          <div className="flex items-center gap-2 mb-2">
+            <Clock size={16} className="text-warning" />
+            <p className="text-sm font-semibold text-warning">
+              ⏰ {lateGuards.length} Late Clock-In{lateGuards.length > 1 ? "s" : ""} Detected
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {lateGuards.slice(0, 8).map((g, i) => (
+              <div key={i} className="flex items-center gap-2 bg-background rounded-lg px-3 py-1.5 border border-warning/20 text-xs">
+                <span className="font-medium text-foreground">{g.name}</span>
+                <span className="text-muted-foreground">@ {g.siteName}</span>
+                <span className="font-semibold text-destructive">
+                  {g.lateMinutes >= 60 ? `${Math.floor(g.lateMinutes / 60)}h ${g.lateMinutes % 60}m` : `${g.lateMinutes}m`}
+                </span>
+                {g.noShow && <span className="text-[10px] text-destructive font-bold">NO SHOW</span>}
+              </div>
+            ))}
+            {lateGuards.length > 8 && (
+              <span className="text-xs text-warning self-center">+{lateGuards.length - 8} more</span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Emergency Alert Banner */}
       {emergencyAlerts.length > 0 && (

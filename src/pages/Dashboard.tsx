@@ -17,6 +17,7 @@ import {
   Shield,
   CheckCircle,
   XCircle,
+  TimerOff,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -72,7 +73,8 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const [refreshKey, setRefreshKey] = useState(0);
   const [fieldOps, setFieldOps] = useState({ activeProjects: 0, pendingPayments: 0, pendingAmount: 0, checkedOut: 0, totalEquipment: 0, todayReports: 0, weeklyReports: [] as number[] });
-  const [rosterData, setRosterData] = useState<{ name: string; siteName: string; shiftStart: string | null; shiftEnd: string | null; clockedIn: boolean }[]>([]);
+  const [rosterData, setRosterData] = useState<{ name: string; siteName: string; shiftStart: string | null; shiftEnd: string | null; clockedIn: boolean; lateMinutes: number | null }[]>([]);
+  const [lateAlerts, setLateAlerts] = useState<{ name: string; siteName: string; shiftStart: string; lateMinutes: number; clockedInAt: string | null }[]>([]);
 
   useEffect(() => {
     const fetchFieldOps = async () => {
@@ -94,7 +96,7 @@ export default function DashboardPage() {
         supabase.from("guard_assignments").select("user_id, site_id, shift_start, shift_end, days_of_week").eq("is_active", true),
         supabase.from("profiles").select("user_id, first_name, last_name").eq("status", "Active"),
         supabase.from("client_sites").select("id, name"),
-        supabase.from("clock_punches").select("user_id, punch_type").gte("punched_at", todayStr).lte("punched_at", todayStr + "T23:59:59"),
+        supabase.from("clock_punches").select("user_id, punch_type, punched_at").gte("punched_at", todayStr).lte("punched_at", todayStr + "T23:59:59"),
       ]);
 
       // Build 7-day counts array
@@ -106,22 +108,57 @@ export default function DashboardPage() {
         dayCounts.push((weekReports || []).filter(r => r.report_date === ds).length);
       }
 
-      // Build roster for today
+      const now = new Date();
       const roster = (todayAssignments || [])
         .filter(a => !a.days_of_week || a.days_of_week.length === 0 || a.days_of_week.includes(todayDay))
         .map(a => {
           const p = (allProfiles || []).find(p => p.user_id === a.user_id);
           const s = (allSites || []).find(s => s.id === a.site_id);
-          const hasClockedIn = (todayPunches || []).some(tp => tp.user_id === a.user_id && tp.punch_type === "clock_in");
+          const clockInPunch = (todayPunches || []).find(tp => tp.user_id === a.user_id && tp.punch_type === "clock_in");
+          const hasClockedIn = !!clockInPunch;
+          
+          // Calculate late minutes
+          let lateMinutes: number | null = null;
+          if (a.shift_start) {
+            const [shiftH, shiftM] = a.shift_start.split(":").map(Number);
+            const shiftTime = new Date(today);
+            shiftTime.setHours(shiftH, shiftM, 0, 0);
+            
+            if (hasClockedIn && clockInPunch.punched_at) {
+              const clockInTime = new Date(clockInPunch.punched_at);
+              const diffMs = clockInTime.getTime() - shiftTime.getTime();
+              if (diffMs > 5 * 60 * 1000) { // 5 min grace period
+                lateMinutes = Math.floor(diffMs / 60000);
+              }
+            } else if (now.getTime() > shiftTime.getTime() + 5 * 60 * 1000) {
+              // Not clocked in and past shift start + grace
+              lateMinutes = Math.floor((now.getTime() - shiftTime.getTime()) / 60000);
+            }
+          }
+          
           return {
             name: p ? `${p.first_name} ${p.last_name}` : "Unknown",
             siteName: s?.name || "Unknown",
             shiftStart: a.shift_start,
             shiftEnd: a.shift_end,
             clockedIn: hasClockedIn,
+            lateMinutes,
           };
         });
       setRosterData(roster);
+
+      // Build late alerts (only guards who are late or were late)
+      const late = roster
+        .filter(g => g.lateMinutes !== null && g.lateMinutes > 0 && g.shiftStart)
+        .map(g => ({
+          name: g.name,
+          siteName: g.siteName,
+          shiftStart: g.shiftStart!,
+          lateMinutes: g.lateMinutes!,
+          clockedInAt: g.clockedIn ? "Arrived late" : null,
+        }))
+        .sort((a, b) => b.lateMinutes - a.lateMinutes);
+      setLateAlerts(late);
 
       setFieldOps({
         activeProjects: activeProjects || 0,
@@ -255,6 +292,20 @@ export default function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              {lateAlerts.length > 0 && (
+                <div
+                  className="flex items-start gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20 cursor-pointer hover:bg-destructive/15 transition-colors"
+                  onClick={() => navigate("/attendance")}
+                >
+                  <TimerOff size={16} className="text-destructive mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{lateAlerts.length} late clock-in{lateAlerts.length > 1 ? "s" : ""} today</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {lateAlerts.filter(a => !a.clockedInAt).length} guards still missing • Review →
+                    </p>
+                  </div>
+                </div>
+              )}
               <div
                 className="flex items-start gap-3 p-3 rounded-lg bg-warning/10 border border-warning/20 cursor-pointer hover:bg-warning/15 transition-colors"
                 onClick={() => navigate("/attendance")}
@@ -319,6 +370,56 @@ export default function DashboardPage() {
           </Card>
         </motion.div>
       </div>
+
+      {/* Late Clock-In Alerts */}
+      {lateAlerts.length > 0 && (
+        <motion.div {...fadeUp} transition={{ delay: 0.38 }}>
+          <Card className="shadow-card border-destructive/30 bg-destructive/5">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base font-display flex items-center gap-2">
+                  <TimerOff size={16} className="text-destructive" />
+                  Late Clock-In Alerts
+                  <Badge variant="destructive" className="text-[10px]">{lateAlerts.length}</Badge>
+                </CardTitle>
+                <button
+                  onClick={() => navigate("/attendance")}
+                  className="text-xs text-destructive font-medium hover:underline"
+                >
+                  View attendance →
+                </button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                {lateAlerts.slice(0, 6).map((alert, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-background border border-destructive/20">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{alert.name}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">{alert.siteName}</p>
+                    </div>
+                    <div className="flex flex-col items-end flex-shrink-0">
+                      <Badge variant="destructive" className="text-[10px]">
+                        {alert.lateMinutes >= 60
+                          ? `${Math.floor(alert.lateMinutes / 60)}h ${alert.lateMinutes % 60}m late`
+                          : `${alert.lateMinutes}m late`}
+                      </Badge>
+                      <span className="text-[10px] text-muted-foreground mt-0.5">
+                        Shift: {alert.shiftStart} • {alert.clockedInAt || "No show"}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {lateAlerts.length > 6 && (
+                <button onClick={() => navigate("/attendance")} className="w-full text-center text-xs text-destructive font-medium hover:underline mt-2">
+                  +{lateAlerts.length - 6} more late guards →
+                </button>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
       {/* Field Operations Widget */}
       <motion.div {...fadeUp} transition={{ delay: 0.4 }}>
@@ -442,18 +543,31 @@ export default function DashboardPage() {
                   <span>{rosterData.length} scheduled</span>
                   <span className="flex items-center gap-1"><CheckCircle size={12} className="text-success" /> {rosterData.filter(r => r.clockedIn).length} clocked in</span>
                   <span className="flex items-center gap-1"><XCircle size={12} className="text-destructive" /> {rosterData.filter(r => !r.clockedIn).length} not yet</span>
+                  {lateAlerts.length > 0 && (
+                    <span className="flex items-center gap-1"><TimerOff size={12} className="text-destructive" /> {lateAlerts.length} late</span>
+                  )}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                   {rosterData.slice(0, 9).map((guard, i) => (
-                    <div key={i} className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${guard.clockedIn ? "bg-success/5 border-success/20" : "bg-destructive/5 border-destructive/20"}`}>
+                    <div key={i} className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
+                      guard.lateMinutes && guard.lateMinutes > 0
+                        ? "bg-destructive/10 border-destructive/30"
+                        : guard.clockedIn
+                          ? "bg-success/5 border-success/20"
+                          : "bg-destructive/5 border-destructive/20"
+                    }`}>
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-foreground truncate">{guard.name}</p>
                         <p className="text-[10px] text-muted-foreground truncate">{guard.siteName}</p>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        {guard.shiftStart && (
+                        {guard.lateMinutes && guard.lateMinutes > 0 ? (
+                          <Badge variant="destructive" className="text-[9px] px-1.5 py-0">
+                            {guard.lateMinutes}m late
+                          </Badge>
+                        ) : guard.shiftStart ? (
                           <span className="text-[10px] text-muted-foreground">{guard.shiftStart}</span>
-                        )}
+                        ) : null}
                         {guard.clockedIn ? (
                           <CheckCircle size={16} className="text-success" />
                         ) : (
