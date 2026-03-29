@@ -383,10 +383,10 @@ export default function DashboardPage() {
                   <Badge variant="destructive" className="text-[10px]">{lateAlerts.length}</Badge>
                 </CardTitle>
                 <button
-                  onClick={() => navigate("/attendance")}
+                  onClick={() => navigate("/late-clockin-report")}
                   className="text-xs text-destructive font-medium hover:underline"
                 >
-                  View attendance →
+                  View full report →
                 </button>
               </div>
             </CardHeader>
