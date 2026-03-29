@@ -37,6 +37,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRole } from "@/hooks/useRole";
 import { useCompany } from "@/hooks/useCompany";
 import { useAuth } from "@/hooks/useAuth";
+import PanicButton from "@/components/PanicButton";
 
 interface NavItem {
   path: string;
