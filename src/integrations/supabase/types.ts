@@ -1310,7 +1310,34 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      geofence_violations: {
+        Row: {
+          actual_distance_meters: number | null
+          allowed_radius: number | null
+          client_site_name: string | null
+          guard_jurisdiction: string | null
+          guard_lat: number | null
+          guard_lon: number | null
+          guard_name: string | null
+          jurisdiction_id: string | null
+          punch_id: string | null
+          punch_type: string | null
+          punched_at: string | null
+          shift_date: string | null
+          site_name: string | null
+          user_id: string | null
+          within_geofence: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_sites_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "jurisdictions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
