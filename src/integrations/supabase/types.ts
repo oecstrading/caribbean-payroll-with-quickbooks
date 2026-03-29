@@ -908,6 +908,39 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_settings: {
+        Row: {
+          alert_on_geofence_violation: boolean
+          alert_on_late_clock_in: boolean
+          alert_on_panic_button: boolean
+          enable_email: boolean
+          enable_push: boolean
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alert_on_geofence_violation?: boolean
+          alert_on_late_clock_in?: boolean
+          alert_on_panic_button?: boolean
+          enable_email?: boolean
+          enable_push?: boolean
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alert_on_geofence_violation?: boolean
+          alert_on_late_clock_in?: boolean
+          alert_on_panic_button?: boolean
+          enable_email?: boolean
+          enable_push?: boolean
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       patrol_logs: {
         Row: {
           checkpoint_name: string | null
