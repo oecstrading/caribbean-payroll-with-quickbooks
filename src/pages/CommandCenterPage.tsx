@@ -375,6 +375,73 @@ export default function CommandCenterPage() {
         </div>
       </div>
 
+      {/* Emergency Alert Banner */}
+      {emergencyAlerts.length > 0 && (
+        <div className="px-4 md:px-6 py-3 bg-destructive/20 border-b-2 border-destructive animate-pulse">
+          <div className="flex items-center gap-2 mb-2">
+            <Siren size={20} className="text-destructive" />
+            <p className="text-sm font-bold text-destructive uppercase tracking-wide">
+              🚨 {emergencyAlerts.length} Active Emergency{emergencyAlerts.length > 1 ? " Alerts" : " Alert"}
+            </p>
+          </div>
+          <div className="space-y-2">
+            {emergencyAlerts.map((alert) => (
+              <div key={alert.id} className="flex items-center justify-between bg-destructive/10 rounded-lg px-3 py-2">
+                <div>
+                  <p className="text-sm font-semibold text-destructive">
+                    {profiles[alert.user_id] || "Guard"} — PANIC
+                  </p>
+                  <p className="text-xs text-destructive/80">
+                    {timeSince(alert.created_at)} • GPS: {alert.latitude?.toFixed(4)}, {alert.longitude?.toFixed(4)}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      if (alert.latitude && alert.longitude) {
+                        setSelectedGuard({ lat: alert.latitude, lng: alert.longitude });
+                      }
+                    }}
+                    className="px-3 py-1.5 bg-primary text-primary-foreground rounded-md text-xs font-medium"
+                  >
+                    Locate
+                  </button>
+                  {resolveAlertId === alert.id ? (
+                    <div className="flex gap-1.5 items-center">
+                      <input
+                        value={resolveNotes}
+                        onChange={(e) => setResolveNotes(e.target.value)}
+                        placeholder="Resolution notes..."
+                        className="px-2 py-1.5 text-xs rounded-md border border-border bg-background w-40"
+                      />
+                      <button
+                        onClick={() => resolveEmergency(alert.id)}
+                        className="px-3 py-1.5 bg-primary text-primary-foreground rounded-md text-xs font-medium"
+                      >
+                        Confirm
+                      </button>
+                      <button
+                        onClick={() => { setResolveAlertId(null); setResolveNotes(""); }}
+                        className="px-2 py-1.5 text-xs text-muted-foreground"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setResolveAlertId(alert.id)}
+                      className="px-3 py-1.5 bg-secondary text-foreground rounded-md text-xs font-medium"
+                    >
+                      Resolve
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Violation Alert Banner */}
       {recentViolations.length > 0 && (
         <div className="px-4 md:px-6 py-2 bg-destructive/10 border-b border-destructive/30">
