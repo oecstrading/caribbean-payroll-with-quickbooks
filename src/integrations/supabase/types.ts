@@ -14,6 +14,169 @@ export type Database = {
   }
   public: {
     Tables: {
+      applicant_documents: {
+        Row: {
+          applicant_id: string
+          document_type: string
+          expiry_date: string | null
+          file_name: string
+          file_url: string
+          id: string
+          uploaded_at: string
+          verified: boolean
+        }
+        Insert: {
+          applicant_id: string
+          document_type?: string
+          expiry_date?: string | null
+          file_name?: string
+          file_url?: string
+          id?: string
+          uploaded_at?: string
+          verified?: boolean
+        }
+        Update: {
+          applicant_id?: string
+          document_type?: string
+          expiry_date?: string | null
+          file_name?: string
+          file_url?: string
+          id?: string
+          uploaded_at?: string
+          verified?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "applicant_documents_applicant_id_fkey"
+            columns: ["applicant_id"]
+            isOneToOne: false
+            referencedRelation: "applicants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      applicants: {
+        Row: {
+          address: string | null
+          applied_date: string
+          created_at: string
+          desired_position: string | null
+          email: string
+          experience_years: number | null
+          first_name: string
+          id: string
+          jurisdiction: string | null
+          last_name: string
+          notes: string | null
+          phone: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          applied_date?: string
+          created_at?: string
+          desired_position?: string | null
+          email?: string
+          experience_years?: number | null
+          first_name?: string
+          id?: string
+          jurisdiction?: string | null
+          last_name?: string
+          notes?: string | null
+          phone?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          applied_date?: string
+          created_at?: string
+          desired_position?: string | null
+          email?: string
+          experience_years?: number | null
+          first_name?: string
+          id?: string
+          jurisdiction?: string | null
+          last_name?: string
+          notes?: string | null
+          phone?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      client_invoices: {
+        Row: {
+          client_email: string | null
+          client_name: string
+          created_at: string
+          created_by: string | null
+          due_date: string
+          id: string
+          invoice_date: string
+          invoice_number: string
+          notes: string | null
+          period_end: string
+          period_start: string
+          site_id: string | null
+          status: string
+          subtotal: number
+          tax_amount: number
+          tax_rate: number
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          client_email?: string | null
+          client_name?: string
+          created_at?: string
+          created_by?: string | null
+          due_date?: string
+          id?: string
+          invoice_date?: string
+          invoice_number?: string
+          notes?: string | null
+          period_end?: string
+          period_start?: string
+          site_id?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          tax_rate?: number
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          client_email?: string | null
+          client_name?: string
+          created_at?: string
+          created_by?: string | null
+          due_date?: string
+          id?: string
+          invoice_date?: string
+          invoice_number?: string
+          notes?: string | null
+          period_end?: string
+          period_start?: string
+          site_id?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          tax_rate?: number
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_invoices_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "client_sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_portal_access: {
         Row: {
           access_code: string
@@ -900,6 +1063,50 @@ export type Database = {
             columns: ["site_id"]
             isOneToOne: false
             referencedRelation: "client_sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoice_line_items: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          guard_name: string | null
+          hours: number
+          id: string
+          invoice_id: string
+          rate: number
+          shift_date: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          description?: string
+          guard_name?: string | null
+          hours?: number
+          id?: string
+          invoice_id: string
+          rate?: number
+          shift_date?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          guard_name?: string | null
+          hours?: number
+          id?: string
+          invoice_id?: string
+          rate?: number
+          shift_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_line_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "client_invoices"
             referencedColumns: ["id"]
           },
         ]
