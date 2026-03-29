@@ -35,6 +35,8 @@ import CommandCenterPage from "@/pages/CommandCenterPage";
 import ViolationReportPage from "@/pages/ViolationReportPage";
 import RosterPage from "@/pages/RosterPage";
 import LateClockInReportPage from "@/pages/LateClockInReportPage";
+import ComplianceTrackingPage from "@/pages/ComplianceTrackingPage";
+import GuardPerformancePage from "@/pages/GuardPerformancePage";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
