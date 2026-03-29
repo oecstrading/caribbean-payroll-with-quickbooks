@@ -69,6 +69,7 @@ const navItems: NavItem[] = [
   { path: "/command-center", label: "Command Center", icon: Navigation, managerOnly: true },
   { path: "/guard-tour", label: "Guard Tour", icon: MapPin, bottomNav: true },
   { path: "/incidents", label: "Incidents", icon: AlertTriangle },
+  { path: "/violations", label: "Violations", icon: AlertTriangle, managerOnly: true },
   { path: "/portal", label: "My Portal", icon: UserCircle, separator: true, bottomNav: true },
   { path: "/users", label: "User Management", icon: Shield, adminOnly: true },
   { path: "/settings", label: "Settings", icon: Settings, bottomNav: true },
