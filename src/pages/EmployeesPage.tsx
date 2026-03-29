@@ -232,6 +232,7 @@ export default function EmployeesPage() {
           })()}
         </DialogContent>
       </Dialog>
+      <CSVImportDialog open={showImport} onOpenChange={setShowImport} type="employees" />
     </div>
   );
 }
