@@ -243,6 +243,7 @@ export default function TrainingHubPage() {
               </div>
             </DialogContent>
           </Dialog>
+          </div>
         )}
       </div>
 
