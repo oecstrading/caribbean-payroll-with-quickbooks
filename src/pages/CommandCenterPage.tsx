@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
-import { MapPin, Clock, Shield, Users, RefreshCw, Radio, ChevronRight, Filter, Route, AlertTriangle } from "lucide-react";
+import { MapPin, Clock, Shield, Users, RefreshCw, Radio, ChevronRight, Filter, Route, AlertTriangle, Siren } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useRole } from "@/hooks/useRole";
