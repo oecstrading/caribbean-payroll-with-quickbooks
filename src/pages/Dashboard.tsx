@@ -295,13 +295,13 @@ export default function DashboardPage() {
               {lateAlerts.length > 0 && (
                 <div
                   className="flex items-start gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20 cursor-pointer hover:bg-destructive/15 transition-colors"
-                  onClick={() => navigate("/attendance")}
+                  onClick={() => navigate("/late-clockin-report")}
                 >
                   <TimerOff size={16} className="text-destructive mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="text-sm font-medium text-foreground">{lateAlerts.length} late clock-in{lateAlerts.length > 1 ? "s" : ""} today</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {lateAlerts.filter(a => !a.clockedInAt).length} guards still missing • Review →
+                      {lateAlerts.filter(a => !a.clockedInAt).length} guards still missing • View Report →
                     </p>
                   </div>
                 </div>
@@ -383,10 +383,10 @@ export default function DashboardPage() {
                   <Badge variant="destructive" className="text-[10px]">{lateAlerts.length}</Badge>
                 </CardTitle>
                 <button
-                  onClick={() => navigate("/attendance")}
+                  onClick={() => navigate("/late-clockin-report")}
                   className="text-xs text-destructive font-medium hover:underline"
                 >
-                  View attendance →
+                  View full report →
                 </button>
               </div>
             </CardHeader>
@@ -412,8 +412,8 @@ export default function DashboardPage() {
                 ))}
               </div>
               {lateAlerts.length > 6 && (
-                <button onClick={() => navigate("/attendance")} className="w-full text-center text-xs text-destructive font-medium hover:underline mt-2">
-                  +{lateAlerts.length - 6} more late guards →
+                <button onClick={() => navigate("/late-clockin-report")} className="w-full text-center text-xs text-destructive font-medium hover:underline mt-2">
+                  +{lateAlerts.length - 6} more late guards — View Report →
                 </button>
               )}
             </CardContent>
