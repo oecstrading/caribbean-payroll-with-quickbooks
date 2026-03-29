@@ -37,6 +37,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRole } from "@/hooks/useRole";
 import { useCompany } from "@/hooks/useCompany";
 import { useAuth } from "@/hooks/useAuth";
+import PanicButton from "@/components/PanicButton";
 
 interface NavItem {
   path: string;
@@ -321,6 +322,7 @@ export default function AppLayout() {
         {/* Page Content */}
         <main className="flex-1 overflow-y-auto bg-background pb-16 md:pb-0">
           <Outlet />
+          <PanicButton />
         </main>
 
         {/* Mobile Bottom Navigation */}

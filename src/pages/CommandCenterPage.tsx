@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
-import { MapPin, Clock, Shield, Users, RefreshCw, Radio, ChevronRight, Filter, Route, AlertTriangle } from "lucide-react";
+import { MapPin, Clock, Shield, Users, RefreshCw, Radio, ChevronRight, Filter, Route, AlertTriangle, Siren } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useRole } from "@/hooks/useRole";
@@ -95,12 +95,17 @@ export default function CommandCenterPage() {
   const [isLive, setIsLive] = useState(true);
   const [filterJurisdiction, setFilterJurisdiction] = useState<string>("all");
   const [recentViolations, setRecentViolations] = useState<ActivePunch[]>([]);
+  // Emergency alerts
+  const [emergencyAlerts, setEmergencyAlerts] = useState<any[]>([]);
+  const [resolveAlertId, setResolveAlertId] = useState<string | null>(null);
+  const [resolveNotes, setResolveNotes] = useState("");
   // Trail/breadcrumb state
   const [trailGuardId, setTrailGuardId] = useState<string>("");
   const [trailDate, setTrailDate] = useState(new Date().toISOString().split("T")[0]);
   const [trailPoints, setTrailPoints] = useState<TrailPoint[]>([]);
   const [showTrail, setShowTrail] = useState(false);
   const channelRef = useRef<any>(null);
+  const emergencyChannelRef = useRef<any>(null);
 
   const fetchData = useCallback(async () => {
     const today = new Date().toISOString().split("T")[0];
@@ -138,6 +143,83 @@ export default function CommandCenterPage() {
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  // Fetch active emergency alerts
+  useEffect(() => {
+    const fetchEmergencies = async () => {
+      const { data } = await supabase
+        .from("emergency_alerts")
+        .select("*")
+        .eq("status", "active")
+        .order("created_at", { ascending: false });
+      setEmergencyAlerts(data || []);
+    };
+    fetchEmergencies();
+  }, []);
+
+  // Emergency alerts realtime
+  useEffect(() => {
+    const channel = supabase
+      .channel("live-emergencies")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "emergency_alerts" }, (payload) => {
+        const alert = payload.new as any;
+        const guardName = profiles[alert.user_id] || "Guard";
+
+        // Play alarm sound
+        try {
+          const audioCtx = new AudioContext();
+          for (let i = 0; i < 5; i++) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.frequency.value = i % 2 === 0 ? 1200 : 800;
+            osc.type = "square";
+            gain.gain.value = 0.4;
+            osc.start(audioCtx.currentTime + i * 0.3);
+            osc.stop(audioCtx.currentTime + i * 0.3 + 0.2);
+          }
+        } catch {}
+
+        toast.error(`🚨 EMERGENCY: ${guardName} triggered PANIC ALERT!`, {
+          duration: 30000,
+          description: "Tap to view on map",
+        });
+
+        setEmergencyAlerts((prev) => [{ ...alert, guard_name: guardName }, ...prev]);
+
+        // Auto-center map on the emergency
+        if (alert.latitude && alert.longitude) {
+          setSelectedGuard({ lat: alert.latitude, lng: alert.longitude });
+        }
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "emergency_alerts" }, (payload) => {
+        const updated = payload.new as any;
+        if (updated.status !== "active") {
+          setEmergencyAlerts((prev) => prev.filter((a) => a.id !== updated.id));
+        }
+      })
+      .subscribe();
+    emergencyChannelRef.current = channel;
+    return () => { supabase.removeChannel(channel); };
+  }, [profiles]);
+
+  const resolveEmergency = async (alertId: string) => {
+    const { error } = await supabase
+      .from("emergency_alerts")
+      .update({
+        status: "resolved",
+        resolved_by: (await supabase.auth.getUser()).data.user?.id,
+        resolved_at: new Date().toISOString(),
+        resolution_notes: resolveNotes,
+      })
+      .eq("id", alertId);
+    if (error) { toast.error("Failed to resolve alert"); return; }
+    setEmergencyAlerts((prev) => prev.filter((a) => a.id !== alertId));
+    setResolveAlertId(null);
+    setResolveNotes("");
+    toast.success("Emergency alert resolved");
+  };
 
   // Realtime
   useEffect(() => {
@@ -293,6 +375,73 @@ export default function CommandCenterPage() {
         </div>
       </div>
 
+      {/* Emergency Alert Banner */}
+      {emergencyAlerts.length > 0 && (
+        <div className="px-4 md:px-6 py-3 bg-destructive/20 border-b-2 border-destructive animate-pulse">
+          <div className="flex items-center gap-2 mb-2">
+            <Siren size={20} className="text-destructive" />
+            <p className="text-sm font-bold text-destructive uppercase tracking-wide">
+              🚨 {emergencyAlerts.length} Active Emergency{emergencyAlerts.length > 1 ? " Alerts" : " Alert"}
+            </p>
+          </div>
+          <div className="space-y-2">
+            {emergencyAlerts.map((alert) => (
+              <div key={alert.id} className="flex items-center justify-between bg-destructive/10 rounded-lg px-3 py-2">
+                <div>
+                  <p className="text-sm font-semibold text-destructive">
+                    {profiles[alert.user_id] || "Guard"} — PANIC
+                  </p>
+                  <p className="text-xs text-destructive/80">
+                    {timeSince(alert.created_at)} • GPS: {alert.latitude?.toFixed(4)}, {alert.longitude?.toFixed(4)}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      if (alert.latitude && alert.longitude) {
+                        setSelectedGuard({ lat: alert.latitude, lng: alert.longitude });
+                      }
+                    }}
+                    className="px-3 py-1.5 bg-primary text-primary-foreground rounded-md text-xs font-medium"
+                  >
+                    Locate
+                  </button>
+                  {resolveAlertId === alert.id ? (
+                    <div className="flex gap-1.5 items-center">
+                      <input
+                        value={resolveNotes}
+                        onChange={(e) => setResolveNotes(e.target.value)}
+                        placeholder="Resolution notes..."
+                        className="px-2 py-1.5 text-xs rounded-md border border-border bg-background w-40"
+                      />
+                      <button
+                        onClick={() => resolveEmergency(alert.id)}
+                        className="px-3 py-1.5 bg-primary text-primary-foreground rounded-md text-xs font-medium"
+                      >
+                        Confirm
+                      </button>
+                      <button
+                        onClick={() => { setResolveAlertId(null); setResolveNotes(""); }}
+                        className="px-2 py-1.5 text-xs text-muted-foreground"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setResolveAlertId(alert.id)}
+                      className="px-3 py-1.5 bg-secondary text-foreground rounded-md text-xs font-medium"
+                    >
+                      Resolve
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Violation Alert Banner */}
       {recentViolations.length > 0 && (
         <div className="px-4 md:px-6 py-2 bg-destructive/10 border-b border-destructive/30">
@@ -346,6 +495,37 @@ export default function CommandCenterPage() {
                   <Marker key={punch.id} position={[punch.latitude, punch.longitude]} icon={punch.within_geofence ? greenIcon : redIcon}>
                     <Popup><div className="text-sm"><p className="font-bold">{punch.guard_name}</p><p className="text-gray-500">{punch.address_label || "Unknown"}</p><p className="text-xs mt-1">{punch.within_geofence ? "✅ Within geofence" : "❌ Outside geofence"}</p><p className="text-xs text-gray-400">{timeSince(punch.punched_at)}</p></div></Popup>
                   </Marker>
+                ) : null
+              )}
+
+              {/* Emergency alert markers - blinking red circles */}
+              {emergencyAlerts.map((alert) =>
+                alert.latitude && alert.longitude ? (
+                  <div key={`emergency-${alert.id}`}>
+                    <Circle
+                      center={[alert.latitude, alert.longitude]}
+                      radius={50}
+                      pathOptions={{
+                        color: "hsl(0, 84%, 60%)",
+                        fillColor: "hsl(0, 84%, 60%)",
+                        fillOpacity: 0.4,
+                        weight: 3,
+                        className: "animate-pulse",
+                      }}
+                    />
+                    <Marker position={[alert.latitude, alert.longitude]} icon={redIcon}>
+                      <Popup>
+                        <div className="text-sm">
+                          <p className="font-bold text-red-600">🚨 EMERGENCY ALERT</p>
+                          <p className="font-semibold">{profiles[alert.user_id] || "Guard"}</p>
+                          <p className="text-xs mt-1">{timeSince(alert.created_at)}</p>
+                          <p className="text-xs text-gray-500">
+                            GPS: {alert.latitude?.toFixed(5)}, {alert.longitude?.toFixed(5)}
+                          </p>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  </div>
                 ) : null
               )}
 
