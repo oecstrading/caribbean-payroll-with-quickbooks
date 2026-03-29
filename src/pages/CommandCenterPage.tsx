@@ -95,6 +95,7 @@ export default function CommandCenterPage() {
   const [isLive, setIsLive] = useState(true);
   const [filterJurisdiction, setFilterJurisdiction] = useState<string>("all");
   const [recentViolations, setRecentViolations] = useState<ActivePunch[]>([]);
+  const [lateGuards, setLateGuards] = useState<{ name: string; siteName: string; lateMinutes: number; noShow: boolean }[]>([]);
   // Emergency alerts
   const [emergencyAlerts, setEmergencyAlerts] = useState<any[]>([]);
   const [resolveAlertId, setResolveAlertId] = useState<string | null>(null);
