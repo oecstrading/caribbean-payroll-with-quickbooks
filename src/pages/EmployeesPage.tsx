@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Search, UserPlus, MoreHorizontal, Mail, Phone, FileText, X } from "lucide-react";
+import { Search, UserPlus, MoreHorizontal, Mail, Phone, FileText, X, Upload } from "lucide-react";
+import CSVImportDialog from "@/components/CSVImportDialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { sampleEmployees, type Employee } from "@/lib/sample-data";
