@@ -31,6 +31,7 @@ import {
   Navigation,
   AlertTriangle,
   Building2,
+  CalendarRange,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -67,6 +68,7 @@ const navItems: NavItem[] = [
   { path: "/contractors", label: "Contractors", icon: Briefcase, managerOnly: true },
   { path: "/project-profitability", label: "Profitability", icon: TrendingUp, managerOnly: true },
   { path: "/sites", label: "Client Sites", icon: Building2, separator: true },
+  { path: "/roster", label: "Guard Roster", icon: CalendarRange },
   { path: "/command-center", label: "Command Center", icon: Navigation, managerOnly: true },
   { path: "/guard-tour", label: "Guard Tour", icon: MapPin, bottomNav: true },
   { path: "/incidents", label: "Incidents", icon: AlertTriangle },

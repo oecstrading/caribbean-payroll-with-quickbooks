@@ -33,6 +33,7 @@ import IncidentReportsPage from "@/pages/IncidentReportsPage";
 import ClientPortalPage from "@/pages/ClientPortalPage";
 import CommandCenterPage from "@/pages/CommandCenterPage";
 import ViolationReportPage from "@/pages/ViolationReportPage";
+import RosterPage from "@/pages/RosterPage";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -89,6 +90,7 @@ const AppRoutes = () => (
       <Route path="/incidents" element={<IncidentReportsPage />} />
       <Route path="/command-center" element={<CommandCenterPage />} />
       <Route path="/violations" element={<ViolationReportPage />} />
+      <Route path="/roster" element={<RosterPage />} />
       <Route path="/settings" element={<SettingsPage />} />
     </Route>
     <Route path="/client-portal" element={<ClientPortalPage />} />
