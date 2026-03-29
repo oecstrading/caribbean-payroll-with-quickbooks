@@ -94,6 +94,7 @@ export default function CommandCenterPage() {
   const [selectedGuard, setSelectedGuard] = useState<{ lat: number; lng: number } | null>(null);
   const [isLive, setIsLive] = useState(true);
   const [filterJurisdiction, setFilterJurisdiction] = useState<string>("all");
+  const [recentViolations, setRecentViolations] = useState<ActivePunch[]>([]);
   // Trail/breadcrumb state
   const [trailGuardId, setTrailGuardId] = useState<string>("");
   const [trailDate, setTrailDate] = useState(new Date().toISOString().split("T")[0]);
