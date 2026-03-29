@@ -150,9 +150,20 @@ export default function CommandCenterPage() {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "clock_punches" }, (payload) => {
         const newPunch = payload.new as any;
         const guardName = profiles[newPunch.user_id] || "Guard";
-        toast.info(`${newPunch.punch_type === "clock_in" ? "🟢" : "🔴"} ${guardName} ${newPunch.punch_type.replace("_", " ")}`, {
-          description: newPunch.address_label || "Unknown site",
-        });
+        
+        // Check for geofence violation
+        if (newPunch.within_geofence === false) {
+          toast.error(`⚠️ GEOFENCE VIOLATION: ${guardName}`, {
+            description: `Attempted clock-in outside zone at ${newPunch.address_label || "Unknown site"}`,
+            duration: 15000,
+          });
+          setRecentViolations((prev) => [{ ...newPunch, guard_name: guardName }, ...prev].slice(0, 10));
+        } else {
+          toast.info(`${newPunch.punch_type === "clock_in" ? "🟢" : "🔴"} ${guardName} ${newPunch.punch_type.replace("_", " ")}`, {
+            description: newPunch.address_label || "Unknown site",
+          });
+        }
+        
         setPunches((prev) => {
           const filtered = prev.filter((p) => p.user_id !== newPunch.user_id);
           return [{ ...newPunch, guard_name: guardName }, ...filtered];
