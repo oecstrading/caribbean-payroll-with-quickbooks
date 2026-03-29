@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { MapPin, Plus, Shield, FileText, Users, CheckCircle, Clock, Edit, Trash2 } from "lucide-react";
+import { MapPin, Plus, Shield, FileText, Users, CheckCircle, Clock, Edit, Trash2, Upload } from "lucide-react";
+import CSVImportDialog from "@/components/CSVImportDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -58,6 +59,7 @@ export default function SiteManagementPage() {
   const [assignUserId, setAssignUserId] = useState("");
   const [assignShiftStart, setAssignShiftStart] = useState("18:00");
   const [assignShiftEnd, setAssignShiftEnd] = useState("06:00");
+  const [showImport, setShowImport] = useState(false);
 
   const fetchAll = async () => {
     const [sitesRes, assignRes, signoffsRes, profilesRes, jurRes] = await Promise.all([
@@ -151,9 +153,14 @@ export default function SiteManagementPage() {
           <p className="text-sm text-muted-foreground">Manage client sites, post orders, and guard assignments</p>
         </div>
         {isAdminOrManager && (
-          <button onClick={() => setShowAdd(true)} className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
-            <Plus size={16} /> Add Site
-          </button>
+          <div className="flex gap-2">
+            <button onClick={() => setShowImport(true)} className="flex items-center gap-2 px-4 py-2.5 bg-secondary text-secondary-foreground rounded-lg text-sm font-medium hover:bg-secondary/80 transition-colors">
+              <Upload size={16} /> Import CSV
+            </button>
+            <button onClick={() => setShowAdd(true)} className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
+              <Plus size={16} /> Add Site
+            </button>
+          </div>
         )}
       </div>
 
@@ -328,6 +335,7 @@ export default function SiteManagementPage() {
           )}
         </DialogContent>
       </Dialog>
+      <CSVImportDialog open={showImport} onOpenChange={setShowImport} type="clients" onSuccess={fetchAll} />
     </motion.div>
   );
 }
