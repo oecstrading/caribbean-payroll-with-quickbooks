@@ -203,6 +203,10 @@ export default function TrainingHubPage() {
           <p className="text-muted-foreground text-sm">Company documents, SOPs, training materials & policies</p>
         </div>
         {isAdminOrManager && (
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleSeedDocuments} disabled={seeding}>
+              <Sparkles className="h-4 w-4 mr-2" /> {seeding ? "Seeding..." : "Seed Defaults"}
+            </Button>
           <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
             <DialogTrigger asChild>
               <Button><Upload className="h-4 w-4 mr-2" /> Upload Document</Button>
