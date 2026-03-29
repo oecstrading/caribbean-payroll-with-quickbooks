@@ -31,6 +31,7 @@ import SiteManagementPage from "@/pages/SiteManagementPage";
 import GuardTourPage from "@/pages/GuardTourPage";
 import IncidentReportsPage from "@/pages/IncidentReportsPage";
 import ClientPortalPage from "@/pages/ClientPortalPage";
+import CommandCenterPage from "@/pages/CommandCenterPage";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
