@@ -910,6 +910,39 @@ export type Database = {
         }
         Relationships: []
       }
+      late_clock_in_alerts: {
+        Row: {
+          alert_sent_at: string
+          clock_in_at: string | null
+          id: string
+          late_minutes: number
+          shift_date: string
+          shift_start: string
+          site_id: string
+          user_id: string
+        }
+        Insert: {
+          alert_sent_at?: string
+          clock_in_at?: string | null
+          id?: string
+          late_minutes?: number
+          shift_date?: string
+          shift_start: string
+          site_id: string
+          user_id: string
+        }
+        Update: {
+          alert_sent_at?: string
+          clock_in_at?: string | null
+          id?: string
+          late_minutes?: number
+          shift_date?: string
+          shift_start?: string
+          site_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       leave_balances: {
         Row: {
           id: string
