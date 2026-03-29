@@ -46,10 +46,10 @@ export default function ComplianceTrackingPage() {
   const fetchData = async () => {
     setLoading(true);
     const [licRes, profRes] = await Promise.all([
-      supabase.from("guard_licenses").select("*").order("expiry_date", { ascending: true }),
+      supabase.from("guard_licenses" as any).select("*").order("expiry_date", { ascending: true }),
       supabase.from("profiles").select("user_id, first_name, last_name, department"),
     ]);
-    setLicenses((licRes.data as License[]) || []);
+    setLicenses((licRes.data as unknown as License[]) || []);
     setProfiles((profRes.data as Profile[]) || []);
     setLoading(false);
   };
