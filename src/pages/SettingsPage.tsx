@@ -81,6 +81,48 @@ export default function SettingsPage() {
     fetch();
   }, []);
 
+  // Fetch notification settings
+  useEffect(() => {
+    const fetchNotif = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from("notification_settings")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (data) {
+        setNotifSettings({
+          enable_push: data.enable_push ?? true,
+          enable_email: data.enable_email ?? false,
+          alert_on_geofence_violation: data.alert_on_geofence_violation ?? true,
+          alert_on_late_clock_in: data.alert_on_late_clock_in ?? true,
+          alert_on_panic_button: data.alert_on_panic_button ?? true,
+        });
+      }
+      setNotifLoading(false);
+    };
+    fetchNotif();
+  }, [user]);
+
+  const handleNotifToggle = async (field: string, value: boolean) => {
+    if (!user) return;
+    const updated = { ...notifSettings, [field]: value };
+    setNotifSettings(updated);
+    setNotifSaving(true);
+    try {
+      const { error } = await supabase
+        .from("notification_settings")
+        .upsert({ user_id: user.id, ...updated, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+      if (error) throw error;
+      toast.success("Notification preference updated");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save");
+      setNotifSettings({ ...notifSettings, [field]: !value }); // revert
+    } finally {
+      setNotifSaving(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!isAdminOrManager || !user) {
       toast.error("Only admins and managers can update company settings");
