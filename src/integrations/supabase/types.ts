@@ -14,6 +14,95 @@ export type Database = {
   }
   public: {
     Tables: {
+      client_portal_access: {
+        Row: {
+          access_code: string
+          client_email: string | null
+          client_name: string
+          created_at: string
+          id: string
+          is_active: boolean
+          last_accessed_at: string | null
+          site_id: string
+        }
+        Insert: {
+          access_code: string
+          client_email?: string | null
+          client_name: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_accessed_at?: string | null
+          site_id: string
+        }
+        Update: {
+          access_code?: string
+          client_email?: string | null
+          client_name?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_accessed_at?: string | null
+          site_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_portal_access_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "client_sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_sites: {
+        Row: {
+          address: string | null
+          client_email: string | null
+          client_name: string | null
+          client_phone: string | null
+          created_at: string
+          id: string
+          latitude: number | null
+          longitude: number | null
+          name: string
+          post_orders: string | null
+          radius_meters: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          client_email?: string | null
+          client_name?: string | null
+          client_phone?: string | null
+          created_at?: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          post_orders?: string | null
+          radius_meters?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          client_email?: string | null
+          client_name?: string | null
+          client_phone?: string | null
+          created_at?: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          post_orders?: string | null
+          radius_meters?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       clock_punches: {
         Row: {
           address_label: string | null
@@ -603,6 +692,94 @@ export type Database = {
         }
         Relationships: []
       }
+      guard_assignments: {
+        Row: {
+          assigned_at: string
+          days_of_week: string[] | null
+          id: string
+          is_active: boolean
+          shift_end: string | null
+          shift_start: string | null
+          site_id: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          days_of_week?: string[] | null
+          id?: string
+          is_active?: boolean
+          shift_end?: string | null
+          shift_start?: string | null
+          site_id: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          days_of_week?: string[] | null
+          id?: string
+          is_active?: boolean
+          shift_end?: string | null
+          shift_start?: string | null
+          site_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guard_assignments_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "client_sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      incident_reports: {
+        Row: {
+          description: string | null
+          id: string
+          photo_urls: string[] | null
+          reported_at: string
+          resolved_at: string | null
+          severity: string
+          site_id: string
+          status: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          description?: string | null
+          id?: string
+          photo_urls?: string[] | null
+          reported_at?: string
+          resolved_at?: string | null
+          severity?: string
+          site_id: string
+          status?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          photo_urls?: string[] | null
+          reported_at?: string
+          resolved_at?: string | null
+          severity?: string
+          site_id?: string
+          status?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incident_reports_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "client_sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leave_balances: {
         Row: {
           id: string
@@ -668,6 +845,47 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      patrol_logs: {
+        Row: {
+          checkpoint_name: string | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          notes: string | null
+          scanned_at: string
+          site_id: string
+          user_id: string
+        }
+        Insert: {
+          checkpoint_name?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          notes?: string | null
+          scanned_at?: string
+          site_id: string
+          user_id: string
+        }
+        Update: {
+          checkpoint_name?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          notes?: string | null
+          scanned_at?: string
+          site_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patrol_logs_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "client_sites"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payroll_runs: {
         Row: {
@@ -761,6 +979,38 @@ export type Database = {
           },
         ]
       }
+      post_order_signoffs: {
+        Row: {
+          id: string
+          post_orders_text: string | null
+          signed_at: string
+          site_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          post_orders_text?: string | null
+          signed_at?: string
+          site_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          post_orders_text?: string | null
+          signed_at?: string
+          site_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_order_signoffs_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "client_sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -769,6 +1019,7 @@ export type Database = {
           first_name: string
           id: string
           job_title: string | null
+          jurisdiction: string
           last_name: string
           monthly_salary: number | null
           nic_number: string | null
@@ -776,10 +1027,12 @@ export type Database = {
           person_id: string | null
           phone: string | null
           schedule: string | null
+          social_security_number: string | null
           start_date: string | null
           status: string
           std_hours_per_day: number | null
           tan_number: string | null
+          tax_id_number: string | null
           updated_at: string
           user_id: string
         }
@@ -790,6 +1043,7 @@ export type Database = {
           first_name?: string
           id?: string
           job_title?: string | null
+          jurisdiction?: string
           last_name?: string
           monthly_salary?: number | null
           nic_number?: string | null
@@ -797,10 +1051,12 @@ export type Database = {
           person_id?: string | null
           phone?: string | null
           schedule?: string | null
+          social_security_number?: string | null
           start_date?: string | null
           status?: string
           std_hours_per_day?: number | null
           tan_number?: string | null
+          tax_id_number?: string | null
           updated_at?: string
           user_id: string
         }
@@ -811,6 +1067,7 @@ export type Database = {
           first_name?: string
           id?: string
           job_title?: string | null
+          jurisdiction?: string
           last_name?: string
           monthly_salary?: number | null
           nic_number?: string | null
@@ -818,10 +1075,12 @@ export type Database = {
           person_id?: string | null
           phone?: string | null
           schedule?: string | null
+          social_security_number?: string | null
           start_date?: string | null
           status?: string
           std_hours_per_day?: number | null
           tan_number?: string | null
+          tax_id_number?: string | null
           updated_at?: string
           user_id?: string
         }

@@ -28,6 +28,9 @@ import {
   UsersRound,
   Briefcase,
   TrendingUp,
+  Navigation,
+  AlertTriangle,
+  Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -62,6 +65,9 @@ const navItems: NavItem[] = [
   { path: "/daily-reports", label: "Field Reports", icon: ClipboardList },
   { path: "/contractors", label: "Contractors", icon: Briefcase, managerOnly: true },
   { path: "/project-profitability", label: "Profitability", icon: TrendingUp, managerOnly: true },
+  { path: "/sites", label: "Client Sites", icon: Building2, separator: true },
+  { path: "/guard-tour", label: "Guard Tour", icon: Navigation, bottomNav: true },
+  { path: "/incidents", label: "Incidents", icon: AlertTriangle },
   { path: "/portal", label: "My Portal", icon: UserCircle, separator: true, bottomNav: true },
   { path: "/users", label: "User Management", icon: Shield, adminOnly: true },
   { path: "/settings", label: "Settings", icon: Settings, bottomNav: true },

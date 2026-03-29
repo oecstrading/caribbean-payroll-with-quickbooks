@@ -27,6 +27,10 @@ import DailyReportsPage from "@/pages/DailyReportsPage";
 import CrewsPage from "@/pages/CrewsPage";
 import ContractorsPage from "@/pages/ContractorsPage";
 import ProjectProfitabilityPage from "@/pages/ProjectProfitabilityPage";
+import SiteManagementPage from "@/pages/SiteManagementPage";
+import GuardTourPage from "@/pages/GuardTourPage";
+import IncidentReportsPage from "@/pages/IncidentReportsPage";
+import ClientPortalPage from "@/pages/ClientPortalPage";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -78,8 +82,12 @@ const AppRoutes = () => (
       <Route path="/crews" element={<CrewsPage />} />
       <Route path="/contractors" element={<ContractorsPage />} />
       <Route path="/project-profitability" element={<ProjectProfitabilityPage />} />
+      <Route path="/sites" element={<SiteManagementPage />} />
+      <Route path="/guard-tour" element={<GuardTourPage />} />
+      <Route path="/incidents" element={<IncidentReportsPage />} />
       <Route path="/settings" element={<SettingsPage />} />
     </Route>
+    <Route path="/client-portal" element={<ClientPortalPage />} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
