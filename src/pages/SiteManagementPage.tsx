@@ -60,16 +60,18 @@ export default function SiteManagementPage() {
   const [assignShiftEnd, setAssignShiftEnd] = useState("06:00");
 
   const fetchAll = async () => {
-    const [sitesRes, assignRes, signoffsRes, profilesRes] = await Promise.all([
+    const [sitesRes, assignRes, signoffsRes, profilesRes, jurRes] = await Promise.all([
       supabase.from("client_sites").select("*").order("created_at", { ascending: false }),
       supabase.from("guard_assignments").select("*").eq("is_active", true),
       supabase.from("post_order_signoffs").select("*").order("signed_at", { ascending: false }).limit(100),
       supabase.from("profiles").select("user_id, first_name, last_name, email").eq("status", "Active"),
+      supabase.from("jurisdictions").select("id, code, name"),
     ]);
     setSites(sitesRes.data || []);
     setAssignments(assignRes.data || []);
     setSignoffs(signoffsRes.data || []);
     setProfiles(profilesRes.data || []);
+    setJurisdictions((jurRes.data as any[]) || []);
     setLoading(false);
   };
 
