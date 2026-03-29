@@ -44,6 +44,17 @@ export default function SettingsPage() {
   const [logoUrl, setLogoUrl] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Notification settings
+  const [notifSettings, setNotifSettings] = useState({
+    enable_push: true,
+    enable_email: false,
+    alert_on_geofence_violation: true,
+    alert_on_late_clock_in: true,
+    alert_on_panic_button: true,
+  });
+  const [notifLoading, setNotifLoading] = useState(true);
+  const [notifSaving, setNotifSaving] = useState(false);
+
   useEffect(() => {
     const fetch = async () => {
       const { data } = await supabase
