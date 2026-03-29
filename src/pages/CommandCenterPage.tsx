@@ -498,6 +498,37 @@ export default function CommandCenterPage() {
                 ) : null
               )}
 
+              {/* Emergency alert markers - blinking red circles */}
+              {emergencyAlerts.map((alert) =>
+                alert.latitude && alert.longitude ? (
+                  <div key={`emergency-${alert.id}`}>
+                    <Circle
+                      center={[alert.latitude, alert.longitude]}
+                      radius={50}
+                      pathOptions={{
+                        color: "hsl(0, 84%, 60%)",
+                        fillColor: "hsl(0, 84%, 60%)",
+                        fillOpacity: 0.4,
+                        weight: 3,
+                        className: "animate-pulse",
+                      }}
+                    />
+                    <Marker position={[alert.latitude, alert.longitude]} icon={redIcon}>
+                      <Popup>
+                        <div className="text-sm">
+                          <p className="font-bold text-red-600">🚨 EMERGENCY ALERT</p>
+                          <p className="font-semibold">{profiles[alert.user_id] || "Guard"}</p>
+                          <p className="text-xs mt-1">{timeSince(alert.created_at)}</p>
+                          <p className="text-xs text-gray-500">
+                            GPS: {alert.latitude?.toFixed(5)}, {alert.longitude?.toFixed(5)}
+                          </p>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  </div>
+                ) : null
+              )}
+
               {/* Trail breadcrumb line */}
               {showTrail && trailCoords.length > 1 && (
                 <Polyline positions={trailCoords} pathOptions={{ color: "hsl(25, 95%, 53%)", weight: 3, dashArray: "8 6", opacity: 0.8 }} />
