@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
-import { MapPin, Navigation, CheckCircle, AlertCircle, Clock, Shield, RefreshCw } from "lucide-react";
+import { MapPin, Navigation, CheckCircle, AlertCircle, Clock, Shield, RefreshCw, Mic } from "lucide-react";
+import VoiceInput from "@/components/VoiceInput";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -448,6 +449,7 @@ export default function GuardTourPage() {
                           onChange={(e) => setCheckpointName(e.target.value)}
                           className="text-sm"
                         />
+                        <VoiceInput onTranscript={(t) => setCheckpointName(t)} />
                         <button
                           onClick={() => handleCheckpoint(site.id)}
                           disabled={!userPos}
@@ -456,12 +458,15 @@ export default function GuardTourPage() {
                           Log
                         </button>
                       </div>
-                      <Input
-                        placeholder="Notes (optional)"
-                        value={checkpointNotes}
-                        onChange={(e) => setCheckpointNotes(e.target.value)}
-                        className="text-sm"
-                      />
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Notes (optional)"
+                          value={checkpointNotes}
+                          onChange={(e) => setCheckpointNotes(e.target.value)}
+                          className="text-sm"
+                        />
+                        <VoiceInput onTranscript={(t) => setCheckpointNotes(t)} />
+                      </div>
                     </div>
                   </div>
                 )}

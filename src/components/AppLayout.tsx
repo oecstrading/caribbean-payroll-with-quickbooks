@@ -41,6 +41,7 @@ import { useRole } from "@/hooks/useRole";
 import { useCompany } from "@/hooks/useCompany";
 import { useAuth } from "@/hooks/useAuth";
 import PanicButton from "@/components/PanicButton";
+import VoiceCommandListener from "@/components/VoiceCommandListener";
 
 interface NavItem {
   path: string;
@@ -131,6 +132,7 @@ export default function AppLayout() {
   };
 
   return (
+    <>
     <div className="flex h-screen overflow-hidden">
       {/* Mobile Overlay */}
       <AnimatePresence>
@@ -362,5 +364,7 @@ export default function AppLayout() {
         </nav>
       </div>
     </div>
+    <VoiceCommandListener />
+    </>
   );
 }
