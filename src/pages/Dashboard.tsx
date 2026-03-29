@@ -292,6 +292,20 @@ export default function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              {lateAlerts.length > 0 && (
+                <div
+                  className="flex items-start gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20 cursor-pointer hover:bg-destructive/15 transition-colors"
+                  onClick={() => navigate("/attendance")}
+                >
+                  <TimerOff size={16} className="text-destructive mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{lateAlerts.length} late clock-in{lateAlerts.length > 1 ? "s" : ""} today</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {lateAlerts.filter(a => !a.clockedInAt).length} guards still missing • Review →
+                    </p>
+                  </div>
+                </div>
+              )}
               <div
                 className="flex items-start gap-3 p-3 rounded-lg bg-warning/10 border border-warning/20 cursor-pointer hover:bg-warning/15 transition-colors"
                 onClick={() => navigate("/attendance")}
