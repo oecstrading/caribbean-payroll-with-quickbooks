@@ -39,6 +39,7 @@ import ComplianceTrackingPage from "@/pages/ComplianceTrackingPage";
 import GuardPerformancePage from "@/pages/GuardPerformancePage";
 import ApplicantTrackingPage from "@/pages/ApplicantTrackingPage";
 import InvoicingPage from "@/pages/InvoicingPage";
+import TrainingHubPage from "@/pages/TrainingHubPage";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -101,6 +102,7 @@ const AppRoutes = () => (
       <Route path="/guard-performance" element={<GuardPerformancePage />} />
       <Route path="/applicants" element={<ApplicantTrackingPage />} />
       <Route path="/invoicing" element={<InvoicingPage />} />
+      <Route path="/training" element={<TrainingHubPage />} />
       <Route path="/settings" element={<SettingsPage />} />
     </Route>
     <Route path="/client-portal" element={<ClientPortalPage />} />
