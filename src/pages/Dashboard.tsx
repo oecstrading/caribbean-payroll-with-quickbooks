@@ -72,6 +72,7 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const [refreshKey, setRefreshKey] = useState(0);
   const [fieldOps, setFieldOps] = useState({ activeProjects: 0, pendingPayments: 0, pendingAmount: 0, checkedOut: 0, totalEquipment: 0, todayReports: 0, weeklyReports: [] as number[] });
+  const [rosterData, setRosterData] = useState<{ name: string; siteName: string; shiftStart: string | null; shiftEnd: string | null; clockedIn: boolean }[]>([]);
 
   useEffect(() => {
     const fetchFieldOps = async () => {
