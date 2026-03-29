@@ -95,12 +95,17 @@ export default function CommandCenterPage() {
   const [isLive, setIsLive] = useState(true);
   const [filterJurisdiction, setFilterJurisdiction] = useState<string>("all");
   const [recentViolations, setRecentViolations] = useState<ActivePunch[]>([]);
+  // Emergency alerts
+  const [emergencyAlerts, setEmergencyAlerts] = useState<any[]>([]);
+  const [resolveAlertId, setResolveAlertId] = useState<string | null>(null);
+  const [resolveNotes, setResolveNotes] = useState("");
   // Trail/breadcrumb state
   const [trailGuardId, setTrailGuardId] = useState<string>("");
   const [trailDate, setTrailDate] = useState(new Date().toISOString().split("T")[0]);
   const [trailPoints, setTrailPoints] = useState<TrailPoint[]>([]);
   const [showTrail, setShowTrail] = useState(false);
   const channelRef = useRef<any>(null);
+  const emergencyChannelRef = useRef<any>(null);
 
   const fetchData = useCallback(async () => {
     const today = new Date().toISOString().split("T")[0];
