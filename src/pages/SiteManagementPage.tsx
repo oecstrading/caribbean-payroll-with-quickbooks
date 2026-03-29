@@ -53,22 +53,25 @@ export default function SiteManagementPage() {
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [selectedSite, setSelectedSite] = useState<ClientSite | null>(null);
-  const [form, setForm] = useState({ name: "", address: "", latitude: "", longitude: "", radius_meters: "200", post_orders: "", client_name: "", client_email: "", client_phone: "" });
+  const [form, setForm] = useState({ name: "", address: "", latitude: "", longitude: "", radius_meters: "200", post_orders: "", client_name: "", client_email: "", client_phone: "", jurisdiction_id: "" });
+  const [jurisdictions, setJurisdictions] = useState<{ id: string; code: string; name: string }[]>([]);
   const [assignUserId, setAssignUserId] = useState("");
   const [assignShiftStart, setAssignShiftStart] = useState("18:00");
   const [assignShiftEnd, setAssignShiftEnd] = useState("06:00");
 
   const fetchAll = async () => {
-    const [sitesRes, assignRes, signoffsRes, profilesRes] = await Promise.all([
+    const [sitesRes, assignRes, signoffsRes, profilesRes, jurRes] = await Promise.all([
       supabase.from("client_sites").select("*").order("created_at", { ascending: false }),
       supabase.from("guard_assignments").select("*").eq("is_active", true),
       supabase.from("post_order_signoffs").select("*").order("signed_at", { ascending: false }).limit(100),
       supabase.from("profiles").select("user_id, first_name, last_name, email").eq("status", "Active"),
+      supabase.from("jurisdictions").select("id, code, name"),
     ]);
     setSites(sitesRes.data || []);
     setAssignments(assignRes.data || []);
     setSignoffs(signoffsRes.data || []);
     setProfiles(profilesRes.data || []);
+    setJurisdictions((jurRes.data as any[]) || []);
     setLoading(false);
   };
 
@@ -76,7 +79,7 @@ export default function SiteManagementPage() {
 
   const handleAddSite = async () => {
     if (!form.name.trim()) { toast.error("Site name is required"); return; }
-    const { error } = await supabase.from("client_sites").insert({
+    const insertData: any = {
       name: form.name,
       address: form.address,
       latitude: form.latitude ? parseFloat(form.latitude) : null,
@@ -86,11 +89,13 @@ export default function SiteManagementPage() {
       client_name: form.client_name,
       client_email: form.client_email,
       client_phone: form.client_phone,
-    });
+    };
+    if (form.jurisdiction_id) insertData.jurisdiction_id = form.jurisdiction_id;
+    const { error } = await supabase.from("client_sites").insert(insertData);
     if (error) { toast.error("Failed to add site"); return; }
     toast.success("Client site added");
     setShowAdd(false);
-    setForm({ name: "", address: "", latitude: "", longitude: "", radius_meters: "200", post_orders: "", client_name: "", client_email: "", client_phone: "" });
+    setForm({ name: "", address: "", latitude: "", longitude: "", radius_meters: "200", post_orders: "", client_name: "", client_email: "", client_phone: "", jurisdiction_id: "" });
     fetchAll();
   };
 
@@ -231,6 +236,10 @@ export default function SiteManagementPage() {
           <div className="space-y-3 mt-2">
             <Input placeholder="Site Name *" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
             <Input placeholder="Address" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} />
+            <select value={form.jurisdiction_id} onChange={e => setForm(f => ({ ...f, jurisdiction_id: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background">
+              <option value="">Select Jurisdiction (Island)...</option>
+              {jurisdictions.map(j => <option key={j.id} value={j.id}>{j.name} ({j.code})</option>)}
+            </select>
             <div className="grid grid-cols-2 gap-2">
               <Input placeholder="Latitude" type="number" step="any" value={form.latitude} onChange={e => setForm(f => ({ ...f, latitude: e.target.value }))} />
               <Input placeholder="Longitude" type="number" step="any" value={form.longitude} onChange={e => setForm(f => ({ ...f, longitude: e.target.value }))} />

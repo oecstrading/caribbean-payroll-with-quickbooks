@@ -63,7 +63,9 @@ export type Database = {
           client_phone: string | null
           created_at: string
           id: string
+          jurisdiction_id: string | null
           latitude: number | null
+          location: unknown
           longitude: number | null
           name: string
           post_orders: string | null
@@ -78,7 +80,9 @@ export type Database = {
           client_phone?: string | null
           created_at?: string
           id?: string
+          jurisdiction_id?: string | null
           latitude?: number | null
+          location?: unknown
           longitude?: number | null
           name: string
           post_orders?: string | null
@@ -93,7 +97,9 @@ export type Database = {
           client_phone?: string | null
           created_at?: string
           id?: string
+          jurisdiction_id?: string | null
           latitude?: number | null
+          location?: unknown
           longitude?: number | null
           name?: string
           post_orders?: string | null
@@ -101,11 +107,20 @@ export type Database = {
           status?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "client_sites_jurisdiction_id_fkey"
+            columns: ["jurisdiction_id"]
+            isOneToOne: false
+            referencedRelation: "jurisdictions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       clock_punches: {
         Row: {
           address_label: string | null
+          clock_in_location: unknown
           geofence_zone_id: string | null
           id: string
           latitude: number | null
@@ -117,6 +132,7 @@ export type Database = {
         }
         Insert: {
           address_label?: string | null
+          clock_in_location?: unknown
           geofence_zone_id?: string | null
           id?: string
           latitude?: number | null
@@ -128,6 +144,7 @@ export type Database = {
         }
         Update: {
           address_label?: string | null
+          clock_in_location?: unknown
           geofence_zone_id?: string | null
           id?: string
           latitude?: number | null
@@ -780,6 +797,51 @@ export type Database = {
           },
         ]
       }
+      jurisdictions: {
+        Row: {
+          code: string
+          created_at: string
+          currency_code: string
+          holiday_multiplier: number
+          holiday_ot_multiplier: number
+          id: string
+          name: string
+          nic_ceiling: number | null
+          nic_employee_rate: number
+          nic_employer_rate: number
+          night_differential: number
+          overtime_multiplier: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          currency_code?: string
+          holiday_multiplier?: number
+          holiday_ot_multiplier?: number
+          id?: string
+          name: string
+          nic_ceiling?: number | null
+          nic_employee_rate?: number
+          nic_employer_rate?: number
+          night_differential?: number
+          overtime_multiplier?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          currency_code?: string
+          holiday_multiplier?: number
+          holiday_ot_multiplier?: number
+          id?: string
+          name?: string
+          nic_ceiling?: number | null
+          nic_employee_rate?: number
+          nic_employer_rate?: number
+          night_differential?: number
+          overtime_multiplier?: number
+        }
+        Relationships: []
+      }
       leave_balances: {
         Row: {
           id: string
@@ -1259,6 +1321,10 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_manager: { Args: { _user_id: string }; Returns: boolean }
+      verify_guard_location: {
+        Args: { _lat: number; _lon: number; _site_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       addition_type:
