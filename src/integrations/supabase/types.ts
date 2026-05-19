@@ -1646,6 +1646,8 @@ export type Database = {
       qbo_account_mappings: {
         Row: {
           account_type: string
+          category: string
+          description: string
           id: string
           payroll_item: string
           qbo_account_id: string
@@ -1655,6 +1657,8 @@ export type Database = {
         }
         Insert: {
           account_type?: string
+          category?: string
+          description?: string
           id?: string
           payroll_item: string
           qbo_account_id?: string
@@ -1664,12 +1668,47 @@ export type Database = {
         }
         Update: {
           account_type?: string
+          category?: string
+          description?: string
           id?: string
           payroll_item?: string
           qbo_account_id?: string
           qbo_account_name?: string
           updated_at?: string
           updated_by?: string | null
+        }
+        Relationships: []
+      }
+      qbo_chart_of_accounts: {
+        Row: {
+          account_name: string
+          account_subtype: string | null
+          account_type: string
+          active: boolean
+          created_at: string
+          id: string
+          qbo_account_id: string
+          source: string
+        }
+        Insert: {
+          account_name: string
+          account_subtype?: string | null
+          account_type?: string
+          active?: boolean
+          created_at?: string
+          id?: string
+          qbo_account_id?: string
+          source?: string
+        }
+        Update: {
+          account_name?: string
+          account_subtype?: string | null
+          account_type?: string
+          active?: boolean
+          created_at?: string
+          id?: string
+          qbo_account_id?: string
+          source?: string
         }
         Relationships: []
       }
