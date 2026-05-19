@@ -107,6 +107,7 @@ const AppRoutes = () => (
       <Route path="/settings" element={<SettingsPage />} />
     </Route>
     <Route path="/client-portal" element={<ClientPortalPage />} />
+    <Route path="/training-public" element={<PublicTrainingPage />} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
