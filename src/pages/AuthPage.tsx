@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Mail, Lock, User, Globe, ArrowRight, Hash } from "lucide-react";
+import { Mail, Lock, User, Globe, ArrowRight, Hash, Sparkles, Check, Banknote, ShieldCheck, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import caribbeanHero from "@/assets/caribbean-hero.jpg";
 
 export default function AuthPage() {
   const [isSignUp, setIsSignUp] = useState(false);
