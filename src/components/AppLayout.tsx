@@ -60,6 +60,7 @@ const navItems: NavItem[] = [
   { path: "/attendance", label: "Attendance", icon: Clock },
   { path: "/payroll", label: "Payroll", icon: DollarSign, bottomNav: true },
   { path: "/payroll-history", label: "Payroll History", icon: History },
+  { path: "/quickbooks", label: "QuickBooks Sync", icon: Landmark, managerOnly: true },
   { path: "/payslips", label: "Payslips", icon: Receipt },
   { path: "/reports", label: "Reports", icon: FileText },
   { path: "/geofencing", label: "Geofencing", icon: MapPin },

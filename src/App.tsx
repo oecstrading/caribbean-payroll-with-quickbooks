@@ -41,6 +41,7 @@ import ApplicantTrackingPage from "@/pages/ApplicantTrackingPage";
 import InvoicingPage from "@/pages/InvoicingPage";
 import TrainingHubPage from "@/pages/TrainingHubPage";
 import PublicTrainingPage from "@/pages/PublicTrainingPage";
+import QuickBooksPage from "@/pages/QuickBooksPage";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -104,6 +105,7 @@ const AppRoutes = () => (
       <Route path="/applicants" element={<ApplicantTrackingPage />} />
       <Route path="/invoicing" element={<InvoicingPage />} />
       <Route path="/training" element={<TrainingHubPage />} />
+      <Route path="/quickbooks" element={<QuickBooksPage />} />
       <Route path="/settings" element={<SettingsPage />} />
     </Route>
     <Route path="/client-portal" element={<ClientPortalPage />} />

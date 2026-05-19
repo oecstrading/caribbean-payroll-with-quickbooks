@@ -1643,6 +1643,144 @@ export type Database = {
         }
         Relationships: []
       }
+      qbo_account_mappings: {
+        Row: {
+          account_type: string
+          id: string
+          payroll_item: string
+          qbo_account_id: string
+          qbo_account_name: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          account_type?: string
+          id?: string
+          payroll_item: string
+          qbo_account_id?: string
+          qbo_account_name?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          account_type?: string
+          id?: string
+          payroll_item?: string
+          qbo_account_id?: string
+          qbo_account_name?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      qbo_connection: {
+        Row: {
+          access_token: string | null
+          company_name: string | null
+          connected_at: string | null
+          connected_by: string | null
+          environment: string
+          id: string
+          realm_id: string | null
+          refresh_token: string | null
+          status: string
+          token_expires_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token?: string | null
+          company_name?: string | null
+          connected_at?: string | null
+          connected_by?: string | null
+          environment?: string
+          id?: string
+          realm_id?: string | null
+          refresh_token?: string | null
+          status?: string
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string | null
+          company_name?: string | null
+          connected_at?: string | null
+          connected_by?: string | null
+          environment?: string
+          id?: string
+          realm_id?: string | null
+          refresh_token?: string | null
+          status?: string
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      qbo_employee_map: {
+        Row: {
+          id: string
+          last_synced_at: string | null
+          qbo_display_name: string
+          qbo_employee_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          last_synced_at?: string | null
+          qbo_display_name?: string
+          qbo_employee_id?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          last_synced_at?: string | null
+          qbo_display_name?: string
+          qbo_employee_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      qbo_sync_log: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          error_message: string | null
+          id: string
+          payload: Json | null
+          payroll_run_id: string | null
+          qbo_entity_id: string | null
+          response: Json | null
+          status: string
+          sync_type: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          id?: string
+          payload?: Json | null
+          payroll_run_id?: string | null
+          qbo_entity_id?: string | null
+          response?: Json | null
+          status?: string
+          sync_type?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          id?: string
+          payload?: Json | null
+          payroll_run_id?: string | null
+          qbo_entity_id?: string | null
+          response?: Json | null
+          status?: string
+          sync_type?: string
+        }
+        Relationships: []
+      }
       training_documents: {
         Row: {
           category: string
