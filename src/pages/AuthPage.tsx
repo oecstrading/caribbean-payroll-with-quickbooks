@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Mail, Lock, User, Globe, ArrowRight, Hash } from "lucide-react";
+import { Mail, Lock, User, Globe, ArrowRight, Hash, Sparkles, Check, Banknote, ShieldCheck, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import caribbeanHero from "@/assets/caribbean-hero.jpg";
 
 export default function AuthPage() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -97,28 +98,80 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Left branding panel */}
-      <div className="hidden lg:flex lg:w-1/2 bg-primary relative overflow-hidden items-center justify-center">
-        <div className="relative z-10 px-12 text-primary-foreground">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 rounded-xl bg-primary-foreground/20 flex items-center justify-center">
-              <span className="font-display font-bold text-xl">OE</span>
+      {/* Left branding panel — Caribbean vibrant */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-center justify-center">
+        {/* Background photo */}
+        <img
+          src={caribbeanHero}
+          alt="Saint Lucia Pitons at sunset"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        {/* Vibrant tropical gradient overlay (nano banana yellow → coral → magenta → deep teal) */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(135deg, hsl(48 100% 55% / 0.55) 0%, hsl(18 95% 58% / 0.65) 28%, hsl(330 85% 50% / 0.7) 58%, hsl(195 90% 22% / 0.92) 100%)",
+          }}
+        />
+        {/* Soft glow blobs */}
+        <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full blur-3xl opacity-40" style={{ background: "hsl(48 100% 60%)" }} />
+        <div className="absolute -bottom-24 -right-10 w-96 h-96 rounded-full blur-3xl opacity-40" style={{ background: "hsl(330 90% 55%)" }} />
+
+        <div className="relative z-10 px-12 py-16 text-white max-w-xl">
+          <div className="flex items-center gap-3 mb-10">
+            <div className="w-12 h-12 rounded-xl bg-white/15 backdrop-blur-md border border-white/30 flex items-center justify-center shadow-lg">
+              <span className="font-display font-bold text-xl text-white">OE</span>
             </div>
             <div>
-              <h1 className="font-display font-bold text-2xl">OECS HR & Payroll</h1>
-              <p className="text-primary-foreground/70 text-sm">Saint Lucia</p>
+              <h1 className="font-display font-bold text-2xl text-white drop-shadow">OECS HR & Payroll</h1>
+              <p className="text-white/80 text-sm flex items-center gap-1.5">
+                <MapPin size={12} /> Built for the Caribbean
+              </p>
             </div>
           </div>
-          <h2 className="font-display font-bold text-4xl leading-tight mb-4">
-            Your complete HR<br />& payroll solution
+
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/30 mb-6">
+            <Sparkles size={14} className="text-accent" />
+            <span className="text-xs font-medium tracking-wide uppercase">Now with QuickBooks Sync</span>
+          </div>
+
+          <h2 className="font-display font-bold text-5xl leading-[1.05] mb-5 drop-shadow-lg">
+            Payroll that <span style={{ color: "hsl(48 100% 65%)" }}>moves</span> like the islands.
           </h2>
-          <p className="text-primary-foreground/80 text-lg max-w-md">
-            View payslips, manage leave, update your info — all from one secure self-service portal.
+          <p className="text-white/90 text-lg max-w-md mb-8 leading-relaxed">
+            NIC, PAYE, gratuity, education levy — calculated automatically across St. Lucia and every OECS island. Pay your team in minutes, not days.
           </p>
-        </div>
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 -right-20 w-80 h-80 rounded-full bg-primary-foreground" />
-          <div className="absolute -bottom-10 -left-10 w-60 h-60 rounded-full bg-primary-foreground" />
+
+          {/* Feature pills */}
+          <ul className="space-y-3 mb-10">
+            {[
+              { icon: Banknote, text: "One-click payroll runs & digital payslips" },
+              { icon: ShieldCheck, text: "OECS-compliant: NIC, PAYE, TD5, C3 exports" },
+              { icon: Check, text: "Native QuickBooks Online journal sync" },
+            ].map((f, i) => (
+              <li key={i} className="flex items-center gap-3 text-white/95">
+                <div className="w-8 h-8 rounded-lg bg-white/15 backdrop-blur-md border border-white/30 flex items-center justify-center flex-shrink-0">
+                  <f.icon size={16} className="text-accent" />
+                </div>
+                <span className="text-sm font-medium">{f.text}</span>
+              </li>
+            ))}
+          </ul>
+
+          {/* Stats strip */}
+          <div className="grid grid-cols-3 gap-3 pt-6 border-t border-white/20">
+            {[
+              { v: "7", l: "OECS islands" },
+              { v: "<5 min", l: "to run payroll" },
+              { v: "100%", l: "compliance" },
+            ].map((s, i) => (
+              <div key={i}>
+                <div className="font-display font-bold text-2xl" style={{ color: "hsl(48 100% 65%)" }}>{s.v}</div>
+                <div className="text-xs text-white/75 uppercase tracking-wide">{s.l}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
