@@ -40,6 +40,7 @@ import GuardPerformancePage from "@/pages/GuardPerformancePage";
 import ApplicantTrackingPage from "@/pages/ApplicantTrackingPage";
 import InvoicingPage from "@/pages/InvoicingPage";
 import TrainingHubPage from "@/pages/TrainingHubPage";
+import PublicTrainingPage from "@/pages/PublicTrainingPage";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
