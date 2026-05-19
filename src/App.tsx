@@ -107,6 +107,7 @@ const AppRoutes = () => (
       <Route path="/invoicing" element={<InvoicingPage />} />
       <Route path="/training" element={<TrainingHubPage />} />
       <Route path="/quickbooks" element={<QuickBooksPage />} />
+      <Route path="/payroll-settings" element={<PayrollSettingsPage />} />
       <Route path="/settings" element={<SettingsPage />} />
     </Route>
     <Route path="/client-portal" element={<ClientPortalPage />} />
