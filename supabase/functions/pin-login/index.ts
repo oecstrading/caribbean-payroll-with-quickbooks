@@ -97,7 +97,7 @@ Deno.serve(async (req) => {
     }
 
     // Verify the token to get a session
-    const anonKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const anonClient = createClient(supabaseUrl, anonKey);
     
     const tokenHash = authData.properties?.hashed_token;
