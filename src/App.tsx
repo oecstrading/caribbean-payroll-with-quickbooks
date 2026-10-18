@@ -51,12 +51,15 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: "linear-gradient(135deg, hsl(48 100% 55%) 0%, hsl(18 95% 58%) 35%, hsl(330 85% 50%) 70%, hsl(195 90% 22%) 100%)" }}
+      >
         <div className="text-center space-y-3">
-          <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center mx-auto animate-pulse">
-            <span className="font-display font-bold text-primary-foreground text-sm">OE</span>
+          <div className="w-10 h-10 rounded-lg bg-white/90 flex items-center justify-center mx-auto animate-pulse">
+            <span className="font-display font-bold text-sm" style={{ color: "hsl(195 90% 22%)" }}>OE</span>
           </div>
-          <p className="text-sm text-muted-foreground">Loading...</p>
+          <p className="text-sm text-white/90">Loading your Caribbean payroll…</p>
         </div>
       </div>
     );
