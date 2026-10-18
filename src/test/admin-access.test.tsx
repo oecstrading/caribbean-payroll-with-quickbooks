@@ -2,9 +2,9 @@ import { render, screen, waitFor, cleanup } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { RoleProvider, useRole } from "@/hooks/useRole";
 
-const mocks = vi.hoisted(() => ({ role: "admin" }));
+const mocks = vi.hoisted(() => ({ role: "admin", user: { id: "google-user" } }));
 vi.mock("@/hooks/useAuth", () => ({
-  useAuth: () => ({ user: { id: "google-user" }, session: null }),
+  useAuth: () => ({ user: mocks.user, session: null }),
 }));
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
