@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle, ArrowRight, DollarSign, FileText, AlertCircle, Receipt, Mail, Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,90 +14,19 @@ const steps = ["Review & Sync", "Audit", "Approve & Run"];
 export default function PayrollPage() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
-  const [bulkEmailing, setBulkEmailing] = useState(false);
-  const [processing, setProcessing] = useState(false);
+  const bulkEmailing = false;
+  const processing = false;
   const [approved, setApproved] = useState(false);
   const { deductionsMap } = useAllEmployeeDeductions();
   const { additionsMap } = useAllEmployeeAdditions();
 
-  const handleBulkEmail = async () => {
+  const handleBulkEmail = () => {
     toast.info("Sample payslips cannot be emailed. Use verified employee records for delivery.");
-    return;
-    setBulkEmailing(true);
-    let sent = 0;
-    let failed = 0;
-    for (const emp of payrollData) {
-      try {
-        const { data, error } = await supabase.functions.invoke("email-payslip", {
-          body: { user_id: emp.id, payslip_html: `Payslip for ${emp.firstName} ${emp.lastName}`, period: "March 2026" },
-        });
-        if (error || data?.error) { failed++; } else { sent++; }
-      } catch { failed++; }
-    }
-    setBulkEmailing(false);
-    if (failed === 0) {
-      toast.success(`All ${sent} payslips emailed successfully`);
-    } else {
-      toast.warning(`${sent} sent, ${failed} failed`);
-    }
   };
 
-  const handleApprovePayroll = async () => {
-    // This page currently calculates fictional sample employees, not Auth users.
-    // Never create an approved payroll run with unlinked or random user IDs.
+  const handleApprovePayroll = () => {
     setApproved(true);
     toast.success("Sample payroll preview completed. No live payroll or payslips were saved.");
-    return;
-    setProcessing(true);
-    try {
-      const period = "March 2026";
-
-      // 1. Create payroll run
-      const { data: run, error: runError } = await supabase
-        .from("payroll_runs")
-        .insert({
-          period,
-          status: "approved",
-          employee_count: payrollData.length,
-          total_gross: totals.gross,
-          total_deductions: totals.nicEmployee + totals.paye + totals.creditor,
-          total_net: totals.net,
-        })
-        .select()
-        .single();
-
-      if (runError) throw runError;
-
-      // 2. Create payslips for each employee
-      // Use crypto.randomUUID() for sample employees since they don't have real user_ids
-      const payslipRows = payrollData.map((emp) => ({
-        payroll_run_id: run.id,
-        user_id: emp.id,
-        period,
-        basic_pay: emp.payroll.basicPay,
-        overtime_pay: emp.payroll.overtimePay,
-        gross_pay: emp.payroll.grossMonthly,
-        employee_nic: emp.payroll.employeeNIC,
-        employer_nic: emp.payroll.employerNIC,
-        paye: emp.payroll.paye,
-        total_deductions: emp.payroll.totalDeductions,
-        net_pay: emp.payroll.netPay,
-      }));
-
-      const { error: slipError } = await supabase
-        .from("payslips")
-        .insert(payslipRows);
-
-      if (slipError) throw slipError;
-
-      setApproved(true);
-      toast.success(`Payroll approved! ${payrollData.length} payslips saved.`);
-    } catch (err: any) {
-      console.error("Payroll approval error:", err);
-      toast.error(err.message || "Failed to process payroll");
-    } finally {
-      setProcessing(false);
-    }
   };
 
   const payrollData = sampleEmployees
