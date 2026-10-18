@@ -109,7 +109,7 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen flex" style={{ background: "linear-gradient(135deg, hsl(195 60% 30%) 0%, hsl(330 40% 35%) 50%, hsl(18 70% 45%) 100%)" }}>
       {/* Left branding panel — Caribbean vibrant */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-center justify-center">
         {/* Background photo */}
