@@ -1,4 +1,5 @@
 # Payroll account and Smiley’s samples
+- [ ] Enable administrator Google sign-in and verify full administrator access without elevating other Google users.
 - [ ] Create Payroll invitation for info@smileysincslu.com; username Tintmyride758. Blocked: account service and database are unreachable.
 - [ ] Grant full operational access except user creation/deletion. Blocked: database unavailable; existing policies cannot be inspected or verified.
 - [x] Add six clearly labeled fictional Smiley’s tinting staff and attendance records to existing sample previews without replacing real records; two tests passed.
