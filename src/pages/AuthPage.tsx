@@ -88,11 +88,23 @@ export default function AuthPage() {
   };
 
   const handleGoogleSignIn = async () => {
-    const { error } = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-    if (error) {
-      toast.error("Google sign-in failed");
+    try {
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+      });
+      if (result.error) {
+        toast.error("Google sign-in failed. Please try again.");
+        return;
+      }
+      if (result.redirected) return;
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data.user) {
+        toast.error("Unable to confirm your sign-in. Please try again.");
+        return;
+      }
+      navigate("/", { replace: true });
+    } catch {
+      toast.error("Google sign-in is temporarily unavailable. Please try again.");
     }
   };
 
