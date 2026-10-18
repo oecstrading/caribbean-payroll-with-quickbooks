@@ -35,6 +35,7 @@ export default function EmployeesPage() {
         <div>
           <h1 className="text-xl md:text-2xl font-display font-bold text-foreground">Employees</h1>
           <p className="text-sm text-muted-foreground mt-1">{sampleEmployees.length} team members</p>
+          <p className="text-xs text-muted-foreground mt-1">Sample records • Smiley's Tinting Services, Saint Lucia • Fictional staff and salaries</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -118,6 +119,7 @@ export default function EmployeesPage() {
                       <div>
                         <p className="font-medium text-foreground">{employee.firstName} {employee.lastName}</p>
                         <p className="text-xs text-muted-foreground">{employee.email}</p>
+                        {employee.companyName && <p className="text-xs text-primary">{employee.companyName}</p>}
                       </div>
                     </div>
                   </td>

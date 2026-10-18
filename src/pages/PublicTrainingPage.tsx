@@ -7,7 +7,7 @@ import { toast } from "sonner";
 const BROCHURE_URL =
   "https://bmhqsmygcnpekzdhtbed.supabase.co/storage/v1/object/public/training-docs/public/OECS_Brochure_v3.pdf";
 const MANUAL_URL =
-  "https://bmhqsmygcnpekzdhtbed.supabase.co/storage/v1/object/public/training-docs/public/OECS_User_Manual_v3.pdf";
+  "/training/OECS_User_Manual_v4.pdf";
 
 const DOCS = [
   {
@@ -22,9 +22,9 @@ const DOCS = [
   {
     title: "OECS Security Platform – User Manual",
     description:
-      "Comprehensive guide covering scheduling, GPS attendance, payroll (NIC/PAYE), guard tours, voice reporting, invoicing, and more.",
+      "Updated guide covering Smiley’s tinting samples, payroll, QuickBooks account mapping, voice reporting, and operational safeguards.",
     category: "Documentation",
-    badge: "Latest v3",
+    badge: "Latest v4",
     url: MANUAL_URL,
     icon: FileText,
   },
@@ -34,9 +34,9 @@ export default function PublicTrainingPage() {
   const handleShare = async (url: string, title: string) => {
     try {
       if (navigator.share) {
-        await navigator.share({ title, url });
+        await navigator.share({ title, url: new URL(url, window.location.origin).href });
       } else {
-        await navigator.clipboard.writeText(url);
+        await navigator.clipboard.writeText(new URL(url, window.location.origin).href);
         toast.success("Link copied to clipboard");
       }
     } catch {
@@ -116,7 +116,7 @@ export default function PublicTrainingPage() {
                     rel="noopener noreferrer"
                     className="text-xs text-primary hover:underline truncate"
                   >
-                    {doc.url}
+                    View PDF
                   </a>
                 </CardContent>
               </Card>

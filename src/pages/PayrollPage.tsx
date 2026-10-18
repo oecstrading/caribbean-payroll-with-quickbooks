@@ -22,6 +22,8 @@ export default function PayrollPage() {
   const { additionsMap } = useAllEmployeeAdditions();
 
   const handleBulkEmail = async () => {
+    toast.info("Sample payslips cannot be emailed. Use verified employee records for delivery.");
+    return;
     setBulkEmailing(true);
     let sent = 0;
     let failed = 0;
@@ -42,6 +44,11 @@ export default function PayrollPage() {
   };
 
   const handleApprovePayroll = async () => {
+    // This page currently calculates fictional sample employees, not Auth users.
+    // Never create an approved payroll run with unlinked or random user IDs.
+    setApproved(true);
+    toast.success("Sample payroll preview completed. No live payroll or payslips were saved.");
+    return;
     setProcessing(true);
     try {
       const period = "March 2026";
@@ -66,7 +73,7 @@ export default function PayrollPage() {
       // Use crypto.randomUUID() for sample employees since they don't have real user_ids
       const payslipRows = payrollData.map((emp) => ({
         payroll_run_id: run.id,
-        user_id: crypto.randomUUID(), // placeholder for sample data
+        user_id: emp.id,
         period,
         basic_pay: emp.payroll.basicPay,
         overtime_pay: emp.payroll.overtimePay,
@@ -125,6 +132,7 @@ export default function PayrollPage() {
       <div>
         <h1 className="text-2xl font-display font-bold text-foreground">Run Payroll</h1>
         <p className="text-sm text-muted-foreground mt-1">March 2026 • Saint Lucia (XCD)</p>
+        <p className="text-xs text-muted-foreground mt-1">Sample payroll • Includes Smiley's Tinting Services • No live payments or emails</p>
       </div>
 
       {/* Stepper */}
@@ -355,7 +363,7 @@ export default function PayrollPage() {
             <div className="flex flex-wrap gap-2 justify-end">
               <button
                 onClick={handleBulkEmail}
-                disabled={bulkEmailing}
+                disabled
                 className="flex items-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-secondary text-foreground rounded-lg text-xs md:text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50"
               >
                 {bulkEmailing ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
@@ -376,7 +384,7 @@ export default function PayrollPage() {
                 className="flex items-center gap-2 px-4 md:px-8 py-2.5 md:py-3 bg-success text-success-foreground rounded-lg text-xs md:text-sm font-bold hover:bg-success/90 transition-colors disabled:opacity-50"
               >
                 {processing ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle size={18} />}
-                {approved ? "Approved ✓" : processing ? "Processing..." : "Approve Payroll"}
+                {approved ? "Sample Completed ✓" : processing ? "Processing..." : "Complete Sample Payroll"}
               </button>
             </div>
           </div>

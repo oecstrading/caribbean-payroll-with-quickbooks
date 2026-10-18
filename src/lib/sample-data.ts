@@ -1,4 +1,4 @@
-// Sample employee data based on uploaded spreadsheet
+// Demonstration records only; never use these IDs as authentication identities.
 
 export interface Employee {
   id: string;
@@ -17,9 +17,32 @@ export interface Employee {
   nicNumber: string;
   tanNumber: string;
   monthlySalary: number;
+  companyName?: string;
 }
 
 export const sampleEmployees: Employee[] = [
+  ...[
+    { firstName: "Alana", lastName: "Joseph", department: "Administration", jobTitle: "Office & Payroll Coordinator", monthlySalary: 3200 },
+    { firstName: "Marcus", lastName: "Charles", department: "Automotive Tinting", jobTitle: "Lead Tint Installer", monthlySalary: 3800 },
+    { firstName: "Keisha", lastName: "James", department: "Automotive Tinting", jobTitle: "Tint Installation Technician", monthlySalary: 2800 },
+    { firstName: "Darren", lastName: "Louis", department: "Residential & Commercial", jobTitle: "Window Film Specialist", monthlySalary: 3000 },
+    { firstName: "Nadia", lastName: "Francis", department: "Customer Service", jobTitle: "Bookings & Sales Assistant", monthlySalary: 2400 },
+    { firstName: "Joel", lastName: "Pierre", department: "Automotive Tinting", jobTitle: "Trainee Installer", monthlySalary: 1800 },
+  ].map((employee, index): Employee => ({
+    ...employee,
+    id: `smileys-demo-${index + 1}`,
+    personId: `SM${String(index + 1).padStart(2, "0")}`,
+    companyName: "Smiley's Tinting Services (Sample)",
+    email: `${employee.firstName.toLowerCase()}.sample@example.invalid`,
+    phone: "",
+    startDate: "2026-01-05",
+    schedule: "8-to-5",
+    stdHoursPerDay: 8,
+    otRate: 1.5,
+    status: "Active",
+    nicNumber: `SAMPLE-NIC-${index + 1}`,
+    tanNumber: `SAMPLE-TAN-${index + 1}`,
+  })),
   { id: "1", personId: "01", firstName: "Jarrel", lastName: "John", department: "Engineering", jobTitle: "Senior Developer", email: "jarrel@company.com", phone: "758-555-0101", startDate: "2023-01-15", schedule: "9-to-5", stdHoursPerDay: 8, otRate: 1.5, status: "Active", nicNumber: "NIC-2023-0001", tanNumber: "TAN-0001", monthlySalary: 5500 },
   { id: "2", personId: "02", firstName: "Lydon", lastName: "Fagan", department: "Engineering", jobTitle: "Designer", email: "lydon@company.com", phone: "758-555-0102", startDate: "2023-03-01", schedule: "9-to-5", stdHoursPerDay: 8, otRate: 1.5, status: "Active", nicNumber: "NIC-2023-0002", tanNumber: "TAN-0002", monthlySalary: 4500 },
   { id: "3", personId: "03", firstName: "Maria", lastName: "Santos", department: "Human Resources", jobTitle: "HR Manager", email: "maria@company.com", phone: "758-555-0103", startDate: "2022-06-01", schedule: "9-to-5", stdHoursPerDay: 8, otRate: 1.75, status: "Active", nicNumber: "NIC-2022-0003", tanNumber: "TAN-0003", monthlySalary: 6000 },
@@ -48,6 +71,10 @@ export interface AttendanceRecord {
 }
 
 export const sampleAttendance: AttendanceRecord[] = [
+  ...sampleEmployees.filter((employee) => employee.companyName).flatMap((employee): AttendanceRecord[] => [
+    { personId: employee.personId, name: `${employee.firstName} ${employee.lastName}`, date: "2026-03-02", clockIn: "08:00", clockOut: "17:00", totalHours: 8, status: "Complete", late: false, lateMinutes: 0, otHours: 0 },
+    { personId: employee.personId, name: `${employee.firstName} ${employee.lastName}`, date: "2026-03-03", clockIn: "08:00", clockOut: "17:00", totalHours: 8, status: "Complete", late: false, lateMinutes: 0, otHours: 0 },
+  ]),
   { personId: "01", name: "Jarrel John", date: "2026-03-02", clockIn: "08:30", clockOut: "20:39", totalHours: 12.15, status: "Complete", late: false, lateMinutes: 0, otHours: 4.15 },
   { personId: "01", name: "Jarrel John", date: "2026-03-03", clockIn: "08:30", clockOut: "19:04", totalHours: 10.57, status: "Complete", late: false, lateMinutes: 0, otHours: 2.57 },
   { personId: "01", name: "Jarrel John", date: "2026-03-04", clockIn: "08:16", clockOut: null, totalHours: null, status: "Missing Out", late: false, lateMinutes: 0, otHours: 0 },
