@@ -53,7 +53,8 @@ export default function EmployeeFolderDialog({ folder, creating, onClose, onSave
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [tab, setTab] = useState("personal");
   const navigate = useNavigate();
-  useEffect(() => { setValues(folder?.values || { ...emptyEmployee }); setEditing(creating); setErrors({}); setTab("personal"); }, [folder, creating]);
+  useEffect(() => { setValues(folder?.values || { ...emptyEmployee }); setEditing(creating); setErrors({}); }, [folder, creating]);
+  useEffect(() => { setTab("personal"); }, [folder?.id, creating]);
   const save = async () => {
     const parsed = employeeFolderSchema.safeParse(values);
     if (!parsed.success) {

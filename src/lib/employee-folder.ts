@@ -3,7 +3,7 @@ import type { Employee } from "./sample-data";
 import type { Database } from "@/integrations/supabase/types";
 
 const text = z.string().trim().max(100);
-const date = z.string().refine((value) => !value || (/^\d{4}-\d{2}-\d{2}$/.test(value) && new Date(value).toISOString().slice(0, 10) === value), "Enter a valid date");
+const date = z.string().refine((value) => !value || (/^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(new Date(value).getTime()) && new Date(value).toISOString().slice(0, 10) === value), "Enter a valid date");
 export const employeeFolderSchema = z.object({
   first_name: text.min(1, "First name is required"), last_name: text.min(1, "Last name is required"),
   email: z.string().trim().email("Enter a valid work email").max(255), phone: z.string().trim().max(40),
@@ -46,7 +46,7 @@ export const hrKeys = ["date_of_birth", "gender", "marital_status", "nationality
 export function profileToFolder(profile: FolderProfile): EmployeeFolder {
   const details = typeof profile.hr_details === "object" && profile.hr_details && !Array.isArray(profile.hr_details) ? profile.hr_details : {};
   const values = { ...emptyEmployee };
-  for (const key of hrKeys) if (typeof details[key] === "string") values[key] = details[key];
+  for (const key of hrKeys) if (typeof details[key] === "string") Object.assign(values, { [key]: details[key] });
   return { id: profile.user_id, source: "live", deletedAt: profile.deleted_at, values: {
     ...values, first_name: profile.first_name, last_name: profile.last_name, email: profile.email,
     phone: profile.phone || "", person_id: profile.person_id || "", department: profile.department || "", job_title: profile.job_title || "",
