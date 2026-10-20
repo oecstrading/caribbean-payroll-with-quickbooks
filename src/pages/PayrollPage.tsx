@@ -315,8 +315,8 @@ export default function PayrollPage() {
               </div>
             </CardContent>
           </Card>
+          <PayrollOfficer key={JSON.stringify(officerPayload)} payload={officerPayload} allowed={isAdminOrManager && !loading && !loadError} />
           <div className="flex justify-between">
-            <span className="sr-only">Manager approval remains separate from AI review</span>
             <Button onClick={() => setCurrentStep(0)} className="px-6 py-2.5 bg-secondary text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors">
               Back
             </Button>

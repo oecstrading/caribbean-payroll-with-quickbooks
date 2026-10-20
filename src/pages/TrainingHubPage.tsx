@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Textarea } from "@/components/ui/textarea";
 import { BookOpen, Upload, Download, Trash2, FileText, Search, Filter, Sparkles } from "lucide-react";
 import { format } from "date-fns";
+import { TRAINING_RESOURCES } from "@/lib/training-resources";
 
 const CATEGORIES = [
   { value: "training", label: "Training Material" },
@@ -248,6 +249,13 @@ export default function TrainingHubPage() {
       </div>
 
       {/* Search and filter */}
+      <section className="border-y border-border py-4 space-y-3" aria-label="Latest platform resources">
+        <h2 className="font-semibold text-foreground">Latest platform resources</h2>
+        {TRAINING_RESOURCES.filter(doc => (filterCategory === "all" || filterCategory === doc.category) && `${doc.title} ${doc.description}`.toLowerCase().includes(searchQuery.toLowerCase())).map(doc => <div key={doc.id} className="flex items-center justify-between gap-3 py-2">
+          <div className="min-w-0"><p className="font-medium text-foreground">{doc.title} <Badge variant="secondary">{doc.badge}</Badge></p><p className="text-sm text-muted-foreground">{doc.description}</p></div>
+          <Button asChild variant="outline" size="icon"><a href={doc.url} target="_blank" rel="noopener noreferrer" aria-label={`Download ${doc.title}`}><Download /></a></Button>
+        </div>)}
+      </section>
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
