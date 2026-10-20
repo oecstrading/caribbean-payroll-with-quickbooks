@@ -20,7 +20,11 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "pwa-icon-192.png", "pwa-icon-512.png"],
       workbox: {
-        navigateFallbackDenylist: [/^\/~oauth/],
+        // Never answer file downloads (PDFs, docs, CSVs…) or training/marketing files with the app shell
+        navigateFallbackDenylist: [/^\/~oauth/, /^\/(training|marketing|downloads)\//, /\.[a-z0-9]{2,5}$/i],
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
