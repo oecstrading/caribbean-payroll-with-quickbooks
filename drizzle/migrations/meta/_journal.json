@@ -43,6 +43,13 @@
       "when": 1792516846394,
       "tag": "0005_validate_hr_attachment_extensions",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792518494460,
+      "tag": "0006_employee_pay_basis_rate",
+      "breakpoints": true
     }
   ]
 }
