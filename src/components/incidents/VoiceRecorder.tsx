@@ -75,7 +75,7 @@ export default function VoiceRecorder({ siteId, onReportGenerated }: VoiceRecord
     try {
       // Upload audio
       const ext = blob.type.includes("webm") ? "webm" : "mp4";
-      const path = `reports/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const path = `reports/${(await supabase.auth.getUser()).data.user?.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
       const { error: uploadErr } = await supabase.storage.from("incident-audio").upload(path, blob);
       if (uploadErr) throw uploadErr;
       const { data: urlData } = supabase.storage.from("incident-audio").getPublicUrl(path);

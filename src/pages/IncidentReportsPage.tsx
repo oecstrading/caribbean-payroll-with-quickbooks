@@ -68,7 +68,7 @@ export default function IncidentReportsPage() {
     const urls: string[] = [];
     for (const file of Array.from(files)) {
       const ext = file.name.split(".").pop();
-      const path = `incidents/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const path = `incidents/${(await supabase.auth.getUser()).data.user?.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
       const { error } = await supabase.storage.from("field-photos").upload(path, file);
       if (!error) {
         const { data } = supabase.storage.from("field-photos").getPublicUrl(path);

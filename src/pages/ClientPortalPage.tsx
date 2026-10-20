@@ -25,33 +25,18 @@ export default function ClientPortalPage() {
     setLoading(true);
     setError("");
 
-    // Look up access code — this is a public lookup so we use anon key
-    const { data: access } = await supabase
-      .from("client_portal_access")
-      .select("*")
-      .eq("access_code", accessCode.trim())
-      .eq("is_active", true)
-      .maybeSingle();
-
-    if (!access) {
+    const { data, error: rpcErr } = await supabase.rpc("client_portal_data", { _code: accessCode.trim() });
+    const portal = data as any;
+    if (rpcErr || !portal) {
       setError("Invalid or expired access code");
       setLoading(false);
       return;
     }
-
-    // Fetch site data
-    const [siteRes, patrolRes, incidentRes, signoffRes] = await Promise.all([
-      supabase.from("client_sites").select("*").eq("id", access.site_id).single(),
-      supabase.from("patrol_logs").select("*").eq("site_id", access.site_id).order("scanned_at", { ascending: false }).limit(50),
-      supabase.from("incident_reports").select("*").eq("site_id", access.site_id).order("reported_at", { ascending: false }).limit(20),
-      supabase.from("post_order_signoffs").select("*").eq("site_id", access.site_id).order("signed_at", { ascending: false }).limit(20),
-    ]);
-
     setSiteData({
-      site: siteRes.data,
-      patrols: patrolRes.data || [],
-      incidents: incidentRes.data || [],
-      signoffs: signoffRes.data || [],
+      site: portal.site,
+      patrols: portal.patrols || [],
+      incidents: portal.incidents || [],
+      signoffs: portal.signoffs || [],
     });
     setAuthenticated(true);
     setLoading(false);
