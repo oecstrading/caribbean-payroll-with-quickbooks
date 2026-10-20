@@ -106,6 +106,33 @@ export type Database = {
         }
         Relationships: []
       }
+      attendance_simulation_clock: {
+        Row: {
+          changed_by: string | null
+          enabled: boolean
+          id: boolean
+          real_start: string
+          run_id: string
+          simulated_start: string
+        }
+        Insert: {
+          changed_by?: string | null
+          enabled?: boolean
+          id?: boolean
+          real_start?: string
+          run_id?: string
+          simulated_start?: string
+        }
+        Update: {
+          changed_by?: string | null
+          enabled?: boolean
+          id?: boolean
+          real_start?: string
+          run_id?: string
+          simulated_start?: string
+        }
+        Relationships: []
+      }
       client_invoices: {
         Row: {
           client_email: string | null
@@ -1826,6 +1853,33 @@ export type Database = {
         }
         Relationships: []
       }
+      simulated_attendance_punches: {
+        Row: {
+          id: string
+          punch_type: string
+          recorded_at: string
+          run_id: string
+          simulated_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          punch_type: string
+          recorded_at?: string
+          run_id: string
+          simulated_at: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          punch_type?: string
+          recorded_at?: string
+          run_id?: string
+          simulated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       training_documents: {
         Row: {
           category: string
@@ -1951,6 +2005,40 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_manager: { Args: { _user_id: string }; Returns: boolean }
+      record_simulated_punch: {
+        Args: { _type: string }
+        Returns: {
+          id: string
+          punch_type: string
+          recorded_at: string
+          run_id: string
+          simulated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "simulated_attendance_punches"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      reset_attendance_simulation: {
+        Args: { _enabled: boolean; _start: string }
+        Returns: {
+          changed_by: string | null
+          enabled: boolean
+          id: boolean
+          real_start: string
+          run_id: string
+          simulated_start: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "attendance_simulation_clock"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       verify_guard_location: {
         Args: { _lat: number; _lon: number; _site_id: string }
         Returns: Json

@@ -8,6 +8,13 @@
       "when": 1792515038163,
       "tag": "0000_employee_hr_folders",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792515693911,
+      "tag": "0001_simulated_attendance_clock",
+      "breakpoints": true
     }
   ]
 }
