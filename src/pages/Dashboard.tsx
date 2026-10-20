@@ -27,6 +27,7 @@ import { useNavigate } from "react-router-dom";
 import { useRef, useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import AttendanceClock from "@/components/AttendanceClock";
+import caribbeanHero from "@/assets/caribbean-hero.jpg";
 
 const fadeUp = {
   initial: { opacity: 0, y: 12 },
@@ -227,9 +228,16 @@ export default function DashboardPage() {
         </span>
       </div>
       {/* Page Header */}
-      <motion.div {...fadeUp} transition={{ delay: 0 }}>
-        <h1 className="text-2xl font-display font-bold text-foreground">Dashboard</h1>
-        <p className="text-sm text-muted-foreground mt-1">Welcome back. Here's your workforce summary.</p>
+      <motion.div {...fadeUp} transition={{ delay: 0 }} className="relative overflow-hidden rounded-2xl shadow-lg">
+        <img src={caribbeanHero} alt="Saint Lucia Pitons at sunset" className="absolute inset-0 w-full h-full object-cover" />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(120deg, hsl(195 90% 18% / 0.92) 0%, hsl(330 80% 35% / 0.82) 55%, hsl(18 90% 45% / 0.75) 100%)" }} />
+        <div className="relative px-6 py-7 md:px-8 md:py-9" style={{ color: "hsl(0 0% 100%)", textShadow: "0 1px 3px hsl(0 0% 0% / 0.45)" }}>
+          <p className="text-xs uppercase tracking-widest font-semibold" style={{ color: "hsl(48 100% 70%)" }}>OECS HR & Payroll · Built for the Caribbean</p>
+          <h1 className="text-3xl md:text-4xl font-display font-bold mt-2">
+            Payroll that <span style={{ color: "hsl(48 100% 65%)" }}>moves</span> like the islands.
+          </h1>
+          <p className="text-sm md:text-base mt-2 max-w-xl" style={{ color: "hsl(0 0% 100% / 0.92)" }}>Welcome back. Here's your workforce summary.</p>
+        </div>
       </motion.div>
 
       {/* Metrics */}
