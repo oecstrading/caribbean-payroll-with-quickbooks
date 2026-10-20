@@ -37,7 +37,7 @@ const sections: { id: string; label: string; icon: typeof User; fields: Field[] 
     { key: "pay_frequency", label: "How the employee is paid", options: [...payBases] }, { key: "pay_rate", label: "Pay rate", type: "number" },
     { key: "monthly_salary", label: "Monthly salary", type: "number" },
     { key: "nic_number", label: "NIC / social insurance number" }, { key: "tan_number", label: "Tax account number" },
-    { key: "schedule", label: "Work schedule" }, { key: "std_hours_per_day", label: "Standard daily hours", options: ["4", "6", "7", "7.5", "8", "9", "10", "12"] }, { key: "weekly_hours", label: "Hours per work week" }, { key: "ot_rate", label: "Overtime multiplier", type: "number" },
+    { key: "schedule", label: "Work schedule" }, { key: "std_hours_per_day", label: "Standard daily hours" }, { key: "weekly_hours", label: "Hours per work week" }, { key: "ot_rate", label: "Overtime multiplier", type: "number" },
   ] },
   { id: "emergency", label: "Emergency", icon: Heart, fields: [
     { key: "emergency_name", label: "Emergency contact name" }, { key: "emergency_relationship", label: "Relationship" }, { key: "emergency_phone", label: "Emergency phone", type: "tel" },
@@ -87,6 +87,7 @@ export default function EmployeeFolderDialog({ folder, creating, onClose, onSave
     nationality: ["Saint Lucian", "Antiguan", "Kittitian / Nevisian", "Dominican", "Grenadian", "Vincentian", "Barbadian", "Trinidadian", "Jamaican", "Guyanese", ...directory.map(record => record.values.nationality)],
     city: ["Castries", "Gros Islet", "Rodney Bay", "Babonneau", "Dennery", "Micoud", "Vieux Fort", "Laborie", "Choiseul", "Soufrière", "Canaries", "Anse La Raye", "St. John's", "Basseterre", "Roseau", "St. George's", "Kingstown", ...directory.map(record => record.values.city)],
     schedule: ["Mon–Fri, 8am–4pm", "Mon–Fri, 8am–5pm", "Mon–Fri, 9am–5pm", "Mon–Sat", "Rotating shifts", "Day shift (12 hours)", "Night shift (12 hours)", "Part-time", "Flexible", ...directory.map(record => record.values.schedule)],
+    std_hours_per_day: ["4", "6", "7", "7.5", "8", "9", "10", "12"],
     weekly_hours: ["40", "37.5", "36", "35", "32", "30", "24", "20", "45", "48"],
     emergency_relationship: ["Spouse", "Partner", "Parent", "Child", "Sibling", "Friend", "Other", ...directory.map(record => record.values.emergency_relationship)],
   };
