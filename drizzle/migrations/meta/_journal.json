@@ -29,6 +29,13 @@
       "when": 1792516241619,
       "tag": "0003_atomic_payroll_approval_only",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792516534112,
+      "tag": "0004_email_free_employees_and_private_documents",
+      "breakpoints": true
     }
   ]
 }
