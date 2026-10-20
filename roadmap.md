@@ -1,11 +1,11 @@
 # Payroll account and Smiley’s samples
-- [ ] Expand employee folders with standard HR fields, live save/edit, administrator-only deletion with retained history, and verification.
+- [x] Expand employee folders with personal, employment, payroll, emergency-contact and notes fields; verified signed-in live save/reload and sample edits, with 12 passing tests. Administrator-only reversible folder deletion retains history and does not revoke account access.
 - [x] Enable requested PIN sign-in for Payroll and verify login. Depends on account-service recovery and creation of the Payroll account.
 - [x] Confirm Google provider enabled and improve successful Google sign-in navigation/error handling; two role tests pass (admin retains admin/manager access; ordinary user is not elevated).
-- [x] Verify actual administrator Google sign-in and full server permissions. Blocked: database pooler remains unavailable; existing administrator account cannot be checked.
-- [ ] Create Payroll invitation for info@smileysincslu.com; username Tintmyride758. Blocked: account service and database are unreachable.
-- [ ] Grant full operational access except user creation/deletion. Blocked: database unavailable; existing policies cannot be inspected or verified.
+- [x] Verify existing administrator role and signed-in HR editing. Interactive Google consent remains outside automated verification.
+- [x] Create Payroll account for info@smileysincslu.com; username Tintmyride758; verify PIN session issuance.
+- [x] Assign Payroll manager access with HR editing and no account creation/deletion; preserve server-side administrator-only account creation and folder deletion.
 - [x] Add six clearly labeled fictional Smiley’s tinting staff and attendance records to existing sample previews without replacing real records; two tests passed.
 - [x] Update public Training Hub to serve v4 PDF; verified five rendered PDF pages and HTTP 200 download in preview. No clipping or overlap found.
-- [ ] Verify authenticated payroll, access restrictions and connected features. Blocked: account/database outage. QuickBooks remains simulated, not live.
+- [ ] Verify live QuickBooks integration. Blocked: production QuickBooks credentials/connection are not configured; integration remains simulated.
 - [ ] Publish updated guide and samples. Blocked: publication has not been requested.
