@@ -1,4 +1,5 @@
 # Payroll account and Smiley’s samples
+- [ ] Add employees without email and private employee documents with access controls and expiry dates; verify creation, payroll, uploads, persistence and permissions.
 - [x] Add multi-department payroll selection, atomic live approval and departmental/consolidated PDF/CSV reports. Verified one/two-department selection, downloads, live save/report/history/reload; removed temporary verification run. Seven department tests pass; samples remain isolated.
 - [x] Add shared device and simulated clocks on Dashboard/Attendance with HR-only date reset and isolated staff test punches; verified November 1 reset, signed-in clock in/out, reload, shared Dashboard clock and stopping simulation. Four tests pass.
 - [x] Expand employee folders with personal, employment, payroll, emergency-contact and notes fields; verified signed-in live save/reload and sample edits, with 12 passing tests. Administrator-only reversible folder deletion retains history and does not revoke account access.
