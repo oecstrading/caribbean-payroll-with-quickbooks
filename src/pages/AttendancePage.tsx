@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { sampleAttendance, type AttendanceRecord } from "@/lib/sample-data";
 import AttendanceCSVImport from "@/components/AttendanceCSVImport";
+import AttendanceClock from "@/components/AttendanceClock";
 
 export default function AttendancePage() {
   const [importedRecords, setImportedRecords] = useState<AttendanceRecord[]>([]);
@@ -44,6 +45,7 @@ export default function AttendancePage() {
       </div>
 
       {/* Date Selector */}
+      <AttendanceClock />
       <div className="flex gap-2 flex-wrap">
         {dates.map((date) => (
           <button
