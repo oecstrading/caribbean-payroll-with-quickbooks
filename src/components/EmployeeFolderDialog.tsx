@@ -1,3 +1,4 @@
+import { NativeSelect } from "@/components/ui/native-select";
 import { useEffect, useState } from "react";
 import { Save, Pencil, FileText, Trash2, RotateCcw, User, Briefcase, Wallet, Heart, StickyNote } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -106,7 +107,7 @@ export default function EmployeeFolderDialog({ folder, creating, onClose, onSave
               const disabled = !editing || (field.key === "email" && !creating);
               return <div key={field.key} className={field.wide ? "sm:col-span-2 space-y-1.5" : "space-y-1.5"}>
                 <Label htmlFor={`hr-${field.key}`} className="text-xs text-muted-foreground">{field.label}</Label>
-                {field.options ? <select id={`hr-${field.key}`} value={String(values[field.key])} disabled={disabled} onChange={(event) => setValues({ ...values, [field.key]: event.target.value })} className="w-full h-11 rounded-md border border-input bg-background px-3 text-sm text-foreground disabled:opacity-70 focus:outline-none focus:ring-2 focus:ring-ring"><option value="">Not specified</option>{field.options.map((option) => <option key={option}>{option}</option>)}</select>
+                {field.options ? <NativeSelect id={`hr-${field.key}`} value={String(values[field.key])} disabled={disabled} onChange={(event) => setValues({ ...values, [field.key]: event.target.value })} className="w-full h-11 rounded-md border border-input bg-background px-3 text-sm text-foreground disabled:opacity-70 focus:outline-none focus:ring-2 focus:ring-ring"><option value="">Not specified</option>{field.options.map((option) => <option key={option}>{option}</option>)}</NativeSelect>
                   : pickerOptions[field.key] ? <ValuePicker id={`hr-${field.key}`} label={field.label} value={String(values[field.key])} options={pickerOptions[field.key] || []} disabled={disabled} invalid={Boolean(errors[field.key])} onChange={value => setValues({ ...values, [field.key]: value })} />
                   : field.type === "textarea" ? <Textarea id={`hr-${field.key}`} value={String(values[field.key])} disabled={disabled} maxLength={2000} rows={7} onChange={(event) => setValues({ ...values, [field.key]: event.target.value })} />
                   : <Input id={`hr-${field.key}`} type={field.type || "text"} className="h-11" value={values[field.key]} disabled={disabled} min={field.type === "number" ? 0 : undefined} step={field.type === "number" ? "0.01" : undefined} maxLength={field.key === "email" ? 255 : field.wide ? 500 : field.type === "tel" ? 40 : 100} onChange={(event) => setValues({ ...values, [field.key]: event.target.value })} aria-invalid={Boolean(errors[field.key])} />}

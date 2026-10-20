@@ -1,3 +1,4 @@
+import { NativeSelect } from "@/components/ui/native-select";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { payslipReportRow, selectDepartments, type PayrollReportRow } from "@/lib/department-payroll";
@@ -39,8 +40,8 @@ export default function SavedPayrollReports() {
   }, [period]);
   return <section className="space-y-4">
     <h2 className="text-lg font-display font-semibold text-foreground">Approved payroll reports</h2>
-    <div className="space-y-1 max-w-xs"><Label htmlFor="report-period">Payroll month</Label><select id="report-period" className="w-full h-11 border border-input bg-background text-foreground rounded-md px-3" value={period} onChange={e => setPeriod(e.target.value)}>
-      {!periods.length && <option value="">No approved payroll</option>}{periods.map(p => <option key={p}>{p}</option>)}</select></div>
+    <div className="space-y-1 max-w-xs"><Label htmlFor="report-period">Payroll month</Label><NativeSelect id="report-period" className="w-full h-11 border border-input bg-background text-foreground rounded-md px-3" value={period} onChange={e => setPeriod(e.target.value)}>
+      {!periods.length && <option value="">No approved payroll</option>}{periods.map(p => <option key={p}>{p}</option>)}</NativeSelect></div>
     {error ? <p role="alert" className="text-destructive text-sm">{error}</p> : loading ? <p className="text-sm text-muted-foreground">Loading payroll reports…</p> : <>
       <DepartmentSelector departments={[...new Set(rows.map(row => row.department))].sort()} selected={selected} onChange={setSelected} />
       <DepartmentPayrollReport rows={selectDepartments(rows, selected)} period={period || "—"} />
