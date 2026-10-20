@@ -1559,7 +1559,11 @@ export type Database = {
           employee_count: number
           id: string
           jurisdiction: string | null
+          notes: string | null
+          pay_type: string
           period: string
+          period_end: string | null
+          period_start: string | null
           run_date: string
           status: string
           total_deductions: number
@@ -1573,7 +1577,11 @@ export type Database = {
           employee_count?: number
           id?: string
           jurisdiction?: string | null
+          notes?: string | null
+          pay_type?: string
           period: string
+          period_end?: string | null
+          period_start?: string | null
           run_date?: string
           status?: string
           total_deductions?: number
@@ -1587,7 +1595,11 @@ export type Database = {
           employee_count?: number
           id?: string
           jurisdiction?: string | null
+          notes?: string | null
+          pay_type?: string
           period?: string
+          period_end?: string | null
+          period_start?: string | null
           run_date?: string
           status?: string
           total_deductions?: number
@@ -2269,6 +2281,18 @@ export type Database = {
         }
         Returns: string
       }
+      approve_payroll_run: {
+        Args: {
+          _departments: string[]
+          _end: string
+          _jurisdiction: string
+          _notes?: string
+          _pay_type: string
+          _rows: Json
+          _start: string
+        }
+        Returns: string
+      }
       can_access_employee_document: {
         Args: { _employee: string; _shared: boolean }
         Returns: boolean
@@ -2282,6 +2306,10 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_manager: { Args: { _user_id: string }; Returns: boolean }
+      payroll_period_factor: {
+        Args: { _end: string; _pay_type: string; _start: string }
+        Returns: number
+      }
       record_simulated_punch: {
         Args: { _type: string }
         Returns: {
