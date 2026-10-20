@@ -121,6 +121,29 @@
 }
 
 /* Touch targets */
+/* Native selectors retain device menus and keyboard/form behavior everywhere. */
+select:not([aria-hidden="true"]) {
+  min-height: 44px;
+  max-width: 100%;
+  border-radius: 6px;
+  color: hsl(var(--foreground));
+  background-color: hsl(var(--background));
+  border-color: hsl(var(--input));
+  padding-right: 28px;
+  cursor: pointer;
+}
+select:not([aria-hidden="true"]):focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+select:disabled {
+  cursor: not-allowed;
+}
+select option {
+  color: hsl(var(--popover-foreground));
+  background-color: hsl(var(--popover));
+}
+
 @media (max-width: 768px) {
   button, a, [role="button"] {
     min-height: 44px;

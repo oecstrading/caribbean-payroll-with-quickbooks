@@ -8,3 +8,4 @@
 - User creation and deletion authorization must be enforced server-side independently of operational access; hidden navigation is not a security boundary.
 - Employee folders use live profiles with validated HR details, manager-edit/admin-create-and-delete controls, and reversible soft deletion; this preserves payroll history without deleting authentication accounts.
 - Employee sample edits remain session-only and explicitly separate from live profiles so fictional identities never enter payroll or account APIs.
+- Platform selects retain native form semantics and string values with global styling and the shared native-select wrapper for HR/payroll controls; Input exposes native date/time pickers, while open-ended HR fields use ValuePicker with source-isolated directory suggestions to preserve custom details and sample/live boundaries.

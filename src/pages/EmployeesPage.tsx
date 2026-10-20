@@ -1,3 +1,4 @@
+import { NativeSelect } from "@/components/ui/native-select";
 import { useCallback, useEffect, useState } from "react";
 import { Search, UserPlus, Upload, RefreshCw, MoreHorizontal, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -89,8 +90,8 @@ export default function EmployeesPage() {
     {mode === "sample" && <p className="text-sm text-muted-foreground">Smiley's Tinting Services, Saint Lucia · Fictional staff and salaries · Not linked to live payroll</p>}
     <div className="flex flex-col sm:flex-row gap-3">
       <div className="relative flex-1"><Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" /><Input className="pl-9 h-11" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name, email or employee number" aria-label="Search employees" /></div>
-      <select aria-label="Filter department" value={department} onChange={(event) => setDepartment(event.target.value)} className="h-11 rounded-md border border-input bg-background text-foreground text-sm px-3">{departments.map((value) => <option key={value} value={value}>{value === "All" ? "All departments" : value}</option>)}</select>
-      <select aria-label="Filter status" value={status} onChange={(event) => setStatus(event.target.value)} className="h-11 rounded-md border border-input bg-background text-foreground text-sm px-3">{["All", "Active", "Inactive", "On Leave"].map((value) => <option key={value} value={value}>{value === "All" ? "All statuses" : value}</option>)}</select>
+      <NativeSelect aria-label="Filter department" value={department} onChange={(event) => setDepartment(event.target.value)} className="h-11 rounded-md border border-input bg-background text-foreground text-sm px-3">{departments.map((value) => <option key={value} value={value}>{value === "All" ? "All departments" : value}</option>)}</NativeSelect>
+      <NativeSelect aria-label="Filter status" value={status} onChange={(event) => setStatus(event.target.value)} className="h-11 rounded-md border border-input bg-background text-foreground text-sm px-3">{["All", "Active", "Inactive", "On Leave"].map((value) => <option key={value} value={value}>{value === "All" ? "All statuses" : value}</option>)}</NativeSelect>
     </div>
     {error && mode !== "sample" ? <div role="alert" className="py-12 text-center text-destructive">{error}<Button variant="link" onClick={fetchEmployees}>Retry</Button></div> : loading && mode !== "sample" ? <div className="py-12 text-center text-muted-foreground">Loading employee folders…</div> : <div className="border border-border rounded-lg overflow-hidden bg-card">
       <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b border-border bg-secondary/50">{["Employee", "Department", "Job title", "Employee no.", "Monthly salary", "Status", ""].map((heading, index) => <th key={index} className="text-left py-3 px-4 font-medium text-muted-foreground whitespace-nowrap">{heading}</th>)}</tr></thead><tbody>
@@ -102,7 +103,7 @@ export default function EmployeesPage() {
       </tbody></table></div>
       {!filtered.length && <div className="py-14 text-center text-muted-foreground"><Users className="mx-auto mb-3" /><p>{records.length ? "No employees match these filters" : mode === "deleted" ? "No deleted employee folders" : "No employee folders yet"}</p></div>}
     </div>}
-    <EmployeeFolderDialog folder={selected} creating={creating} onClose={close} onSave={save} onDelete={remove} permissions={permissions} ownId={user?.id} />
+    <EmployeeFolderDialog folder={selected} creating={creating} onClose={close} onSave={save} onDelete={remove} permissions={permissions} ownId={user?.id} directory={(mode === "sample" ? samples : live).filter(record => !record.deletedAt)} />
     {permissions.create && <CSVImportDialog open={showImport} onOpenChange={(open) => { setShowImport(open); if (!open) fetchEmployees(); }} type="employees" />}
   </div>;
 }
