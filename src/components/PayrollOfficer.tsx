@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { BriefcaseBusiness, Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import type { anonymousReviewRows } from "@/lib/payroll-review";
@@ -40,6 +41,6 @@ export default function PayrollOfficer({ payload, allowed }: Props) {
     <p className="text-sm text-muted-foreground">Advisory only · Anonymous amounts and flags sent to AI · Manager approval required</p>
     {busy && <p role="status" className="text-sm text-muted-foreground">Reviewing the current draft…</p>}
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-    {review && <div className="space-y-3 text-sm text-foreground break-words [&_h2]:font-semibold [&_h2]:mt-4 [&_h3]:font-semibold [&_h3]:mt-4 [&_p]:my-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:my-1" data-testid="payroll-officer-review"><ReactMarkdown>{review}</ReactMarkdown></div>}
+    {review && <div className="space-y-3 text-sm text-foreground break-words overflow-x-auto [&_h2]:font-semibold [&_h2]:mt-4 [&_h3]:font-semibold [&_h3]:mt-4 [&_p]:my-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:my-1 [&_td]:border-b [&_td]:border-border [&_td]:p-2 [&_th]:p-2 [&_th]:text-left" data-testid="payroll-officer-review"><ReactMarkdown remarkPlugins={[remarkGfm]}>{review}</ReactMarkdown></div>}
   </section>;
 }

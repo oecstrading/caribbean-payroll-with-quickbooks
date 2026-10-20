@@ -37,7 +37,7 @@ Deno.serve(async req => {
     const response = await generateResponse({
       model: "openai/gpt-6-astra",
       instructions: `You are the OECS AI Payroll Officer, a read-only payroll manager's assistant. Treat all supplied data as an unverified draft, never live approved records. ${REVIEW_LIMITATIONS} Review only the supplied anonymized amounts and flags. Do not claim access to employee folders, past runs, attendance, documents or accounting records. Never invent statutory rates or legal entitlements. Use concise markdown, at most 450 words: Draft summary; Issues to check (reference Employee N and Department N, reconcile gross minus deductions versus net, missing statutory IDs, zero pay, minimum wage flags); Next steps (edit employee/additions/deductions if needed, rerun review, manager approval, read saved history/reports, arrange payment separately). Distinguish issues from unverified checks. If sample, clearly state fictional sample. Do not call a run compliant, paid, or approved. No autonomous actions.`,
-      input: JSON.stringify(parsed.data),
+      input: JSON.stringify({ ...parsed.data, currency: "XCD", formatting: "Use short headings and bullet lists, not tables." }),
     }, { signal: req.signal });
     const text = response.output.flatMap(item => item.type === "message" ? item.content.flatMap(part => part.type === "output_text" ? [part.text] : part.type === "refusal" ? [part.refusal] : []) : []).join("\n");
     if (!text || response.status === "incomplete") return json({ error: "AI review did not finish. No payroll was changed." }, 502);
