@@ -19,6 +19,7 @@ export const employeeFolderSchema = z.object({
   work_location: text, supervisor: text, probation_end: date, contract_end: date, termination_date: date,
   termination_reason: z.string().trim().max(500), pay_frequency: z.enum(["", "Monthly", "Semi-monthly", "Fortnightly", "Weekly", "Daily", "Hourly"]),
   pay_rate: z.string().trim().refine(v => !v || /^\d{1,9}(\.\d{1,2})?$/.test(v), "Enter a rate like 1250 or 18.50"),
+  weekly_hours: z.string().trim().refine(v => !v || (/^\d{1,3}(\.\d{1,2})?$/.test(v) && Number(v) <= 168), "Enter hours like 40 or 37.5"),
   notes: z.string().trim().max(2000),
 }).superRefine((values, context) => {
   if (values.date_of_birth && values.date_of_birth > new Date().toISOString().slice(0, 10)) {
@@ -41,18 +42,25 @@ export const emptyEmployee: EmployeeForm = {
   start_date: "", schedule: "", jurisdiction: "LC", monthly_salary: 0, std_hours_per_day: 8, ot_rate: 1.5, status: "Active",
   date_of_birth: "", gender: "", marital_status: "", nationality: "", address: "", city: "", country: "", personal_email: "",
   emergency_name: "", emergency_relationship: "", emergency_phone: "", employment_type: "", work_location: "", supervisor: "",
-  probation_end: "", contract_end: "", termination_date: "", termination_reason: "", pay_frequency: "", pay_rate: "", notes: "",
+  probation_end: "", contract_end: "", termination_date: "", termination_reason: "", pay_frequency: "", pay_rate: "", weekly_hours: "", notes: "",
 };
-export const hrKeys = ["date_of_birth", "gender", "marital_status", "nationality", "address", "city", "country", "personal_email", "emergency_name", "emergency_relationship", "emergency_phone", "employment_type", "work_location", "supervisor", "probation_end", "contract_end", "termination_date", "termination_reason", "pay_frequency", "pay_rate", "notes"] as const;
+export const hrKeys = ["date_of_birth", "gender", "marital_status", "nationality", "address", "city", "country", "personal_email", "emergency_name", "emergency_relationship", "emergency_phone", "employment_type", "work_location", "supervisor", "probation_end", "contract_end", "termination_date", "termination_reason", "pay_frequency", "pay_rate", "weekly_hours", "notes"] as const;
 export const payBases = ["Monthly", "Semi-monthly", "Weekly", "Daily", "Hourly"] as const;
 export const rateLabels: Record<string, string> = { Monthly: "Monthly rate", "Semi-monthly": "Rate per semi-monthly pay", Fortnightly: "Rate per fortnight", Weekly: "Weekly rate", Daily: "Daily rate", Hourly: "Hourly rate" };
-/** Monthly equivalent: 52 weeks and 260 working days per year; hourly uses standard daily hours. */
-export function monthlyEquivalent(basis: string, rate: number, hoursPerDay: number): number {
-  const factor: Record<string, number> = { Monthly: 1, "Semi-monthly": 2, Fortnightly: 26 / 12, Weekly: 52 / 12, Daily: 260 / 12, Hourly: (260 / 12) * hoursPerDay };
+/** Monthly hours = weekly hours × 52 ÷ 12 (falls back to daily hours × 5 days). */
+export function monthlyHours(weeklyHours: number, hoursPerDay: number): number {
+  const week = weeklyHours > 0 ? weeklyHours : hoursPerDay * 5;
+  return Math.round(week * 52 / 12 * 100) / 100;
+}
+/** Monthly equivalent over 52 weeks a year. Hourly pay uses the employee's weekly hours; daily pay uses days per week (weekly hours ÷ daily hours). */
+export function monthlyEquivalent(basis: string, rate: number, hoursPerDay: number, weeklyHours = 0): number {
+  const week = weeklyHours > 0 ? weeklyHours : hoursPerDay * 5;
+  const daysPerWeek = weeklyHours > 0 && hoursPerDay > 0 ? weeklyHours / hoursPerDay : 5;
+  const factor: Record<string, number> = { Monthly: 1, "Semi-monthly": 2, Fortnightly: 26 / 12, Weekly: 52 / 12, Daily: daysPerWeek * 52 / 12, Hourly: week * 52 / 12 };
   return factor[basis] === undefined || !Number.isFinite(rate) ? NaN : Math.round(rate * factor[basis] * 100) / 100;
 }
 export function effectiveMonthlySalary(values: EmployeeForm): number {
-  const m = values.pay_frequency && values.pay_rate ? monthlyEquivalent(values.pay_frequency, Number(values.pay_rate), Number(values.std_hours_per_day) || 0) : NaN;
+  const m = values.pay_frequency && values.pay_rate ? monthlyEquivalent(values.pay_frequency, Number(values.pay_rate), Number(values.std_hours_per_day) || 0, Number(values.weekly_hours) || 0) : NaN;
   return Number.isFinite(m) ? m : Number(values.monthly_salary) || 0;
 }
 export function profileToFolder(profile: FolderProfile): EmployeeFolder {

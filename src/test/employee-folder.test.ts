@@ -46,3 +46,10 @@ describe("employee folder data", () => {
   it("hourly rate uses standard daily hours", () => { expect(monthlyEquivalent("Hourly", 15, 8)).toBe(2600); });
   it("saves the calculated monthly salary", () => { expect(folderUpdate({ ...emptyEmployee, first_name: "A", last_name: "B", pay_frequency: "Weekly", pay_rate: "600" }).monthly_salary).toBe(2600); });
 });
+
+import { monthlyHours } from "@/lib/employee-folder";
+describe("weekly hours", () => {
+  it("hourly pay uses hours per work week", () => { expect(monthlyEquivalent("Hourly", 10, 8, 36)).toBe(1560); });
+  it("daily pay uses days per week from weekly hours", () => { expect(monthlyEquivalent("Daily", 100, 8, 32)).toBe(1733.33); });
+  it("falls back to daily hours × 5", () => { expect(monthlyHours(0, 8)).toBe(173.33); });
+});

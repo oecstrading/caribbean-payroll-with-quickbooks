@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
-import { employeeFolderSchema, emptyEmployee, payBases, rateLabels, effectiveMonthlySalary, type EmployeeFolder, type EmployeeForm } from "@/lib/employee-folder";
+import { employeeFolderSchema, emptyEmployee, payBases, rateLabels, effectiveMonthlySalary, monthlyHours, type EmployeeFolder, type EmployeeForm } from "@/lib/employee-folder";
 import { calculatePayroll, ST_LUCIA_CONFIG, formatCurrency } from "@/lib/payroll-engine";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -37,7 +37,7 @@ const sections: { id: string; label: string; icon: typeof User; fields: Field[] 
     { key: "pay_frequency", label: "How the employee is paid", options: [...payBases] }, { key: "pay_rate", label: "Pay rate", type: "number" },
     { key: "monthly_salary", label: "Monthly salary", type: "number" },
     { key: "nic_number", label: "NIC / social insurance number" }, { key: "tan_number", label: "Tax account number" },
-    { key: "schedule", label: "Work schedule" }, { key: "std_hours_per_day", label: "Standard daily hours", type: "number" }, { key: "ot_rate", label: "Overtime multiplier", type: "number" },
+    { key: "schedule", label: "Work schedule" }, { key: "std_hours_per_day", label: "Standard daily hours" }, { key: "weekly_hours", label: "Hours per work week" }, { key: "ot_rate", label: "Overtime multiplier", type: "number" },
   ] },
   { id: "emergency", label: "Emergency", icon: Heart, fields: [
     { key: "emergency_name", label: "Emergency contact name" }, { key: "emergency_relationship", label: "Relationship" }, { key: "emergency_phone", label: "Emergency phone", type: "tel" },
@@ -79,14 +79,16 @@ export default function EmployeeFolderDialog({ folder, creating, onClose, onSave
   };
   const preview = calculatePayroll(effectiveMonthlySalary(values), ST_LUCIA_CONFIG);
   const pickerOptions: Partial<Record<keyof EmployeeForm, string[]>> = {
-    department: directory.map(record => record.values.department),
-    job_title: directory.map(record => record.values.job_title),
+    department: ["Administration", "Accounts / Finance", "Human Resources", "Operations", "Sales", "Customer Service", "Installation", "Tinting", "Security", "Maintenance", "Logistics", "IT", ...directory.map(record => record.values.department)],
+    job_title: ["Managing Director", "General Manager", "Supervisor", "Team Lead", "Accountant", "Accounts Clerk", "HR Officer", "Administrative Assistant", "Receptionist", "Sales Representative", "Customer Service Representative", "Technician", "Installer", "Driver", "Security Officer", "Cleaner", "Apprentice", ...directory.map(record => record.values.job_title)],
     supervisor: [...directory.map(record => record.values.supervisor), ...directory.filter(record => record.id !== folder?.id && record.values.status === "Active").map(record => `${record.values.first_name} ${record.values.last_name}`)],
-    work_location: directory.map(record => record.values.work_location),
+    work_location: ["Head Office", "Main Branch", "Workshop", "Warehouse", "Client Site", "Remote", "Field / Mobile", ...directory.map(record => record.values.work_location)],
     country: ["Saint Lucia", "Antigua and Barbuda", "Saint Kitts and Nevis", "Dominica", "Grenada", "Saint Vincent and the Grenadines", "Barbados", "Trinidad and Tobago", "Jamaica", "Guyana", "Belize", "The Bahamas", "Haiti", "Dominican Republic", "Cuba", "Suriname", ...directory.map(record => record.values.country)],
-    nationality: directory.map(record => record.values.nationality),
-    city: directory.map(record => record.values.city),
-    schedule: directory.map(record => record.values.schedule),
+    nationality: ["Saint Lucian", "Antiguan", "Kittitian / Nevisian", "Dominican", "Grenadian", "Vincentian", "Barbadian", "Trinidadian", "Jamaican", "Guyanese", ...directory.map(record => record.values.nationality)],
+    city: ["Castries", "Gros Islet", "Rodney Bay", "Babonneau", "Dennery", "Micoud", "Vieux Fort", "Laborie", "Choiseul", "Soufrière", "Canaries", "Anse La Raye", "St. John's", "Basseterre", "Roseau", "St. George's", "Kingstown", ...directory.map(record => record.values.city)],
+    schedule: ["Mon–Fri, 8am–4pm", "Mon–Fri, 8am–5pm", "Mon–Fri, 9am–5pm", "Mon–Sat", "Rotating shifts", "Day shift (12 hours)", "Night shift (12 hours)", "Part-time", "Flexible", ...directory.map(record => record.values.schedule)],
+    std_hours_per_day: ["4", "6", "7", "7.5", "8", "9", "10", "12"],
+    weekly_hours: ["40", "37.5", "36", "35", "32", "30", "24", "20", "45", "48"],
     emergency_relationship: ["Spouse", "Partner", "Parent", "Child", "Sibling", "Friend", "Other", ...directory.map(record => record.values.emergency_relationship)],
   };
   return <>
@@ -115,7 +117,9 @@ export default function EmployeeFolderDialog({ folder, creating, onClose, onSave
                   : field.type === "textarea" ? <Textarea id={`hr-${field.key}`} value={String(values[field.key])} disabled={disabled} maxLength={2000} rows={7} onChange={(event) => setValues({ ...values, [field.key]: event.target.value })} />
                   : <Input id={`hr-${field.key}`} type={field.type || "text"} className="h-11" value={computed ? effectiveMonthlySalary(values) : values[field.key]} disabled={disabled} min={field.type === "number" ? 0 : undefined} step={field.type === "number" ? "0.01" : undefined} maxLength={field.key === "email" ? 255 : field.wide ? 500 : field.type === "tel" ? 40 : 100} onChange={(event) => setValues({ ...values, [field.key]: event.target.value })} aria-invalid={Boolean(errors[field.key])} />}
                 {errors[field.key] && <p role="alert" className="text-xs text-destructive">{errors[field.key]}</p>}
-                {field.key === "pay_rate" && values.pay_frequency === "Hourly" && <p className="text-xs text-muted-foreground">Monthly pay uses standard daily hours × 260 working days ÷ 12.</p>}
+                {field.key === "pay_rate" && values.pay_frequency === "Hourly" && <p className="text-xs text-muted-foreground">Monthly pay = hourly rate × hours per work week × 52 ÷ 12.</p>}
+                {field.key === "pay_rate" && values.pay_frequency === "Daily" && <p className="text-xs text-muted-foreground">Monthly pay = daily rate × days per week (weekly ÷ daily hours) × 52 ÷ 12.</p>}
+                {field.key === "weekly_hours" && <p className="text-xs text-muted-foreground">{values.weekly_hours ? "" : "Not set: uses daily hours × 5. "}≈ {monthlyHours(Number(values.weekly_hours) || 0, Number(values.std_hours_per_day) || 0)} hours per month</p>}
                 {field.key === "pay_rate" && !values.pay_frequency && editing && <p className="text-xs text-muted-foreground">Choose how the employee is paid first.</p>}
                 {field.key === "email" && !creating && editing && <p className="text-xs text-muted-foreground">Account email is managed separately from HR details.</p>}
               </div>;
