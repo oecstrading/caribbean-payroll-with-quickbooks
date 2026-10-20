@@ -28,7 +28,7 @@ export default function SavedPayrollReports() {
       if (runs.error) throw runs.error;
       const ids = (runs.data || []).map(run => run.id);
       if (!ids.length) return [];
-      const slips = await supabase.from("payslips").select("*").in("payroll_run_id", ids);
+      const slips = await supabase.from("payroll_payslip_directory").select("*").in("payroll_run_id", ids);
       if (slips.error) throw slips.error;
       return (slips.data || []).map(payslipReportRow);
     };

@@ -18,6 +18,12 @@ describe("employee folder permissions", () => {
 });
 describe("employee folder data", () => {
   const valid = { ...emptyEmployee, first_name: "Test", last_name: "Employee", email: "test@example.invalid" };
+  it("allows an employee without an email", () => {
+    expect(employeeFolderSchema.safeParse({ ...valid, email: "" }).success).toBe(true);
+  });
+  it("rejects a malformed optional email", () => {
+    expect(employeeFolderSchema.safeParse({ ...valid, email: "not-email" }).success).toBe(false);
+  });
   it("stores HR additions without changing the account email", () => {
     const update = folderUpdate({ ...valid, emergency_name: "Next of kin", employment_type: "Full-time" });
     expect(update.hr_details.emergency_name).toBe("Next of kin");

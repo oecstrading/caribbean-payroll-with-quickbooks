@@ -1,4 +1,6 @@
 # Application rules
+- Account-free employees use employee_records with a durable employment key, never fabricated auth users; payroll reads both directories atomically and saves account-free payslips separately to preserve auth-bound foreign keys.
+- Employee HR files use private storage and employee_documents metadata; HR manages files, staff read only explicitly shared own files, and downloads use short-lived signed URLs to keep confidential records private.
 - Department payroll approval is an atomic authenticated RPC over live profiles; retain employee-name and department snapshots on payslips, reject duplicate employee/month approval, and consolidate saved runs by period without current-profile joins.
 - Simulation clocks and punches use dedicated tables and authenticated RPCs; never override device time or feed simulated records into live attendance, payroll, billing or compliance. Resets start a new retained run rather than deleting history.
 - Treat src/lib/sample-data.ts records as fictional demonstrations, never as authentication users; this prevents invalid payslip links and accidental live payroll.

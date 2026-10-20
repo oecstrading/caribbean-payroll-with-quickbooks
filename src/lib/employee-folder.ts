@@ -6,7 +6,7 @@ const text = z.string().trim().max(100);
 const date = z.string().refine((value) => !value || (/^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(new Date(value).getTime()) && new Date(value).toISOString().slice(0, 10) === value), "Enter a valid date");
 export const employeeFolderSchema = z.object({
   first_name: text.min(1, "First name is required"), last_name: text.min(1, "Last name is required"),
-  email: z.string().trim().email("Enter a valid work email").max(255), phone: z.string().trim().max(40),
+  email: z.string().trim().max(255).refine(v => !v || z.string().email().safeParse(v).success, "Enter a valid work email"), phone: z.string().trim().max(40),
   person_id: text, department: text, job_title: text, nic_number: text, tan_number: text,
   start_date: date, schedule: text, jurisdiction: text.min(1),
   monthly_salary: z.coerce.number().finite().min(0), std_hours_per_day: z.coerce.number().min(0).max(24),
@@ -31,7 +31,7 @@ export const employeeFolderSchema = z.object({
 });
 export type EmployeeForm = z.infer<typeof employeeFolderSchema>;
 export type FolderProfile = Database["public"]["Tables"]["profiles"]["Row"];
-export interface EmployeeFolder { id: string; source: "live" | "sample"; deletedAt: string | null; values: EmployeeForm }
+export interface EmployeeFolder { id: string; source: "live" | "sample"; accountLinked?: boolean; deletedAt: string | null; values: EmployeeForm }
 export function employeePermissions(role: string | null) {
   return { edit: role === "admin" || role === "manager", create: role === "admin", delete: role === "admin" };
 }

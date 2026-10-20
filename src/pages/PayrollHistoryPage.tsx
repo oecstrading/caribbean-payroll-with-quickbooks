@@ -68,7 +68,9 @@ export default function PayrollHistoryPage() {
 
     if (!payslips[runId]) {
       setLoadingPayslips(runId);
-      const { data, error } = await supabase.from("payslips").select("*").eq("payroll_run_id", runId).order("created_at", { ascending: true });
+      const [linked, unlinked] = await Promise.all([supabase.from("payslips").select("*").eq("payroll_run_id", runId), supabase.from("employee_payslips").select("*").eq("payroll_run_id", runId)]);
+      const error = linked.error || unlinked.error;
+      const data = [...(linked.data || []), ...(unlinked.data || [])];
       if (error) toast.error(error.message);
       else setPayslips(prev => ({ ...prev, [runId]: (data || []).map(s => ({ ...s, profile: s.employee_name_snapshot ? { first_name: s.employee_name_snapshot, last_name: "", department: s.department_snapshot, nic_number: null } : undefined })) }));
       setLoadingPayslips(null);

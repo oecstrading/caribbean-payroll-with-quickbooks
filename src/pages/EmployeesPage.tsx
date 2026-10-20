@@ -31,9 +31,9 @@ export default function EmployeesPage() {
   const [error, setError] = useState("");
   const fetchEmployees = useCallback(async () => {
     setLoading(true); setError("");
-    const { data, error } = await supabase.from("profiles").select("*").order("first_name");
-    if (error) setError("Employee records could not be loaded. Please try again.");
-    else setLive((data || []).map(profileToFolder));
+    const [profiles, records] = await Promise.all([supabase.from("profiles").select("*").order("first_name"), supabase.from("employee_records").select("*").order("first_name")]);
+    if (profiles.error || records.error) setError("Employee records could not be loaded. Please try again.");
+    else setLive([...(profiles.data || []).map(p => ({ ...profileToFolder(p), accountLinked: true })), ...(records.data || []).map(p => ({ ...profileToFolder(p), accountLinked: false }))]);
     setLoading(false);
   }, []);
   useEffect(() => { fetchEmployees(); }, [fetchEmployees]);
@@ -51,23 +51,30 @@ export default function EmployeesPage() {
     let id = selected?.id;
     if (creating) {
       if (!permissions.create) throw new Error("Only administrators can create employees");
+      if (!values.email) {
+        const { data, error } = await supabase.from("employee_records").insert({ ...folderUpdate(values), email: "" }).select("*").single();
+        if (error || !data) throw new Error(error?.message || "Unable to create employee folder");
+        setSelected({ ...profileToFolder(data), accountLinked: false }); setCreating(false); setMode("live");
+        await fetchEmployees(); toast.success("Employee saved without a sign-in account"); return;
+      }
       const { data, error } = await supabase.functions.invoke("invite-user", { body: { email: values.email, role: "employee", first_name: values.first_name, last_name: values.last_name } });
       if (error || data?.error || !data?.user_id) throw new Error(data?.error || "Unable to create employee account. Check the email and try again.");
       id = data.user_id;
     }
     if (!id) throw new Error("Employee record not found");
-    const { data, error } = await supabase.from("profiles").update(folderUpdate(values)).eq("user_id", id).select("*").single();
+    const table = selected?.accountLinked === false ? "employee_records" : "profiles";
+    const { data, error } = await supabase.from(table).update(folderUpdate(values)).eq("user_id", id).select("*").single();
     if (error || !data) {
       if (creating) { setCreating(false); await fetchEmployees(); close(); throw new Error("Account created, but HR details were not saved. Open the new employee folder and try saving again."); }
       throw new Error(error?.message || "Unable to save employee details");
     }
-    setSelected(profileToFolder(data)); setCreating(false); setMode("live");
+    setSelected({ ...profileToFolder(data), accountLinked: table === "profiles" }); setCreating(false); setMode("live");
     await fetchEmployees(); toast.success("Employee saved");
   };
   const remove = async (restore: boolean) => {
     if (!permissions.delete || !selected) throw new Error("Only administrators can delete employee folders");
     if (selected.source === "sample") { setSamples((previous) => previous.filter((record) => record.id !== selected.id)); close(); return; }
-    const { data, error } = await supabase.from("profiles").update({ deleted_at: restore ? null : new Date().toISOString() }).eq("user_id", selected.id).select("user_id").single();
+    const { data, error } = await supabase.from(selected.accountLinked === false ? "employee_records" : "profiles").update({ deleted_at: restore ? null : new Date().toISOString() }).eq("user_id", selected.id).select("user_id").single();
     if (error || !data) throw new Error(error?.message || "Unable to update employee folder");
     close(); await fetchEmployees(); toast.success(restore ? "Employee folder restored" : "Employee folder deleted; history retained");
   };
