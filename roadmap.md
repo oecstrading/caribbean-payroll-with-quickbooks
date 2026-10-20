@@ -1,4 +1,5 @@
 # Payroll account and Smiley’s samples
+- [ ] Expand employee folders with standard HR fields, live save/edit, administrator-only deletion with retained history, and verification.
 - [x] Enable requested PIN sign-in for Payroll and verify login. Depends on account-service recovery and creation of the Payroll account.
 - [x] Confirm Google provider enabled and improve successful Google sign-in navigation/error handling; two role tests pass (admin retains admin/manager access; ordinary user is not elevated).
 - [x] Verify actual administrator Google sign-in and full server permissions. Blocked: database pooler remains unavailable; existing administrator account cannot be checked.
