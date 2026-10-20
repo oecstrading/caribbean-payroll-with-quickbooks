@@ -12,7 +12,7 @@ export default function DepartmentSelector({ departments, selected, onChange, di
     </div>
     <div className="flex flex-wrap gap-x-6 gap-y-2">
       {departments.map(department => <label key={department} className="flex items-center gap-2 min-h-11 text-sm text-foreground cursor-pointer">
-        <Checkbox disabled={disabled} checked={selected.includes(department)} onCheckedChange={checked => onChange(checked ? [...selected, department] : selected.filter(d => d !== department))} />
+        <Checkbox className="min-h-4 h-4 w-4" disabled={disabled} checked={selected.includes(department)} onCheckedChange={checked => onChange(checked ? [...selected, department] : selected.filter(d => d !== department))} />
         <span className="break-words">{department}</span>
       </label>)}
     </div>

@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { sampleEmployees } from "@/lib/sample-data";
-import { calculatePayroll, formatCurrency, ST_LUCIA_CONFIG, checkMinimumWageCompliance } from "@/lib/payroll-engine";
+import { calculatePayroll, formatCurrency, checkMinimumWageCompliance } from "@/lib/payroll-engine";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,7 +36,7 @@ export default function PayrollPage() {
   const [deductionsMap, setDeductionsMap] = useState<Record<string, import("@/lib/payroll-engine").CreditorDeduction[]>>({});
   const [additionsMap, setAdditionsMap] = useState<Record<string, import("@/lib/payroll-engine").PayrollAddition[]>>({});
   const { isAdminOrManager } = useRole();
-  const config = getConfigByJurisdiction(jurisdiction);
+  const config = getConfigByJurisdiction(source === "sample" ? "LC" : jurisdiction);
   useEffect(() => {
     let cancelled = false;
     setLoading(true); setLoadError("");
