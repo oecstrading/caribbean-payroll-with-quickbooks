@@ -1456,9 +1456,11 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          deleted_at: string | null
           department: string | null
           email: string
           first_name: string
+          hr_details: Json
           id: string
           job_title: string | null
           jurisdiction: string
@@ -1480,9 +1482,11 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deleted_at?: string | null
           department?: string | null
           email?: string
           first_name?: string
+          hr_details?: Json
           id?: string
           job_title?: string | null
           jurisdiction?: string
@@ -1504,9 +1508,11 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deleted_at?: string | null
           department?: string | null
           email?: string
           first_name?: string
+          hr_details?: Json
           id?: string
           job_title?: string | null
           jurisdiction?: string
