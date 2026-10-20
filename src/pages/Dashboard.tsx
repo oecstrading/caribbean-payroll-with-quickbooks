@@ -26,6 +26,7 @@ import { calculatePayroll, formatCurrency, ST_LUCIA_CONFIG } from "@/lib/payroll
 import { useNavigate } from "react-router-dom";
 import { useRef, useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import AttendanceClock from "@/components/AttendanceClock";
 
 const fadeUp = {
   initial: { opacity: 0, y: 12 },
@@ -232,6 +233,7 @@ export default function DashboardPage() {
       </motion.div>
 
       {/* Metrics */}
+      <AttendanceClock />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {metrics.map((metric, i) => (
           <motion.div key={metric.label} {...fadeUp} transition={{ delay: 0.05 * (i + 1) }}>

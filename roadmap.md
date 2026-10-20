@@ -1,4 +1,5 @@
 # Payroll account and Smiley’s samples
+- [x] Add shared device and simulated clocks on Dashboard/Attendance with HR-only date reset and isolated staff test punches; verified November 1 reset, signed-in clock in/out, reload, shared Dashboard clock and stopping simulation. Four tests pass.
 - [x] Expand employee folders with personal, employment, payroll, emergency-contact and notes fields; verified signed-in live save/reload and sample edits, with 12 passing tests. Administrator-only reversible folder deletion retains history and does not revoke account access.
 - [x] Enable requested PIN sign-in for Payroll and verify login. Depends on account-service recovery and creation of the Payroll account.
 - [x] Confirm Google provider enabled and improve successful Google sign-in navigation/error handling; two role tests pass (admin retains admin/manager access; ordinary user is not elevated).
