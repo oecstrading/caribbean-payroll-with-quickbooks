@@ -1,240 +1,101 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { Search, UserPlus, MoreHorizontal, Mail, Phone, FileText, X, Upload } from "lucide-react";
-import CSVImportDialog from "@/components/CSVImportDialog";
-import { Card, CardContent } from "@/components/ui/card";
+import { useCallback, useEffect, useState } from "react";
+import { Search, UserPlus, Upload, RefreshCw, MoreHorizontal, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { sampleEmployees, type Employee } from "@/lib/sample-data";
-import { formatCurrency, calculatePayroll, ST_LUCIA_CONFIG } from "@/lib/payroll-engine";
-import { useNavigate } from "react-router-dom";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import CSVImportDialog from "@/components/CSVImportDialog";
+import EmployeeFolderDialog from "@/components/EmployeeFolderDialog";
+import { sampleEmployees } from "@/lib/sample-data";
+import { employeePermissions, folderUpdate, profileToFolder, sampleToFolder, type EmployeeFolder, type EmployeeForm } from "@/lib/employee-folder";
+import { formatCurrency } from "@/lib/payroll-engine";
+import { supabase } from "@/integrations/supabase/client";
+import { useRole } from "@/hooks/useRole";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 export default function EmployeesPage() {
+  const { role } = useRole();
+  const { user } = useAuth();
+  const permissions = employeePermissions(role);
+  const [live, setLive] = useState<EmployeeFolder[]>([]);
+  const [samples, setSamples] = useState(() => sampleEmployees.map(sampleToFolder));
+  const [mode, setMode] = useState("live");
   const [search, setSearch] = useState("");
-  const [filterDept, setFilterDept] = useState("All");
-  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [department, setDepartment] = useState("All");
+  const [status, setStatus] = useState("All");
+  const [selected, setSelected] = useState<EmployeeFolder | null>(null);
+  const [creating, setCreating] = useState(false);
   const [showImport, setShowImport] = useState(false);
-  const navigate = useNavigate();
-
-  const departments = ["All", ...new Set(sampleEmployees.map((e) => e.department))];
-
-  const filtered = sampleEmployees.filter((e) => {
-    const matchSearch = `${e.firstName} ${e.lastName} ${e.email}`.toLowerCase().includes(search.toLowerCase());
-    const matchDept = filterDept === "All" || e.department === filterDept;
-    return matchSearch && matchDept;
-  });
-
-  return (
-    <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-4 md:space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-xl md:text-2xl font-display font-bold text-foreground">Employees</h1>
-          <p className="text-sm text-muted-foreground mt-1">{sampleEmployees.length} team members</p>
-          <p className="text-xs text-muted-foreground mt-1">Sample records • Smiley's Tinting Services, Saint Lucia • Fictional staff and salaries</p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setShowImport(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-secondary text-secondary-foreground rounded-lg text-sm font-medium hover:bg-secondary/80 transition-colors"
-          >
-            <Upload size={16} />
-            Import CSV
-          </button>
-          <button
-            onClick={() => navigate("/users")}
-            className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
-          >
-            <UserPlus size={16} />
-            Add Employee
-          </button>
-        </div>
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const fetchEmployees = useCallback(async () => {
+    setLoading(true); setError("");
+    const { data, error } = await supabase.from("profiles").select("*").order("first_name");
+    if (error) setError("Employee records could not be loaded. Please try again.");
+    else setLive((data || []).map(profileToFolder));
+    setLoading(false);
+  }, []);
+  useEffect(() => { fetchEmployees(); }, [fetchEmployees]);
+  const records = mode === "sample" ? samples.filter((folder) => !folder.deletedAt) : live.filter((folder) => mode === "deleted" ? Boolean(folder.deletedAt) : !folder.deletedAt);
+  const departments = ["All", ...new Set(records.map((folder) => folder.values.department).filter(Boolean))];
+  const filtered = records.filter(({ values }) => `${values.first_name} ${values.last_name} ${values.email} ${values.person_id}`.toLowerCase().includes(search.toLowerCase()) && (department === "All" || values.department === department) && (status === "All" || values.status === status));
+  const close = () => { setSelected(null); setCreating(false); };
+  const save = async (values: EmployeeForm) => {
+    if (!permissions.edit) throw new Error("HR access is required");
+    if (selected?.source === "sample") {
+      const updated = { ...selected, values };
+      setSamples((previous) => previous.map((record) => record.id === selected.id ? updated : record));
+      setSelected(updated); toast.success("Sample updated for this visit. No live records changed."); return;
+    }
+    let id = selected?.id;
+    if (creating) {
+      if (!permissions.create) throw new Error("Only administrators can create employees");
+      const { data, error } = await supabase.functions.invoke("invite-user", { body: { email: values.email, role: "employee", first_name: values.first_name, last_name: values.last_name } });
+      if (error || data?.error || !data?.user_id) throw new Error(data?.error || "Unable to create employee account. Check the email and try again.");
+      id = data.user_id;
+    }
+    if (!id) throw new Error("Employee record not found");
+    const { data, error } = await supabase.from("profiles").update(folderUpdate(values)).eq("user_id", id).select("*").single();
+    if (error || !data) {
+      if (creating) { setCreating(false); await fetchEmployees(); close(); throw new Error("Account created, but HR details were not saved. Open the new employee folder and try saving again."); }
+      throw new Error(error?.message || "Unable to save employee details");
+    }
+    setSelected(profileToFolder(data)); setCreating(false); setMode("live");
+    await fetchEmployees(); toast.success("Employee saved");
+  };
+  const remove = async (restore: boolean) => {
+    if (!permissions.delete || !selected) throw new Error("Only administrators can delete employee folders");
+    if (selected.source === "sample") { setSamples((previous) => previous.filter((record) => record.id !== selected.id)); close(); return; }
+    const { data, error } = await supabase.from("profiles").update({ deleted_at: restore ? null : new Date().toISOString() }).eq("user_id", selected.id).select("user_id").single();
+    if (error || !data) throw new Error(error?.message || "Unable to update employee folder");
+    close(); await fetchEmployees(); toast.success(restore ? "Employee folder restored" : "Employee folder deleted; history retained");
+  };
+  return <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-5">
+    <div className="flex items-center justify-between flex-wrap gap-3">
+      <div><h1 className="text-xl md:text-2xl font-display font-bold text-foreground">Employees</h1><p className="text-sm text-muted-foreground mt-1">{records.length} {mode === "sample" ? "fictional sample records" : mode === "deleted" ? "deleted folders" : "employee folders"}</p></div>
+      <div className="flex gap-2 flex-wrap"><Button variant="outline" className="h-11" disabled={loading} onClick={fetchEmployees} title="Refresh employee records"><RefreshCw />Refresh</Button>
+        {permissions.create && <><Button variant="secondary" className="h-11" onClick={() => setShowImport(true)}><Upload />Import CSV</Button><Button className="h-11" onClick={() => { setSelected(null); setCreating(true); }}><UserPlus />Add employee</Button></>}
       </div>
-
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name or email..."
-            className="w-full pl-9 pr-4 py-2.5 bg-card border border-border rounded-lg text-sm font-body placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-          />
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          {departments.map((dept) => (
-            <button
-              key={dept}
-              onClick={() => setFilterDept(dept)}
-              className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-                filterDept === dept
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-foreground hover:bg-muted"
-              }`}
-            >
-              {dept}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Employee Table */}
-      <Card className="shadow-card border-border/60 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-secondary/50">
-                <th className="text-left py-3 px-4 font-medium text-muted-foreground">Employee</th>
-                <th className="text-left py-3 px-4 font-medium text-muted-foreground">Department</th>
-                <th className="text-left py-3 px-4 font-medium text-muted-foreground">Job Title</th>
-                <th className="text-left py-3 px-4 font-medium text-muted-foreground">NIC No.</th>
-                <th className="text-left py-3 px-4 font-medium text-muted-foreground">Salary</th>
-                <th className="text-left py-3 px-4 font-medium text-muted-foreground">Status</th>
-                <th className="text-right py-3 px-4 font-medium text-muted-foreground"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((employee, i) => (
-                <motion.tr
-                  key={employee.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: i * 0.02 }}
-                  className="border-b border-border/50 hover:bg-secondary/30 transition-colors cursor-pointer"
-                  onClick={() => setSelectedEmployee(employee)}
-                >
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <span className="text-xs font-bold text-primary">
-                          {employee.firstName[0]}{employee.lastName[0]}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="font-medium text-foreground">{employee.firstName} {employee.lastName}</p>
-                        <p className="text-xs text-muted-foreground">{employee.email}</p>
-                        {employee.companyName && <p className="text-xs text-primary">{employee.companyName}</p>}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4 text-foreground">{employee.department}</td>
-                  <td className="py-3 px-4 text-foreground">{employee.jobTitle}</td>
-                  <td className="py-3 px-4 text-muted-foreground font-mono text-xs">{employee.nicNumber}</td>
-                  <td className="py-3 px-4 font-medium text-foreground">{formatCurrency(employee.monthlySalary)} <span className="text-xs text-muted-foreground">XCD</span></td>
-                  <td className="py-3 px-4">
-                    <Badge
-                      variant={employee.status === "Active" ? "default" : "secondary"}
-                      className={employee.status === "Active" ? "bg-success/10 text-success border-success/20 hover:bg-success/20" : ""}
-                    >
-                      {employee.status}
-                    </Badge>
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <button className="p-1.5 rounded-md hover:bg-secondary transition-colors">
-                      <MoreHorizontal size={16} className="text-muted-foreground" />
-                    </button>
-                  </td>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-
-      {/* Employee Detail Dialog */}
-      <Dialog open={!!selectedEmployee} onOpenChange={(open) => !open && setSelectedEmployee(null)}>
-        <DialogContent className="sm:max-w-lg">
-          {selectedEmployee && (() => {
-            const payroll = calculatePayroll(selectedEmployee.monthlySalary, ST_LUCIA_CONFIG);
-            return (
-              <>
-                <DialogHeader>
-                  <DialogTitle className="font-display flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <span className="text-sm font-bold text-primary">
-                        {selectedEmployee.firstName[0]}{selectedEmployee.lastName[0]}
-                      </span>
-                    </div>
-                    {selectedEmployee.firstName} {selectedEmployee.lastName}
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 mt-2">
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <p className="text-muted-foreground text-xs uppercase tracking-wide">Department</p>
-                      <p className="font-medium text-foreground">{selectedEmployee.department}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground text-xs uppercase tracking-wide">Job Title</p>
-                      <p className="font-medium text-foreground">{selectedEmployee.jobTitle}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground text-xs uppercase tracking-wide">Email</p>
-                      <p className="font-medium text-foreground">{selectedEmployee.email}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground text-xs uppercase tracking-wide">Phone</p>
-                      <p className="font-medium text-foreground">{selectedEmployee.phone}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground text-xs uppercase tracking-wide">NIC Number</p>
-                      <p className="font-mono text-foreground">{selectedEmployee.nicNumber}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground text-xs uppercase tracking-wide">Start Date</p>
-                      <p className="font-medium text-foreground">{new Date(selectedEmployee.startDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-border pt-3">
-                    <p className="text-muted-foreground text-xs uppercase tracking-wide mb-2">Monthly Pay Summary</p>
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className="p-3 rounded-lg bg-secondary text-center">
-                        <p className="text-xs text-muted-foreground">Gross</p>
-                        <p className="font-display font-bold text-foreground">{formatCurrency(payroll.grossMonthly)}</p>
-                      </div>
-                      <div className="p-3 rounded-lg bg-destructive/5 text-center">
-                        <p className="text-xs text-muted-foreground">Deductions</p>
-                        <p className="font-display font-bold text-destructive">{formatCurrency(payroll.totalDeductions)}</p>
-                      </div>
-                      <div className="p-3 rounded-lg bg-success/5 text-center">
-                        <p className="text-xs text-muted-foreground">Net Pay</p>
-                        <p className="font-display font-bold text-success">{formatCurrency(payroll.netPay)}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2 pt-2">
-                    <button
-                      onClick={() => {
-                        setSelectedEmployee(null);
-                        navigate(`/payslips?employee=${selectedEmployee.id}`);
-                      }}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
-                    >
-                      <FileText size={16} />
-                      View Payslip
-                    </button>
-                    <button
-                      onClick={() => setSelectedEmployee(null)}
-                      className="px-4 py-2.5 bg-secondary text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors"
-                    >
-                      Close
-                    </button>
-                  </div>
-                </div>
-              </>
-            );
-          })()}
-        </DialogContent>
-      </Dialog>
-      <CSVImportDialog open={showImport} onOpenChange={setShowImport} type="employees" />
     </div>
-  );
+    <Tabs value={mode} onValueChange={(value) => { setMode(value); setDepartment("All"); setStatus("All"); }}><TabsList className="h-11"><TabsTrigger value="live">Employees</TabsTrigger><TabsTrigger value="sample">Sample company</TabsTrigger>{permissions.delete && <TabsTrigger value="deleted">Deleted folders</TabsTrigger>}</TabsList></Tabs>
+    {mode === "sample" && <p className="text-sm text-muted-foreground">Smiley's Tinting Services, Saint Lucia · Fictional staff and salaries · Not linked to live payroll</p>}
+    <div className="flex flex-col sm:flex-row gap-3">
+      <div className="relative flex-1"><Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" /><Input className="pl-9 h-11" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name, email or employee number" aria-label="Search employees" /></div>
+      <select aria-label="Filter department" value={department} onChange={(event) => setDepartment(event.target.value)} className="h-11 rounded-md border border-input bg-background text-foreground text-sm px-3">{departments.map((value) => <option key={value} value={value}>{value === "All" ? "All departments" : value}</option>)}</select>
+      <select aria-label="Filter status" value={status} onChange={(event) => setStatus(event.target.value)} className="h-11 rounded-md border border-input bg-background text-foreground text-sm px-3">{["All", "Active", "Inactive", "On Leave"].map((value) => <option key={value} value={value}>{value === "All" ? "All statuses" : value}</option>)}</select>
+    </div>
+    {error && mode !== "sample" ? <div role="alert" className="py-12 text-center text-destructive">{error}<Button variant="link" onClick={fetchEmployees}>Retry</Button></div> : loading && mode !== "sample" ? <div className="py-12 text-center text-muted-foreground">Loading employee folders…</div> : <div className="border border-border rounded-lg overflow-hidden bg-card">
+      <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b border-border bg-secondary/50">{["Employee", "Department", "Job title", "Employee no.", "Monthly salary", "Status", ""].map((heading, index) => <th key={index} className="text-left py-3 px-4 font-medium text-muted-foreground whitespace-nowrap">{heading}</th>)}</tr></thead><tbody>
+        {filtered.map((folder) => <tr key={folder.id} className="border-b border-border/50 hover:bg-secondary/30 transition-colors cursor-pointer" onClick={() => setSelected(folder)}>
+          <td className="py-3 px-4"><div className="flex items-center gap-3"><div className="w-10 h-10 shrink-0 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-xs">{folder.values.first_name[0]}{folder.values.last_name[0]}</div><div><p className="font-medium text-foreground">{folder.values.first_name} {folder.values.last_name}</p><p className="text-xs text-muted-foreground">{folder.values.email}</p></div></div></td>
+          <td className="py-3 px-4">{folder.values.department || "—"}</td><td className="py-3 px-4">{folder.values.job_title || "—"}</td><td className="py-3 px-4 text-muted-foreground">{folder.values.person_id || "—"}</td><td className="py-3 px-4 whitespace-nowrap">{formatCurrency(folder.values.monthly_salary)}</td><td className="py-3 px-4"><Badge variant={folder.values.status === "Active" ? "default" : "secondary"}>{folder.values.status}</Badge></td>
+          <td className="py-3 px-4"><Button variant="ghost" size="icon" className="h-11 w-11" aria-label={`Open ${folder.values.first_name} ${folder.values.last_name} folder`} onClick={(event) => { event.stopPropagation(); setSelected(folder); }}><MoreHorizontal /></Button></td>
+        </tr>)}
+      </tbody></table></div>
+      {!filtered.length && <div className="py-14 text-center text-muted-foreground"><Users className="mx-auto mb-3" /><p>{records.length ? "No employees match these filters" : mode === "deleted" ? "No deleted employee folders" : "No employee folders yet"}</p></div>}
+    </div>}
+    <EmployeeFolderDialog folder={selected} creating={creating} onClose={close} onSave={save} onDelete={remove} permissions={permissions} ownId={user?.id} />
+    {permissions.create && <CSVImportDialog open={showImport} onOpenChange={(open) => { setShowImport(open); if (!open) fetchEmployees(); }} type="employees" />}
+  </div>;
 }
