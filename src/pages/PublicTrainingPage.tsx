@@ -1,3 +1,4 @@
+import { downloadFile } from "@/lib/download-file";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -75,10 +76,8 @@ export default function PublicTrainingPage() {
                 <CardContent className="flex-1 flex flex-col justify-between gap-4">
                   <p className="text-sm text-muted-foreground">{doc.description}</p>
                   <div className="flex flex-col sm:flex-row gap-2">
-                    <Button asChild className="flex-1">
-                      <a href={doc.url} target="_blank" rel="noopener noreferrer">
-                        <Download className="h-4 w-4 mr-2" /> Download PDF
-                      </a>
+                    <Button className="flex-1" onClick={() => downloadFile(doc.url)}>
+                      <Download className="h-4 w-4 mr-2" /> Download PDF
                     </Button>
                     <Button
                       variant="outline"
