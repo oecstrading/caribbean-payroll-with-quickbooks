@@ -36,6 +36,13 @@
       "when": 1792516534112,
       "tag": "0004_email_free_employees_and_private_documents",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792516846394,
+      "tag": "0005_validate_hr_attachment_extensions",
+      "breakpoints": true
     }
   ]
 }
