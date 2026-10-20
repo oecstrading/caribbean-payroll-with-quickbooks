@@ -33,7 +33,7 @@ export default function EmployeeDocuments({ employeeKey, canManage, accountLinke
     if (!canManage) return;
     const parsed = documentSchema.safeParse(values);
     if (!parsed.success) { toast.error(parsed.error.issues[0]?.message); return; }
-    const data = { ...parsed.data, expiry_date: parsed.data.expiry_date || null, employee_visible: accountLinked && parsed.data.employee_visible };
+    const data = { title: parsed.data.title, category: parsed.data.category, expiry_date: parsed.data.expiry_date || null, employee_visible: accountLinked && parsed.data.employee_visible };
     setBusy(true);
     try {
       if (editing) {
