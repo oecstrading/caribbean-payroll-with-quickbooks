@@ -17,6 +17,9 @@ import { departmentName, reportRow, selectDepartments } from "@/lib/department-p
 import DepartmentSelector from "@/components/DepartmentSelector";
 import DepartmentPayrollReport from "@/components/DepartmentPayrollReport";
 import type { Employee } from "@/lib/sample-data";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { calculatePeriodPayroll, defaultRange, periodFactor, periodLabel, payTypeLabels, workingDays, type PayType } from "@/lib/pay-period";
 
 const steps = ["Review & Sync", "Audit", "Approve & Run"];
 
@@ -27,7 +30,15 @@ export default function PayrollPage() {
   const [processing, setProcessing] = useState(false);
   const [approved, setApproved] = useState(false);
   const [source, setSource] = useState("live");
-  const [period, setPeriod] = useState(() => `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`);
+  const [payType, setPayType] = useState<PayType>("monthly");
+  const [range, setRange] = useState(() => defaultRange("monthly", new Date().toISOString().slice(0, 10)));
+  const [excluded, setExcluded] = useState<string[]>([]);
+  const [notes, setNotes] = useState("");
+  let factor = 0; let periodError = "";
+  try { factor = periodFactor(payType, range.start, range.end); } catch (e) { periodError = (e as Error).message; }
+  const period = periodLabel(payType, range.start, range.end);
+  const startMonth = range.start.slice(0, 7);
+  const changePayType = (t: PayType) => { setPayType(t); setRange(defaultRange(t, range.start)); setExcluded([]); };
   const [jurisdiction, setJurisdiction] = useState("LC");
   const [liveEmployees, setLiveEmployees] = useState<Employee[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
@@ -57,32 +68,31 @@ export default function PayrollPage() {
         status: "Active", tanNumber: p.tan_number || "",
       })));
       const dm: typeof deductionsMap = {}; const am: typeof additionsMap = {};
-      const end = new Date(Number(period.slice(0,4)), Number(period.slice(5,7)), 0).getDate();
       for (const d of deductions.data || []) {
-        if ((d.start_date && d.start_date > `${period}-${end}`) || (d.end_date && d.end_date < `${period}-01`)) continue;
+        if ((d.start_date && d.start_date > range.end) || (d.end_date && d.end_date < range.start)) continue;
         (dm[d.user_id] ||= []).push({ creditorName: d.creditors?.name || "Creditor", amount: Number(d.amount) });
       }
       for (const a of additions.data || []) {
-        if (a.period && a.period !== period) continue;
+        if (a.period && a.period !== startMonth) continue;
         (am[a.user_id] ||= []).push({ type: a.addition_type, description: a.description || a.addition_type, amount: Number(a.amount) });
       }
       setDeductionsMap(dm); setAdditionsMap(am);
     };
     load().catch(e => { if (!cancelled) setLoadError(e.message || "Unable to load employees"); }).finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [jurisdiction, period]);
+  }, [jurisdiction, range.start, range.end]);
   const employees = source === "sample" ? sampleEmployees.filter(e => e.status === "Active") : liveEmployees;
   const departments = [...new Set(employees.map(e => departmentName(e.department)))].sort();
   const departmentKey = departments.join("\u0000");
   useEffect(() => { setSelected(departments); }, [departmentKey, source]);
-  useEffect(() => { setApproved(false); setCurrentStep(0); }, [source, period, jurisdiction, selected]);
+  useEffect(() => { setApproved(false); setCurrentStep(0); }, [source, period, jurisdiction, selected, excluded]);
   const handleBulkEmail = () => toast.info("Use saved payslips for email delivery.");
   const handleApprovePayroll = async () => {
-    if (!payrollData.length || !selected.length || !isAdminOrManager) return;
+    if (!payrollData.length || !selected.length || !isAdminOrManager || periodError) return;
     if (source === "sample") { setApproved(true); toast.success("Sample completed; no live payroll saved."); return; }
     setProcessing(true);
-    const { error } = await supabase.rpc("approve_department_payroll", {
-      _period: period, _jurisdiction: jurisdiction, _departments: selected,
+    const { error } = await supabase.rpc("approve_payroll_run", {
+      _pay_type: payType, _start: range.start, _end: range.end, _notes: notes || undefined, _jurisdiction: jurisdiction, _departments: selected,
       _rows: payrollData.map(e => ({ user_id: e.id, department: e.department, basic_pay: e.payroll.basicPay,
         overtime_pay: e.payroll.overtimePay, gross_pay: e.payroll.grossMonthly, employee_nic: e.payroll.employeeNIC,
         employer_nic: e.payroll.employerNIC, paye: e.payroll.paye, total_deductions: e.payroll.totalDeductions, net_pay: e.payroll.netPay })),
@@ -92,11 +102,13 @@ export default function PayrollPage() {
     setApproved(true); toast.success("Department payroll saved with payslips and reports.");
   };
 
-  const payrollData = selectDepartments(employees, selected)
+  const inDepartments = selectDepartments(employees, selected);
+  const payrollData = (periodError ? [] : inDepartments.filter(e => payType !== "custom" || !excluded.includes(e.id)))
     .map((e) => {
-      const creditorDeductions = source === "live" ? deductionsMap[e.id] || [] : [];
+      // Recurring deductions are monthly amounts; prorate them to the pay period.
+      const creditorDeductions = source === "live" ? (deductionsMap[e.id] || []).map(d => ({ ...d, amount: Math.round(d.amount * factor * 100) / 100 })) : [];
       const additions = source === "live" ? additionsMap[e.id] || [] : [];
-      const result = calculatePayroll(e.monthlySalary, config, 0, creditorDeductions, additions);
+      const result = calculatePeriodPayroll(e.monthlySalary, factor, config, creditorDeductions, additions);
       const hourlyRate = e.monthlySalary / (e.stdHoursPerDay * 22);
       const compliance = checkMinimumWageCompliance(hourlyRate, config);
       return { ...e, payroll: result, hourlyRate, compliance };
@@ -122,18 +134,36 @@ export default function PayrollPage() {
       <div>
         <h1 className="text-2xl font-display font-bold text-foreground">Run Payroll</h1>
         <p className="text-sm text-muted-foreground mt-1">{period} • {config.countryName} ({config.currency})</p>
-        <p className="text-xs text-muted-foreground mt-1">{source === "sample" ? "Fictional sample payroll · No live records or emails" : "Live employee payroll · Monthly salaries"}</p>
+        <p className="text-xs text-muted-foreground mt-1">{source === "sample" ? "Fictional sample payroll · No live records or emails" : `Live employee payroll · ${payTypeLabels[payType]}`}</p>
       </div>
 
       <section className="space-y-4 border-y border-border py-4">
         <Tabs value={source} onValueChange={setSource}><TabsList><TabsTrigger value="live" disabled={processing}>Live employees</TabsTrigger><TabsTrigger value="sample" disabled={processing}>Sample company</TabsTrigger></TabsList></Tabs>
         <div className="flex flex-wrap gap-4">
-          <div className="space-y-1"><Label htmlFor="payroll-month">Payroll month</Label><Input id="payroll-month" type="month" min="2000-01" max="2099-12" value={period} disabled={processing} onChange={e => { if (e.target.value) setPeriod(e.target.value); }} /></div>
+          <div className="space-y-1"><Label htmlFor="pay-type">Pay period</Label><NativeSelect id="pay-type" value={payType} disabled={processing} onChange={e => changePayType(e.target.value as PayType)}>
+            {(Object.keys(payTypeLabels) as PayType[]).map(t => <option key={t} value={t}>{payTypeLabels[t]}</option>)}</NativeSelect></div>
+          {payType === "monthly" ? <div className="space-y-1"><Label htmlFor="payroll-month">Payroll month</Label><Input id="payroll-month" type="month" min="2000-01" max="2099-12" value={startMonth} disabled={processing} onChange={e => { if (e.target.value) setRange(defaultRange("monthly", `${e.target.value}-01`)); }} /></div>
+          : payType === "semi_monthly" ? <>
+            <div className="space-y-1"><Label htmlFor="payroll-month">Month</Label><Input id="payroll-month" type="month" value={startMonth} disabled={processing} onChange={e => { if (e.target.value) setRange(defaultRange("semi_monthly", `${e.target.value}-01`, range.start.endsWith("-16") ? 2 : 1)); }} /></div>
+            <div className="space-y-1"><Label htmlFor="payroll-half">Half</Label><NativeSelect id="payroll-half" value={range.start.endsWith("-16") ? "2" : "1"} disabled={processing} onChange={e => setRange(defaultRange("semi_monthly", `${startMonth}-01`, e.target.value === "2" ? 2 : 1))}>
+              <option value="1">1st – 15th</option><option value="2">16th – month end</option></NativeSelect></div></>
+          : payType === "weekly" ? <div className="space-y-1"><Label htmlFor="payroll-start">Week starting</Label><Input id="payroll-start" type="date" value={range.start} disabled={processing} onChange={e => { if (e.target.value) setRange(defaultRange("weekly", e.target.value)); }} /></div>
+          : <>
+            <div className="space-y-1"><Label htmlFor="payroll-start">From</Label><Input id="payroll-start" type="date" value={range.start} disabled={processing} onChange={e => e.target.value && setRange(r => ({ ...r, start: e.target.value }))} /></div>
+            <div className="space-y-1"><Label htmlFor="payroll-end">To (e.g. last day worked)</Label><Input id="payroll-end" type="date" value={range.end} min={range.start} disabled={processing} onChange={e => e.target.value && setRange(r => ({ ...r, end: e.target.value }))} /></div></>}
           <div className="space-y-1"><Label htmlFor="payroll-island">Jurisdiction</Label><select id="payroll-island" className="h-10 w-full rounded-md border border-input bg-background text-foreground px-3" value={jurisdiction} disabled={source === "sample" || processing} onChange={e => setJurisdiction(e.target.value)}>
             {Object.values(OECS_CONFIGS).map(c => <option key={c.countryCode} value={c.countryCode}>{c.countryName}</option>)}
           </select></div>
         </div>
         {source === "live" && loading ? <p className="text-sm text-muted-foreground">Loading employees…</p> : source === "live" && loadError ? <p role="alert" className="text-sm text-destructive">{loadError}</p> : <DepartmentSelector departments={departments} selected={selected} onChange={setSelected} disabled={processing} />}
+        {payType === "custom" && !periodError && inDepartments.length > 0 && <fieldset className="space-y-2" disabled={processing}>
+          <legend className="text-sm font-semibold text-foreground">Employees to pay</legend>
+          <div className="flex flex-wrap gap-x-6 gap-y-1">{inDepartments.map(e => <label key={e.id} className="flex items-center gap-2 min-h-11 text-sm cursor-pointer">
+            <Checkbox className="min-h-4 h-4 w-4" checked={!excluded.includes(e.id)} onCheckedChange={c => setExcluded(x => c ? x.filter(i => i !== e.id) : [...x, e.id])} />{e.firstName} {e.lastName}</label>)}</div>
+          <div className="space-y-1 max-w-md"><Label htmlFor="payroll-notes">Reason / notes (optional)</Label><Input id="payroll-notes" maxLength={500} placeholder="e.g. Final pay — dismissal" value={notes} onChange={e => setNotes(e.target.value)} /></div>
+        </fieldset>}
+        {periodError ? <p role="alert" className="text-sm text-destructive">{periodError}</p>
+          : <p className="text-sm text-muted-foreground">{range.start} to {range.end}{payType === "custom" ? ` · ${workingDays(range.start, range.end)} working days` : ""} · {Math.round(factor * 10000) / 100}% of monthly salary</p>}
         <p className="text-sm text-muted-foreground">{payrollData.length} employees · {selected.length} departments selected</p>
       </section>
 

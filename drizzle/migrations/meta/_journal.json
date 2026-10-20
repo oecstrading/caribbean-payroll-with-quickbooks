@@ -50,6 +50,13 @@
       "when": 1792518494460,
       "tag": "0006_employee_pay_basis_rate",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792519355711,
+      "tag": "0007_flexible_payroll_periods",
+      "breakpoints": true
     }
   ]
 }
