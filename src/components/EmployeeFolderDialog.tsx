@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
-import { employeeFolderSchema, emptyEmployee, payBases, rateLabels, effectiveMonthlySalary, type EmployeeFolder, type EmployeeForm } from "@/lib/employee-folder";
+import { employeeFolderSchema, emptyEmployee, payBases, rateLabels, effectiveMonthlySalary, monthlyHours, type EmployeeFolder, type EmployeeForm } from "@/lib/employee-folder";
 import { calculatePayroll, ST_LUCIA_CONFIG, formatCurrency } from "@/lib/payroll-engine";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -117,7 +117,9 @@ export default function EmployeeFolderDialog({ folder, creating, onClose, onSave
                   : field.type === "textarea" ? <Textarea id={`hr-${field.key}`} value={String(values[field.key])} disabled={disabled} maxLength={2000} rows={7} onChange={(event) => setValues({ ...values, [field.key]: event.target.value })} />
                   : <Input id={`hr-${field.key}`} type={field.type || "text"} className="h-11" value={computed ? effectiveMonthlySalary(values) : values[field.key]} disabled={disabled} min={field.type === "number" ? 0 : undefined} step={field.type === "number" ? "0.01" : undefined} maxLength={field.key === "email" ? 255 : field.wide ? 500 : field.type === "tel" ? 40 : 100} onChange={(event) => setValues({ ...values, [field.key]: event.target.value })} aria-invalid={Boolean(errors[field.key])} />}
                 {errors[field.key] && <p role="alert" className="text-xs text-destructive">{errors[field.key]}</p>}
-                {field.key === "pay_rate" && values.pay_frequency === "Hourly" && <p className="text-xs text-muted-foreground">Monthly pay uses standard daily hours × 260 working days ÷ 12.</p>}
+                {field.key === "pay_rate" && values.pay_frequency === "Hourly" && <p className="text-xs text-muted-foreground">Monthly pay = hourly rate × hours per work week × 52 ÷ 12.</p>}
+                {field.key === "pay_rate" && values.pay_frequency === "Daily" && <p className="text-xs text-muted-foreground">Monthly pay = daily rate × days per week (weekly ÷ daily hours) × 52 ÷ 12.</p>}
+                {field.key === "weekly_hours" && <p className="text-xs text-muted-foreground">{values.weekly_hours ? "" : "Not set: uses daily hours × 5. "}≈ {monthlyHours(Number(values.weekly_hours) || 0, Number(values.std_hours_per_day) || 0)} hours per month</p>}
                 {field.key === "pay_rate" && !values.pay_frequency && editing && <p className="text-xs text-muted-foreground">Choose how the employee is paid first.</p>}
                 {field.key === "email" && !creating && editing && <p className="text-xs text-muted-foreground">Account email is managed separately from HR details.</p>}
               </div>;
