@@ -102,7 +102,7 @@ export default function EmployeesPage() {
       </tbody></table></div>
       {!filtered.length && <div className="py-14 text-center text-muted-foreground"><Users className="mx-auto mb-3" /><p>{records.length ? "No employees match these filters" : mode === "deleted" ? "No deleted employee folders" : "No employee folders yet"}</p></div>}
     </div>}
-    <EmployeeFolderDialog folder={selected} creating={creating} onClose={close} onSave={save} onDelete={remove} permissions={permissions} ownId={user?.id} />
+    <EmployeeFolderDialog folder={selected} creating={creating} onClose={close} onSave={save} onDelete={remove} permissions={permissions} ownId={user?.id} directory={(mode === "sample" ? samples : live).filter(record => !record.deletedAt)} />
     {permissions.create && <CSVImportDialog open={showImport} onOpenChange={(open) => { setShowImport(open); if (!open) fetchEmployees(); }} type="employees" />}
   </div>;
 }

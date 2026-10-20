@@ -12,6 +12,7 @@ import { calculatePayroll, ST_LUCIA_CONFIG, formatCurrency } from "@/lib/payroll
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import EmployeeDocuments from "@/components/EmployeeDocuments";
+import { ValuePicker } from "@/components/ui/value-picker";
 
 type Field = { key: keyof EmployeeForm; label: string; type?: string; options?: string[]; wide?: boolean };
 const sections: { id: string; label: string; icon: typeof User; fields: Field[] }[] = [
@@ -42,10 +43,11 @@ const sections: { id: string; label: string; icon: typeof User; fields: Field[] 
   { id: "notes", label: "Notes", icon: StickyNote, fields: [{ key: "notes", label: "Confidential HR notes", type: "textarea", wide: true }] },
 ];
 
-export default function EmployeeFolderDialog({ folder, creating, onClose, onSave, onDelete, permissions, ownId }: {
+export default function EmployeeFolderDialog({ folder, creating, onClose, onSave, onDelete, permissions, ownId, directory = [] }: {
   folder: EmployeeFolder | null; creating: boolean; onClose: () => void;
   onSave: (values: EmployeeForm) => Promise<void>; onDelete: (restore: boolean) => Promise<void>;
   permissions: { edit: boolean; create: boolean; delete: boolean }; ownId?: string;
+  directory?: EmployeeFolder[];
 }) {
   const [values, setValues] = useState<EmployeeForm>(emptyEmployee);
   const [editing, setEditing] = useState(false);
@@ -74,6 +76,17 @@ export default function EmployeeFolderDialog({ folder, creating, onClose, onSave
     try { await onDelete(restore); setConfirmDelete(false); } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to update folder"); } finally { setBusy(false); }
   };
   const preview = calculatePayroll(Number(values.monthly_salary) || 0, ST_LUCIA_CONFIG);
+  const pickerOptions: Partial<Record<keyof EmployeeForm, string[]>> = {
+    department: directory.map(record => record.values.department),
+    job_title: directory.map(record => record.values.job_title),
+    supervisor: [...directory.map(record => record.values.supervisor), ...directory.filter(record => record.id !== folder?.id && record.values.status === "Active").map(record => `${record.values.first_name} ${record.values.last_name}`)],
+    work_location: directory.map(record => record.values.work_location),
+    country: ["Saint Lucia", "Antigua and Barbuda", "Saint Kitts and Nevis", "Dominica", "Grenada", "Saint Vincent and the Grenadines", "Barbados", "Trinidad and Tobago", "Jamaica", "Guyana", "Belize", "The Bahamas", "Haiti", "Dominican Republic", "Cuba", "Suriname", ...directory.map(record => record.values.country)],
+    nationality: directory.map(record => record.values.nationality),
+    city: directory.map(record => record.values.city),
+    schedule: directory.map(record => record.values.schedule),
+    emergency_relationship: ["Spouse", "Partner", "Parent", "Child", "Sibling", "Friend", "Other", ...directory.map(record => record.values.emergency_relationship)],
+  };
   return <>
     <Dialog open={creating || Boolean(folder)} onOpenChange={(open) => { if (!open && !busy) onClose(); }}>
       <DialogContent className="sm:max-w-3xl max-h-[90dvh] flex flex-col overflow-hidden p-0 gap-0">
@@ -94,6 +107,7 @@ export default function EmployeeFolderDialog({ folder, creating, onClose, onSave
               return <div key={field.key} className={field.wide ? "sm:col-span-2 space-y-1.5" : "space-y-1.5"}>
                 <Label htmlFor={`hr-${field.key}`} className="text-xs text-muted-foreground">{field.label}</Label>
                 {field.options ? <select id={`hr-${field.key}`} value={String(values[field.key])} disabled={disabled} onChange={(event) => setValues({ ...values, [field.key]: event.target.value })} className="w-full h-11 rounded-md border border-input bg-background px-3 text-sm text-foreground disabled:opacity-70 focus:outline-none focus:ring-2 focus:ring-ring"><option value="">Not specified</option>{field.options.map((option) => <option key={option}>{option}</option>)}</select>
+                  : pickerOptions[field.key] ? <ValuePicker id={`hr-${field.key}`} label={field.label} value={String(values[field.key])} options={pickerOptions[field.key] || []} disabled={disabled} invalid={Boolean(errors[field.key])} onChange={value => setValues({ ...values, [field.key]: value })} />
                   : field.type === "textarea" ? <Textarea id={`hr-${field.key}`} value={String(values[field.key])} disabled={disabled} maxLength={2000} rows={7} onChange={(event) => setValues({ ...values, [field.key]: event.target.value })} />
                   : <Input id={`hr-${field.key}`} type={field.type || "text"} className="h-11" value={values[field.key]} disabled={disabled} min={field.type === "number" ? 0 : undefined} step={field.type === "number" ? "0.01" : undefined} maxLength={field.key === "email" ? 255 : field.wide ? 500 : field.type === "tel" ? 40 : 100} onChange={(event) => setValues({ ...values, [field.key]: event.target.value })} aria-invalid={Boolean(errors[field.key])} />}
                 {errors[field.key] && <p role="alert" className="text-xs text-destructive">{errors[field.key]}</p>}
