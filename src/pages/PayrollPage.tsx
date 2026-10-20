@@ -20,6 +20,8 @@ import type { Employee } from "@/lib/sample-data";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { calculatePeriodPayroll, defaultRange, periodFactor, periodLabel, payTypeLabels, workingDays, type PayType } from "@/lib/pay-period";
+import PayrollOfficer from "@/components/PayrollOfficer";
+import { anonymousReviewRows } from "@/lib/payroll-review";
 
 const steps = ["Review & Sync", "Audit", "Approve & Run"];
 
@@ -128,6 +130,7 @@ export default function PayrollPage() {
   );
 
   const anomalies = payrollData.filter((e) => !e.compliance.compliant);
+  const officerPayload = { source: source === "sample" ? "sample" as const : "live" as const, payType, start: range.start, end: range.end, jurisdiction: source === "sample" ? "LC" : jurisdiction, rows: anonymousReviewRows(payrollData) };
 
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-4 md:space-y-6">
@@ -280,7 +283,7 @@ export default function PayrollPage() {
                 <div className="flex items-center gap-3 p-4 rounded-lg bg-success/10 border border-success/20">
                   <CheckCircle size={20} className="text-success" />
                   <div>
-                    <p className="font-medium text-foreground">All checks passed</p>
+                    <p className="font-medium text-foreground">Configured minimum-wage check passed</p>
                     <p className="text-sm text-muted-foreground">Selected employees meet the configured minimum wage.</p>
                   </div>
                 </div>
@@ -313,6 +316,7 @@ export default function PayrollPage() {
             </CardContent>
           </Card>
           <div className="flex justify-between">
+            <span className="sr-only">Manager approval remains separate from AI review</span>
             <Button onClick={() => setCurrentStep(0)} className="px-6 py-2.5 bg-secondary text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors">
               Back
             </Button>
