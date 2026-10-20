@@ -1,3 +1,5 @@
+import DepartmentPayrollReport from "@/components/DepartmentPayrollReport";
+import { payslipReportRow } from "@/lib/department-payroll";
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { History, ChevronDown, ChevronRight, Calendar, Users, DollarSign, FileText, Eye, Download } from "lucide-react";
@@ -33,6 +35,9 @@ interface Payslip {
   total_deductions: number;
   net_pay: number;
   created_at: string;
+  department_snapshot: string | null;
+  employee_name_snapshot: string | null;
+  currency_code: string | null;
   profile?: { first_name: string; last_name: string; department: string | null; nic_number: string | null };
 }
 
@@ -63,23 +68,9 @@ export default function PayrollHistoryPage() {
 
     if (!payslips[runId]) {
       setLoadingPayslips(runId);
-      const { data } = await supabase
-        .from("payslips")
-        .select("*, profile:profiles!payslips_user_id_fkey(first_name, last_name, department, nic_number)")
-        .eq("payroll_run_id", runId)
-        .order("created_at", { ascending: true });
-
-      // If the join doesn't work due to missing FK name, fetch without join
-      if (!data || data.length === 0) {
-        const { data: plainData } = await supabase
-          .from("payslips")
-          .select("*")
-          .eq("payroll_run_id", runId)
-          .order("created_at", { ascending: true });
-        setPayslips((prev) => ({ ...prev, [runId]: (plainData as Payslip[]) || [] }));
-      } else {
-        setPayslips((prev) => ({ ...prev, [runId]: (data as unknown as Payslip[]) || [] }));
-      }
+      const { data, error } = await supabase.from("payslips").select("*").eq("payroll_run_id", runId).order("created_at", { ascending: true });
+      if (error) toast.error(error.message);
+      else setPayslips(prev => ({ ...prev, [runId]: (data || []).map(s => ({ ...s, profile: s.employee_name_snapshot ? { first_name: s.employee_name_snapshot, last_name: "", department: s.department_snapshot, nic_number: null } : undefined })) }));
       setLoadingPayslips(null);
     }
   };
@@ -275,6 +266,7 @@ export default function PayrollHistoryPage() {
                               <p className="text-sm text-muted-foreground text-center py-3">No payslips found for this run.</p>
                             ) : (
                               <div className="space-y-3">
+                                <DepartmentPayrollReport rows={(payslips[run.id] || []).map(payslipReportRow)} period={run.period} />
                                 <div className="flex justify-end gap-2">
                                   <button
                                     onClick={(e) => { e.stopPropagation(); exportRunPayslipsCSV(run.id); }}
