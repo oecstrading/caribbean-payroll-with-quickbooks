@@ -301,7 +301,7 @@ export default function PayrollHistoryPage() {
                                         <div className="flex items-center gap-2">
                                           <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
                                             <span className="text-[10px] font-bold text-primary">
-                                              {slip.profile ? `${slip.profile.first_name[0]}${slip.profile.last_name[0]}` : "??"}
+                                              {slip.profile ? `${slip.profile.first_name[0] || ""}${slip.profile.last_name[0] || ""}` : "??"}
                                             </span>
                                           </div>
                                           <div>
