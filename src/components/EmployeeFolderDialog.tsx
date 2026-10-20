@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
-import { employeeFolderSchema, emptyEmployee, type EmployeeFolder, type EmployeeForm } from "@/lib/employee-folder";
+import { employeeFolderSchema, emptyEmployee, payBases, rateLabels, effectiveMonthlySalary, type EmployeeFolder, type EmployeeForm } from "@/lib/employee-folder";
 import { calculatePayroll, ST_LUCIA_CONFIG, formatCurrency } from "@/lib/payroll-engine";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -34,7 +34,8 @@ const sections: { id: string; label: string; icon: typeof User; fields: Field[] 
   ] },
   { id: "payroll", label: "Payroll", icon: Wallet, fields: [
     { key: "jurisdiction", label: "Payroll jurisdiction", options: ["LC", "AG", "KN", "DM", "GD", "VC"] },
-    { key: "monthly_salary", label: "Monthly salary", type: "number" }, { key: "pay_frequency", label: "Pay frequency", options: ["Monthly", "Fortnightly", "Weekly"] },
+    { key: "pay_frequency", label: "How the employee is paid", options: [...payBases] }, { key: "pay_rate", label: "Pay rate", type: "number" },
+    { key: "monthly_salary", label: "Monthly salary", type: "number" },
     { key: "nic_number", label: "NIC / social insurance number" }, { key: "tan_number", label: "Tax account number" },
     { key: "schedule", label: "Work schedule" }, { key: "std_hours_per_day", label: "Standard daily hours", type: "number" }, { key: "ot_rate", label: "Overtime multiplier", type: "number" },
   ] },
@@ -76,7 +77,7 @@ export default function EmployeeFolderDialog({ folder, creating, onClose, onSave
     setBusy(true);
     try { await onDelete(restore); setConfirmDelete(false); } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to update folder"); } finally { setBusy(false); }
   };
-  const preview = calculatePayroll(Number(values.monthly_salary) || 0, ST_LUCIA_CONFIG);
+  const preview = calculatePayroll(effectiveMonthlySalary(values), ST_LUCIA_CONFIG);
   const pickerOptions: Partial<Record<keyof EmployeeForm, string[]>> = {
     department: directory.map(record => record.values.department),
     job_title: directory.map(record => record.values.job_title),
@@ -104,14 +105,18 @@ export default function EmployeeFolderDialog({ folder, creating, onClose, onSave
           </div>
           {sections.map((section) => <TabsContent key={section.id} value={section.id} className="px-6 pb-6 pt-3 mt-0">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">{section.fields.map((field) => {
-              const disabled = !editing || (field.key === "email" && !creating);
+              const computed = field.key === "monthly_salary" && Boolean(values.pay_frequency && values.pay_rate);
+              const disabled = !editing || (field.key === "email" && !creating) || computed || (field.key === "pay_rate" && !values.pay_frequency);
+              const label = field.key === "pay_rate" ? `${rateLabels[values.pay_frequency] || "Pay rate"} (XCD)` : computed ? "Monthly equivalent (calculated)" : field.label;
               return <div key={field.key} className={field.wide ? "sm:col-span-2 space-y-1.5" : "space-y-1.5"}>
-                <Label htmlFor={`hr-${field.key}`} className="text-xs text-muted-foreground">{field.label}</Label>
+                <Label htmlFor={`hr-${field.key}`} className="text-xs text-muted-foreground">{label}</Label>
                 {field.options ? <NativeSelect id={`hr-${field.key}`} value={String(values[field.key])} disabled={disabled} onChange={(event) => setValues({ ...values, [field.key]: event.target.value })} className="w-full h-11 rounded-md border border-input bg-background px-3 text-sm text-foreground disabled:opacity-70 focus:outline-none focus:ring-2 focus:ring-ring"><option value="">Not specified</option>{field.options.map((option) => <option key={option}>{option}</option>)}</NativeSelect>
                   : pickerOptions[field.key] ? <ValuePicker id={`hr-${field.key}`} label={field.label} value={String(values[field.key])} options={pickerOptions[field.key] || []} disabled={disabled} invalid={Boolean(errors[field.key])} onChange={value => setValues({ ...values, [field.key]: value })} />
                   : field.type === "textarea" ? <Textarea id={`hr-${field.key}`} value={String(values[field.key])} disabled={disabled} maxLength={2000} rows={7} onChange={(event) => setValues({ ...values, [field.key]: event.target.value })} />
-                  : <Input id={`hr-${field.key}`} type={field.type || "text"} className="h-11" value={values[field.key]} disabled={disabled} min={field.type === "number" ? 0 : undefined} step={field.type === "number" ? "0.01" : undefined} maxLength={field.key === "email" ? 255 : field.wide ? 500 : field.type === "tel" ? 40 : 100} onChange={(event) => setValues({ ...values, [field.key]: event.target.value })} aria-invalid={Boolean(errors[field.key])} />}
+                  : <Input id={`hr-${field.key}`} type={field.type || "text"} className="h-11" value={computed ? effectiveMonthlySalary(values) : values[field.key]} disabled={disabled} min={field.type === "number" ? 0 : undefined} step={field.type === "number" ? "0.01" : undefined} maxLength={field.key === "email" ? 255 : field.wide ? 500 : field.type === "tel" ? 40 : 100} onChange={(event) => setValues({ ...values, [field.key]: event.target.value })} aria-invalid={Boolean(errors[field.key])} />}
                 {errors[field.key] && <p role="alert" className="text-xs text-destructive">{errors[field.key]}</p>}
+                {field.key === "pay_rate" && values.pay_frequency === "Hourly" && <p className="text-xs text-muted-foreground">Monthly pay uses standard daily hours × 260 working days ÷ 12.</p>}
+                {field.key === "pay_rate" && !values.pay_frequency && editing && <p className="text-xs text-muted-foreground">Choose how the employee is paid first.</p>}
                 {field.key === "email" && !creating && editing && <p className="text-xs text-muted-foreground">Account email is managed separately from HR details.</p>}
               </div>;
             })}</div>

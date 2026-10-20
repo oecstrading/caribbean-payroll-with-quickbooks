@@ -17,7 +17,8 @@ export const employeeFolderSchema = z.object({
   emergency_name: text, emergency_relationship: text, emergency_phone: z.string().trim().max(40),
   employment_type: z.enum(["", "Full-time", "Part-time", "Contract", "Temporary", "Intern"]),
   work_location: text, supervisor: text, probation_end: date, contract_end: date, termination_date: date,
-  termination_reason: z.string().trim().max(500), pay_frequency: z.enum(["", "Monthly", "Fortnightly", "Weekly"]),
+  termination_reason: z.string().trim().max(500), pay_frequency: z.enum(["", "Monthly", "Semi-monthly", "Fortnightly", "Weekly", "Daily", "Hourly"]),
+  pay_rate: z.string().trim().refine(v => !v || /^\d{1,9}(\.\d{1,2})?$/.test(v), "Enter a rate like 1250 or 18.50"),
   notes: z.string().trim().max(2000),
 }).superRefine((values, context) => {
   if (values.date_of_birth && values.date_of_birth > new Date().toISOString().slice(0, 10)) {
@@ -40,9 +41,20 @@ export const emptyEmployee: EmployeeForm = {
   start_date: "", schedule: "", jurisdiction: "LC", monthly_salary: 0, std_hours_per_day: 8, ot_rate: 1.5, status: "Active",
   date_of_birth: "", gender: "", marital_status: "", nationality: "", address: "", city: "", country: "", personal_email: "",
   emergency_name: "", emergency_relationship: "", emergency_phone: "", employment_type: "", work_location: "", supervisor: "",
-  probation_end: "", contract_end: "", termination_date: "", termination_reason: "", pay_frequency: "", notes: "",
+  probation_end: "", contract_end: "", termination_date: "", termination_reason: "", pay_frequency: "", pay_rate: "", notes: "",
 };
-export const hrKeys = ["date_of_birth", "gender", "marital_status", "nationality", "address", "city", "country", "personal_email", "emergency_name", "emergency_relationship", "emergency_phone", "employment_type", "work_location", "supervisor", "probation_end", "contract_end", "termination_date", "termination_reason", "pay_frequency", "notes"] as const;
+export const hrKeys = ["date_of_birth", "gender", "marital_status", "nationality", "address", "city", "country", "personal_email", "emergency_name", "emergency_relationship", "emergency_phone", "employment_type", "work_location", "supervisor", "probation_end", "contract_end", "termination_date", "termination_reason", "pay_frequency", "pay_rate", "notes"] as const;
+export const payBases = ["Monthly", "Semi-monthly", "Weekly", "Daily", "Hourly"] as const;
+export const rateLabels: Record<string, string> = { Monthly: "Monthly rate", "Semi-monthly": "Rate per semi-monthly pay", Fortnightly: "Rate per fortnight", Weekly: "Weekly rate", Daily: "Daily rate", Hourly: "Hourly rate" };
+/** Monthly equivalent: 52 weeks and 260 working days per year; hourly uses standard daily hours. */
+export function monthlyEquivalent(basis: string, rate: number, hoursPerDay: number): number {
+  const factor: Record<string, number> = { Monthly: 1, "Semi-monthly": 2, Fortnightly: 26 / 12, Weekly: 52 / 12, Daily: 260 / 12, Hourly: (260 / 12) * hoursPerDay };
+  return factor[basis] === undefined || !Number.isFinite(rate) ? NaN : Math.round(rate * factor[basis] * 100) / 100;
+}
+export function effectiveMonthlySalary(values: EmployeeForm): number {
+  const m = values.pay_frequency && values.pay_rate ? monthlyEquivalent(values.pay_frequency, Number(values.pay_rate), Number(values.std_hours_per_day) || 0) : NaN;
+  return Number.isFinite(m) ? m : Number(values.monthly_salary) || 0;
+}
 export function profileToFolder(profile: FolderProfile): EmployeeFolder {
   const details = typeof profile.hr_details === "object" && profile.hr_details && !Array.isArray(profile.hr_details) ? profile.hr_details : {};
   const values = { ...emptyEmployee };
@@ -70,6 +82,6 @@ export function folderUpdate(values: EmployeeForm) {
     first_name: values.first_name, last_name: values.last_name, phone: values.phone, person_id: values.person_id,
     department: values.department, job_title: values.job_title, nic_number: values.nic_number, tan_number: values.tan_number,
     start_date: values.start_date || null, schedule: values.schedule, jurisdiction: values.jurisdiction,
-    monthly_salary: values.monthly_salary, std_hours_per_day: values.std_hours_per_day, ot_rate: values.ot_rate, status: values.status, hr_details,
+    monthly_salary: effectiveMonthlySalary(values), std_hours_per_day: values.std_hours_per_day, ot_rate: values.ot_rate, status: values.status, hr_details,
   };
 }

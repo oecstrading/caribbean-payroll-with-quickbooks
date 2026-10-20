@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { employeePermissions, employeeFolderSchema, emptyEmployee, folderUpdate, sampleToFolder } from "@/lib/employee-folder";
+import { monthlyEquivalent, employeePermissions, employeeFolderSchema, emptyEmployee, folderUpdate, sampleToFolder } from "@/lib/employee-folder";
 import { sampleEmployees } from "@/lib/sample-data";
 
 describe("employee folder permissions", () => {
@@ -39,4 +39,10 @@ describe("employee folder data", () => {
   it("rejects negative salary", () => {
     expect(employeeFolderSchema.safeParse({ ...valid, monthly_salary: -1 }).success).toBe(false);
   });
+});describe("pay basis", () => {
+  it("weekly rate converts at 52 weeks / 12", () => { expect(monthlyEquivalent("Weekly", 600, 8)).toBe(2600); });
+  it("semi-monthly pays twice a month", () => { expect(monthlyEquivalent("Semi-monthly", 1000, 8)).toBe(2000); });
+  it("daily rate uses 260 working days", () => { expect(monthlyEquivalent("Daily", 120, 8)).toBe(2600); });
+  it("hourly rate uses standard daily hours", () => { expect(monthlyEquivalent("Hourly", 15, 8)).toBe(2600); });
+  it("saves the calculated monthly salary", () => { expect(folderUpdate({ ...emptyEmployee, first_name: "A", last_name: "B", pay_frequency: "Weekly", pay_rate: "600" }).monthly_salary).toBe(2600); });
 });
