@@ -1,0 +1,2 @@
+REVOKE INSERT ON public.payroll_runs, public.payslips FROM authenticated;
+COMMENT ON FUNCTION public.approve_department_payroll(text,text,text[],jsonb) IS 'Only application entry point for live payroll approval; validates HR role, scope, active profiles and duplicate employee-months, and saves run and payslips atomically.';

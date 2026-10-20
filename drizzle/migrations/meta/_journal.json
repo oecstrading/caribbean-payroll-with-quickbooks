@@ -15,6 +15,20 @@
       "when": 1792515693911,
       "tag": "0001_simulated_attendance_clock",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792516016495,
+      "tag": "0002_departmental_payroll_runs",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792516241619,
+      "tag": "0003_atomic_payroll_approval_only",
+      "breakpoints": true
     }
   ]
 }

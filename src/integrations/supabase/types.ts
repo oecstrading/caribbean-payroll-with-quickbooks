@@ -1359,8 +1359,11 @@ export type Database = {
       payroll_runs: {
         Row: {
           created_at: string
+          currency_code: string | null
+          departments: string[]
           employee_count: number
           id: string
+          jurisdiction: string | null
           period: string
           run_date: string
           status: string
@@ -1370,8 +1373,11 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          currency_code?: string | null
+          departments?: string[]
           employee_count?: number
           id?: string
+          jurisdiction?: string | null
           period: string
           run_date?: string
           status?: string
@@ -1381,8 +1387,11 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          currency_code?: string | null
+          departments?: string[]
           employee_count?: number
           id?: string
+          jurisdiction?: string | null
           period?: string
           run_date?: string
           status?: string
@@ -1396,6 +1405,9 @@ export type Database = {
         Row: {
           basic_pay: number
           created_at: string
+          currency_code: string | null
+          department_snapshot: string | null
+          employee_name_snapshot: string | null
           employee_nic: number
           employer_nic: number
           gross_pay: number
@@ -1411,6 +1423,9 @@ export type Database = {
         Insert: {
           basic_pay?: number
           created_at?: string
+          currency_code?: string | null
+          department_snapshot?: string | null
+          employee_name_snapshot?: string | null
           employee_nic?: number
           employer_nic?: number
           gross_pay?: number
@@ -1426,6 +1441,9 @@ export type Database = {
         Update: {
           basic_pay?: number
           created_at?: string
+          currency_code?: string | null
+          department_snapshot?: string | null
+          employee_name_snapshot?: string | null
           employee_nic?: number
           employer_nic?: number
           gross_pay?: number
@@ -1996,6 +2014,15 @@ export type Database = {
       }
     }
     Functions: {
+      approve_department_payroll: {
+        Args: {
+          _departments: string[]
+          _jurisdiction: string
+          _period: string
+          _rows: Json
+        }
+        Returns: string
+      }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       has_role: {
         Args: {

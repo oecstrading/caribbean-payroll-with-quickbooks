@@ -1,13 +1,22 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle, ArrowRight, DollarSign, FileText, AlertCircle, Receipt, Mail, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { sampleEmployees } from "@/lib/sample-data";
-import { calculatePayroll, formatCurrency, ST_LUCIA_CONFIG, checkMinimumWageCompliance } from "@/lib/payroll-engine";
-import { useAllEmployeeDeductions } from "@/hooks/useEmployeeDeductions";
-import { useAllEmployeeAdditions } from "@/hooks/useEmployeeAdditions";
+import { calculatePayroll, formatCurrency, checkMinimumWageCompliance } from "@/lib/payroll-engine";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useRole } from "@/hooks/useRole";
+import { getConfigByJurisdiction, OECS_CONFIGS } from "@/lib/payroll-engine";
+import { departmentName, reportRow, selectDepartments } from "@/lib/department-payroll";
+import DepartmentSelector from "@/components/DepartmentSelector";
+import DepartmentPayrollReport from "@/components/DepartmentPayrollReport";
+import type { Employee } from "@/lib/sample-data";
 
 const steps = ["Review & Sync", "Audit", "Approve & Run"];
 
@@ -15,28 +24,80 @@ export default function PayrollPage() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const bulkEmailing = false;
-  const processing = false;
+  const [processing, setProcessing] = useState(false);
   const [approved, setApproved] = useState(false);
-  const { deductionsMap } = useAllEmployeeDeductions();
-  const { additionsMap } = useAllEmployeeAdditions();
-
-  const handleBulkEmail = () => {
-    toast.info("Sample payslips cannot be emailed. Use verified employee records for delivery.");
+  const [source, setSource] = useState("live");
+  const [period, setPeriod] = useState(() => `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`);
+  const [jurisdiction, setJurisdiction] = useState("LC");
+  const [liveEmployees, setLiveEmployees] = useState<Employee[]>([]);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [deductionsMap, setDeductionsMap] = useState<Record<string, import("@/lib/payroll-engine").CreditorDeduction[]>>({});
+  const [additionsMap, setAdditionsMap] = useState<Record<string, import("@/lib/payroll-engine").PayrollAddition[]>>({});
+  const { isAdminOrManager } = useRole();
+  const config = getConfigByJurisdiction(source === "sample" ? "LC" : jurisdiction);
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true); setLoadError("");
+    const load = async () => {
+      const [profiles, deductions, additions] = await Promise.all([
+        supabase.from("profiles").select("*").is("deleted_at", null).eq("jurisdiction", jurisdiction),
+        supabase.from("employee_deductions").select("*, creditors(name)").eq("is_active", true),
+        supabase.from("employee_additions").select("*").eq("is_active", true),
+      ]);
+      if (profiles.error || deductions.error || additions.error) throw profiles.error || deductions.error || additions.error;
+      if (cancelled) return;
+      setLiveEmployees((profiles.data || []).filter(p => p.status.toLowerCase() === "active").map(p => ({
+        id: p.user_id, firstName: p.first_name, lastName: p.last_name, department: departmentName(p.department),
+        monthlySalary: Number(p.monthly_salary || 0), stdHoursPerDay: Number(p.std_hours_per_day || 8),
+        nicNumber: p.nic_number || "", personId: p.person_id || "", jobTitle: p.job_title || "", email: p.email,
+        phone: p.phone || "", startDate: p.start_date || "", schedule: p.schedule || "", otRate: p.ot_rate || 1.5,
+        status: "Active", tanNumber: p.tan_number || "",
+      })));
+      const dm: typeof deductionsMap = {}; const am: typeof additionsMap = {};
+      const end = new Date(Number(period.slice(0,4)), Number(period.slice(5,7)), 0).getDate();
+      for (const d of deductions.data || []) {
+        if ((d.start_date && d.start_date > `${period}-${end}`) || (d.end_date && d.end_date < `${period}-01`)) continue;
+        (dm[d.user_id] ||= []).push({ creditorName: d.creditors?.name || "Creditor", amount: Number(d.amount) });
+      }
+      for (const a of additions.data || []) {
+        if (a.period && a.period !== period) continue;
+        (am[a.user_id] ||= []).push({ type: a.addition_type, description: a.description || a.addition_type, amount: Number(a.amount) });
+      }
+      setDeductionsMap(dm); setAdditionsMap(am);
+    };
+    load().catch(e => { if (!cancelled) setLoadError(e.message || "Unable to load employees"); }).finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [jurisdiction, period]);
+  const employees = source === "sample" ? sampleEmployees.filter(e => e.status === "Active") : liveEmployees;
+  const departments = [...new Set(employees.map(e => departmentName(e.department)))].sort();
+  const departmentKey = departments.join("\u0000");
+  useEffect(() => { setSelected(departments); }, [departmentKey, source]);
+  useEffect(() => { setApproved(false); setCurrentStep(0); }, [source, period, jurisdiction, selected]);
+  const handleBulkEmail = () => toast.info("Use saved payslips for email delivery.");
+  const handleApprovePayroll = async () => {
+    if (!payrollData.length || !selected.length || !isAdminOrManager) return;
+    if (source === "sample") { setApproved(true); toast.success("Sample completed; no live payroll saved."); return; }
+    setProcessing(true);
+    const { error } = await supabase.rpc("approve_department_payroll", {
+      _period: period, _jurisdiction: jurisdiction, _departments: selected,
+      _rows: payrollData.map(e => ({ user_id: e.id, department: e.department, basic_pay: e.payroll.basicPay,
+        overtime_pay: e.payroll.overtimePay, gross_pay: e.payroll.grossMonthly, employee_nic: e.payroll.employeeNIC,
+        employer_nic: e.payroll.employerNIC, paye: e.payroll.paye, total_deductions: e.payroll.totalDeductions, net_pay: e.payroll.netPay })),
+    });
+    setProcessing(false);
+    if (error) { toast.error(error.message); return; }
+    setApproved(true); toast.success("Department payroll saved with payslips and reports.");
   };
 
-  const handleApprovePayroll = () => {
-    setApproved(true);
-    toast.success("Sample payroll preview completed. No live payroll or payslips were saved.");
-  };
-
-  const payrollData = sampleEmployees
-    .filter((e) => e.status === "Active")
+  const payrollData = selectDepartments(employees, selected)
     .map((e) => {
-      const creditorDeductions = deductionsMap[e.id] || [];
-      const additions = additionsMap[e.id] || [];
-      const result = calculatePayroll(e.monthlySalary, ST_LUCIA_CONFIG, 0, creditorDeductions, additions);
+      const creditorDeductions = source === "live" ? deductionsMap[e.id] || [] : [];
+      const additions = source === "live" ? additionsMap[e.id] || [] : [];
+      const result = calculatePayroll(e.monthlySalary, config, 0, creditorDeductions, additions);
       const hourlyRate = e.monthlySalary / (e.stdHoursPerDay * 22);
-      const compliance = checkMinimumWageCompliance(hourlyRate, ST_LUCIA_CONFIG);
+      const compliance = checkMinimumWageCompliance(hourlyRate, config);
       return { ...e, payroll: result, hourlyRate, compliance };
     });
 
@@ -59,16 +120,28 @@ export default function PayrollPage() {
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-4 md:space-y-6">
       <div>
         <h1 className="text-2xl font-display font-bold text-foreground">Run Payroll</h1>
-        <p className="text-sm text-muted-foreground mt-1">March 2026 • Saint Lucia (XCD)</p>
-        <p className="text-xs text-muted-foreground mt-1">Sample payroll • Includes Smiley's Tinting Services • No live payments or emails</p>
+        <p className="text-sm text-muted-foreground mt-1">{period} • {config.countryName} ({config.currency})</p>
+        <p className="text-xs text-muted-foreground mt-1">{source === "sample" ? "Fictional sample payroll · No live records or emails" : "Live employee payroll · Monthly salaries"}</p>
       </div>
+
+      <section className="space-y-4 border-y border-border py-4">
+        <Tabs value={source} onValueChange={setSource}><TabsList><TabsTrigger value="live" disabled={processing}>Live employees</TabsTrigger><TabsTrigger value="sample" disabled={processing}>Sample company</TabsTrigger></TabsList></Tabs>
+        <div className="flex flex-wrap gap-4">
+          <div className="space-y-1"><Label htmlFor="payroll-month">Payroll month</Label><Input id="payroll-month" type="month" min="2000-01" max="2099-12" value={period} disabled={processing} onChange={e => { if (e.target.value) setPeriod(e.target.value); }} /></div>
+          <div className="space-y-1"><Label htmlFor="payroll-island">Jurisdiction</Label><select id="payroll-island" className="h-10 w-full rounded-md border border-input bg-background text-foreground px-3" value={jurisdiction} disabled={source === "sample" || processing} onChange={e => setJurisdiction(e.target.value)}>
+            {Object.values(OECS_CONFIGS).map(c => <option key={c.countryCode} value={c.countryCode}>{c.countryName}</option>)}
+          </select></div>
+        </div>
+        {source === "live" && loading ? <p className="text-sm text-muted-foreground">Loading employees…</p> : source === "live" && loadError ? <p role="alert" className="text-sm text-destructive">{loadError}</p> : <DepartmentSelector departments={departments} selected={selected} onChange={setSelected} disabled={processing} />}
+        <p className="text-sm text-muted-foreground">{payrollData.length} employees · {selected.length} departments selected</p>
+      </section>
 
       {/* Stepper */}
       <div className="flex items-center gap-2">
         {steps.map((step, i) => (
           <div key={step} className="flex items-center gap-2">
-            <button
-              onClick={() => setCurrentStep(i)}
+            <Button
+              disabled={processing || !payrollData.length || (source === "live" && (loading || !!loadError))} onClick={() => setCurrentStep(i)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
                 i === currentStep
                   ? "bg-primary text-primary-foreground"
@@ -79,7 +152,7 @@ export default function PayrollPage() {
             >
               {i < currentStep ? <CheckCircle size={16} /> : <span className="w-5 h-5 rounded-full border-2 flex items-center justify-center text-xs">{i + 1}</span>}
               <span className="hidden sm:inline">{step}</span>
-            </button>
+            </Button>
             {i < steps.length - 1 && <ArrowRight size={14} className="text-muted-foreground" />}
           </div>
         ))}
@@ -103,7 +176,7 @@ export default function PayrollPage() {
                     <th className="text-right py-3 px-4 font-medium text-muted-foreground">Basic Pay</th>
                     <th className="text-right py-3 px-4 font-medium text-muted-foreground">Additions</th>
                     <th className="text-right py-3 px-4 font-medium text-muted-foreground">Gross</th>
-                    <th className="text-right py-3 px-4 font-medium text-muted-foreground">NIC (5%)</th>
+                    <th className="text-right py-3 px-4 font-medium text-muted-foreground">Employee NIC</th>
                     <th className="text-right py-3 px-4 font-medium text-muted-foreground">PAYE</th>
                     <th className="text-right py-3 px-4 font-medium text-muted-foreground">Creditor Ded.</th>
                     <th className="text-right py-3 px-4 font-medium text-muted-foreground">Net Pay</th>
@@ -125,7 +198,7 @@ export default function PayrollPage() {
                           </div>
                           <div>
                             <p className="font-medium text-foreground">{emp.firstName} {emp.lastName}</p>
-                            <p className="text-xs text-muted-foreground">{emp.nicNumber}</p>
+                            <p className="text-xs text-muted-foreground">{emp.department} · {emp.nicNumber}</p>
                           </div>
                         </div>
                       </td>
@@ -155,9 +228,9 @@ export default function PayrollPage() {
             </div>
           </Card>
           <div className="flex justify-end">
-            <button onClick={() => setCurrentStep(1)} className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
+            <Button disabled={!payrollData.length || (source === "live" && (loading || !!loadError))} onClick={() => setCurrentStep(1)} className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
               Continue to Audit <ArrowRight size={16} />
-            </button>
+            </Button>
           </div>
         </motion.div>
       )}
@@ -168,7 +241,7 @@ export default function PayrollPage() {
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-display flex items-center gap-2">
                 <AlertCircle size={16} className="text-primary" />
-                AI Error Detection
+                Payroll Audit
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -177,7 +250,7 @@ export default function PayrollPage() {
                   <CheckCircle size={20} className="text-success" />
                   <div>
                     <p className="font-medium text-foreground">All checks passed</p>
-                    <p className="text-sm text-muted-foreground">No anomalies detected. All employees meet minimum wage requirements.</p>
+                    <p className="text-sm text-muted-foreground">Selected employees meet the configured minimum wage.</p>
                   </div>
                 </div>
               ) : (
@@ -195,11 +268,9 @@ export default function PayrollPage() {
               <div className="mt-4 space-y-2">
                 <h3 className="text-sm font-medium text-foreground">Audit Checklist</h3>
                 {[
-                  "No duplicate NIC numbers found",
-                  "All tax codes verified",
-                  "No pay spikes exceeding 20% from last month",
+                  `${selected.length} selected departments`,
                   `Employer NIC contribution: ${formatCurrency(totals.nicEmployer)} XCD`,
-                  "PAYE brackets applied correctly (15% / 20% / 30%)",
+                  `Tax configuration: ${config.countryName}`,
                   `Total creditor deductions: ${formatCurrency(totals.creditor)} XCD`,
                 ].map((check) => (
                   <div key={check} className="flex items-center gap-2 text-sm">
@@ -211,12 +282,12 @@ export default function PayrollPage() {
             </CardContent>
           </Card>
           <div className="flex justify-between">
-            <button onClick={() => setCurrentStep(0)} className="px-6 py-2.5 bg-secondary text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors">
+            <Button onClick={() => setCurrentStep(0)} className="px-6 py-2.5 bg-secondary text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors">
               Back
-            </button>
-            <button onClick={() => setCurrentStep(2)} className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
+            </Button>
+            <Button onClick={() => setCurrentStep(2)} className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
               Continue to Approve <ArrowRight size={16} />
-            </button>
+            </Button>
           </div>
         </motion.div>
       )}
@@ -225,7 +296,7 @@ export default function PayrollPage() {
         <motion.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
           <Card className="shadow-card border-border/60">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-display">Payroll Summary — March 2026</CardTitle>
+              <CardTitle className="text-base font-display">Payroll Summary — {period}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -254,11 +325,11 @@ export default function PayrollPage() {
                   <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Deductions</h3>
                   <div className="space-y-2">
                     <div className="flex justify-between py-2 border-b border-border/50">
-                      <span className="text-sm text-foreground">NIC (Employee 5%)</span>
+                      <span className="text-sm text-foreground">NIC (Employee)</span>
                       <span className="font-mono text-destructive">{formatCurrency(totals.nicEmployee)}</span>
                     </div>
                     <div className="flex justify-between py-2 border-b border-border/50">
-                      <span className="text-sm text-foreground">NIC (Employer 5%)</span>
+                      <span className="text-sm text-foreground">NIC (Employer)</span>
                       <span className="font-mono text-muted-foreground">{formatCurrency(totals.nicEmployer)}</span>
                     </div>
                     <div className="flex justify-between py-2 border-b border-border/50">
@@ -285,11 +356,11 @@ export default function PayrollPage() {
             </CardContent>
           </Card>
           <div className="flex flex-col sm:flex-row justify-between gap-3">
-            <button onClick={() => setCurrentStep(1)} className="px-6 py-2.5 bg-secondary text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors">
+            <Button disabled={!payrollData.length || (source === "live" && (loading || !!loadError))} onClick={() => setCurrentStep(1)} className="px-6 py-2.5 bg-secondary text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors">
               Back
-            </button>
+            </Button>
             <div className="flex flex-wrap gap-2 justify-end">
-              <button
+              <Button
                 onClick={handleBulkEmail}
                 disabled
                 className="flex items-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-secondary text-foreground rounded-lg text-xs md:text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50"
@@ -297,27 +368,29 @@ export default function PayrollPage() {
                 {bulkEmailing ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
                 <span className="hidden sm:inline">{bulkEmailing ? `Emailing ${payrollData.length}...` : `Email All (${payrollData.length})`}</span>
                 <span className="sm:hidden">{bulkEmailing ? "Emailing..." : "Email"}</span>
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => navigate("/payslips")}
                 className="flex items-center gap-2 px-4 md:px-6 py-2.5 md:py-3 bg-secondary text-foreground rounded-lg text-xs md:text-sm font-medium hover:bg-muted transition-colors"
               >
                 <Receipt size={16} />
                 <span className="hidden sm:inline">Generate Payslips</span>
                 <span className="sm:hidden">Payslips</span>
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleApprovePayroll}
-                disabled={processing || approved}
+                disabled={processing || approved || !payrollData.length || !isAdminOrManager || (source === "live" && (loading || !!loadError))}
                 className="flex items-center gap-2 px-4 md:px-8 py-2.5 md:py-3 bg-success text-success-foreground rounded-lg text-xs md:text-sm font-bold hover:bg-success/90 transition-colors disabled:opacity-50"
               >
                 {processing ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle size={18} />}
-                {approved ? "Sample Completed ✓" : processing ? "Processing..." : "Complete Sample Payroll"}
-              </button>
+                {approved ? "Completed ✓" : processing ? "Processing..." : source === "sample" ? "Complete Sample Payroll" : "Approve & Save Payroll"}
+              </Button>
             </div>
           </div>
         </motion.div>
       )}
+      <DepartmentPayrollReport rows={payrollData.map(e => reportRow(e.id, `${e.firstName} ${e.lastName}`, e.department, e.payroll))} period={period} sample={source === "sample"} />
+      {approved && source === "live" && <Button variant="outline" onClick={() => navigate("/reports")}>View approved payroll reports <ArrowRight /></Button>}
     </div>
   );
 }
