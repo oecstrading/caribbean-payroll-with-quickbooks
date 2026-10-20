@@ -298,7 +298,7 @@ export default function DashboardPage() {
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-display flex items-center gap-2">
                 <AlertTriangle size={16} className="text-warning" />
-                Compliance Alerts
+                <button type="button" onClick={() => navigate("/compliance")} className="hover:underline">Compliance Alerts →</button>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -437,7 +437,7 @@ export default function DashboardPage() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-display flex items-center gap-2">
               <Briefcase size={16} className="text-primary" />
-              Field Operations
+              <button type="button" onClick={() => navigate("/projects")} className="hover:underline">Field Operations →</button>
             </CardTitle>
           </CardHeader>
           <CardContent>
