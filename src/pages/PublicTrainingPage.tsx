@@ -3,32 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BookOpen, Download, ExternalLink, FileText, Share2 } from "lucide-react";
 import { toast } from "sonner";
+import { TRAINING_RESOURCES } from "@/lib/training-resources";
 
-const BROCHURE_URL =
-  "https://bmhqsmygcnpekzdhtbed.supabase.co/storage/v1/object/public/training-docs/public/OECS_Brochure_v3.pdf";
-const MANUAL_URL =
-  "/training/OECS_User_Manual_v4.pdf";
-
-const DOCS = [
-  {
-    title: "OECS Security Platform – Marketing Brochure",
-    description:
-      "Caribbean-themed overview of the SWM platform, featuring QuickBooks integration and multi-island payroll adaptability across the OECS region.",
-    category: "Marketing",
-    badge: "Latest v3",
-    url: BROCHURE_URL,
-    icon: BookOpen,
-  },
-  {
-    title: "OECS Security Platform – User Manual",
-    description:
-      "Updated guide covering Smiley’s tinting samples, payroll, QuickBooks account mapping, voice reporting, and operational safeguards.",
-    category: "Documentation",
-    badge: "Latest v4",
-    url: MANUAL_URL,
-    icon: FileText,
-  },
-];
+const DOCS = TRAINING_RESOURCES.map(doc => ({ ...doc, icon: doc.category === "manual" ? FileText : BookOpen }));
 
 export default function PublicTrainingPage() {
   const handleShare = async (url: string, title: string) => {

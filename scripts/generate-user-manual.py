@@ -1,89 +1,122 @@
-"""Generate the publicly served manual. Requires reportlab."""
+"""Author current public payroll guide and brochure. Requires reportlab."""
 from pathlib import Path
+from datetime import datetime, timezone
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak, Image
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
-OUTPUT = ROOT / "public/training/OECS_User_Manual_v4.pdf"
-OUTPUT.parent.mkdir(parents=True, exist_ok=True)
+DEST = ROOT / 'public/training'
+DEST.mkdir(parents=True, exist_ok=True)
+for name, pattern in [('Body', 'DejaVu Sans'), ('BodyBold', 'DejaVu Sans:bold')]:
+    pdfmetrics.registerFont(TTFont(name, subprocess.check_output(['fc-match', '-f', '%{file}', pattern], text=True).strip()))
+pdfmetrics.registerFontFamily('Body', normal='Body', bold='BodyBold', italic='Body', boldItalic='BodyBold')
+TEAL, INK, CORAL = '#087F8C', '#233C41', '#D9564F'
 styles = getSampleStyleSheet()
-styles["Title"].textColor = colors.HexColor("#087F8C")
-styles["Heading1"].textColor = colors.HexColor("#087F8C")
-styles["Normal"].fontSize = 11
-styles["Normal"].leading = 17
-story = []
+for name in styles.byName:
+    styles[name].fontName = 'Body'
+    styles[name].textColor = colors.HexColor(INK)
+styles['Normal'].fontSize = 10
+styles['Normal'].leading = 15
+styles['Normal'].spaceAfter = 10
+styles['Title'].fontName = 'BodyBold'
+styles['Title'].fontSize = 27
+styles['Title'].leading = 34
+styles['Title'].textColor = colors.HexColor(TEAL)
+styles['Heading1'].fontName = 'BodyBold'
+styles['Heading1'].fontSize = 20
+styles['Heading1'].leading = 26
+styles['Heading1'].spaceAfter = 15
+styles['Heading1'].textColor = colors.HexColor(TEAL)
+styles['Heading2'].fontName = 'BodyBold'
+styles['Heading2'].fontSize = 12
+styles['Heading2'].leading = 18
+styles['Heading2'].textColor = colors.HexColor(CORAL)
+styles.add(ParagraphStyle('SmallNote', parent=styles['Normal'], fontSize=8, leading=12))
+DATE = datetime.now(timezone.utc).strftime('%d %B %Y')
+PUBLIC = 'https://caribbean-payroll-with-quickbooks.lovable.app/training-public'
 
-def para(text, style="Normal"):
-    story.extend([Paragraph(text, styles[style]), Spacer(1, 12)])
+def build(filename, edition, pages):
+    story = []
+    for i, (title, blocks) in enumerate(pages):
+        if i: story.append(PageBreak())
+        story.append(Paragraph(title, styles['Title'] if i == 0 else styles['Heading1']))
+        if i == 0:
+            story.append(Spacer(1, 14))
+            story.append(Image(str(ROOT / 'src/assets/caribbean-hero.jpg'), width=499, height=280, kind='proportional'))
+            story.append(Spacer(1, 18))
+        for heading, text in blocks:
+            if heading: story.append(Paragraph(heading, styles['Heading2']))
+            story.append(Paragraph(text, styles['Normal']))
+    def footer(canvas, doc):
+        canvas.setStrokeColor(colors.HexColor(TEAL)); canvas.line(48, 42, A4[0]-48, 42)
+        canvas.setFont('Body', 8); canvas.setFillColor(colors.HexColor(INK))
+        canvas.drawString(48, 27, f'OECS HR & Payroll | {edition} | {DATE}')
+        canvas.drawRightString(A4[0]-48, 27, str(doc.page))
+    path = DEST / filename
+    SimpleDocTemplate(str(path), pagesize=A4, leftMargin=48, rightMargin=48, topMargin=40, bottomMargin=56, title=f'OECS HR & Payroll — {edition}', author='OECS HR & Payroll').build(story, onFirstPage=footer, onLaterPages=footer)
+    print(path)
 
-def section(title, paragraphs):
-    para(title, "Heading1")
-    for text in paragraphs:
-        para(text)
-
-def footer(canvas, doc):
-    canvas.setFont("Helvetica", 9)
-    canvas.setFillColor(colors.HexColor("#52656A"))
-    canvas.drawString(48, 28, "OECS HR & Payroll | User Manual v4 | 18 October 2026")
-    canvas.drawRightString(A4[0]-48, 28, str(doc.page))
-
-para("OECS HR & Payroll", "Title")
-para("User Manual / Version 4", "Heading1")
-story.append(Image(str(ROOT / "src/assets/caribbean-hero.jpg"), width=480, height=270, kind="proportional"))
-story.append(Spacer(1, 24))
-para("Caribbean workforce operations, payroll and QuickBooks account mapping.")
-para("Includes the Smiley's Tinting Services demonstration, Saint Lucia.")
-para("Important: this edition distinguishes sample previews from live payroll. QuickBooks currently operates in simulated sandbox mode. Account creation and connected-service verification require a healthy account service.")
-story.append(PageBreak())
-section("1. Sign-in and access", [
-    "Open /auth and sign in using your email and password, or use Google. PIN sign-in requires an administrator-assigned PIN and your email. Keep credentials private.",
-    "Requested Payroll identity: display name Payroll; username Tintmyride758; invitation email info@smileysincslu.com. The username is a display handle, not an email sign-in credential.",
-    "Requested access: all operational functions except creating and deleting users. This account and its restricted access are pending provisioning; do not assume an invitation was sent. Existing roles are Administrator, Manager and Employee. Only administrators currently open User Management.",
-    "Use the navigation menu for Employees, Attendance, Run Payroll, Payslips, Payroll History, Reports, Settings, Training Hub and QuickBooks. Employees use the self-service portal for their own records."
-])
-section("2. Smiley's Tinting Services sample", [
-    "The Employees, Attendance, Run Payroll and Payslips sample lists now include six fictional tinting-company staff: office coordinator, lead installer, technician, window film specialist, bookings assistant and trainee.",
-    "The company is labeled Smiley's Tinting Services (Sample). Salaries, names and NIC/TAN identifiers are fictional examples in XCD; example.invalid email addresses cannot receive mail. Existing company details and earlier samples are not replaced.",
-    "Search Employees by name or use department filters. Select a row to inspect a salary calculation, then View Payslip. These samples are not real employee accounts, employment records or approved payroll."
-])
-story.append(PageBreak())
-section("3. Payroll and payslips", [
-    "Run Payroll currently previews sample staff for March 2026. Review basic pay, additions, gross pay, NIC, PAYE, creditor deductions and net pay. Continue to Audit to review minimum-wage checks, then continue to the summary.",
-    "Complete Sample Payroll marks the preview complete without saving a live payroll run, paying staff or inserting payslips. Email delivery is disabled for this sample list. Sample identities must never be substituted for real account IDs.",
-    "Net pay is earnings including approved additions minus statutory and other deductions. Validate all current Saint Lucia tax rates and ceilings with your payroll adviser before a live run; configured examples are not tax advice.",
-    "Payslips displays sample calculations and export options. Payroll History reads saved runs; empty history is expected when only sample previews exist. Digital payslip delivery requires real employee accounts and a working email service."
-])
-section("4. QuickBooks Online mapping", [
-    "Open Payroll Settings to pair payroll items with QuickBooks accounts. Categories include earnings and premium pay, statutory and benefits liabilities, and assets and bank accounts. Review salary, overtime, bonus, NIC, PAYE, advances and any jurisdiction-specific levy with your accountant.",
-    "Refresh reloads the catalogue. Auto-map proposes matches by account name; review each match. Create missing accounts currently creates local placeholder catalogue entries, not accounts in your live QuickBooks company.",
-    "QuickBooks Sync provides Connection, COA Mapping, Sync Runs and Log views. Current sandbox connection and journal pushes are simulations. Production requires Intuit credentials and a completed OAuth connection; no live QuickBooks posting is verified."
-])
-story.append(PageBreak())
-section("5. Attendance, projects and field work", [
-    "Attendance includes sample clock-in/out records. CSV imports in the attendance screen are temporary in-memory records. A complete sample shift includes an unpaid meal break; displayed hours are not necessarily the full elapsed time.",
-    "For live field operations, configure a site and geofence, assign a roster, and use GPS clock-in/out. Location permission and a working account service are required. Review late or missing punches before billing or payroll.",
-    "Projects, crews, equipment and contractors organize field work such as automotive tint installation and residential window-film jobs. Sample employee lists do not automatically create project assignments or live time punches.",
-    "Security-specific modules include Guard Tours, post checkpoints, incident reports, licensing compliance and emergency alerts. They are optional operational workflows for a tinting business, not evidence that tinting staff hold security licenses."
-])
-section("6. Voice, reports and billing", [
-    "Use microphone controls where available for dictation in Guard Tour and Daily Reports. The app-wide voice control can request navigation and supported actions. Grant microphone permission, speak clearly and review all generated text before submitting.",
-    "Voice interpretation depends on connected processing services and network access. Use typed input if recording or transcription fails. Do not rely on voice control for emergency response without verifying delivery.",
-    "Review daily reports, incident records and client invoices before approval. Confirm the client, verified worked time, rate, taxes and supporting patrol records. Exact-minute billing and automatic report-to-invoice workflows require live end-to-end validation; this demonstration does not certify their operation."
-])
-story.append(PageBreak())
-section("7. Training Hub and public sharing", [
-    "Open Training Hub to search and filter documents by category. Administrators and managers can Upload Document: enter a title, description and category, choose the file and submit. Confirm the document appears before sharing it.",
-    "Seed Defaults adds the original text-based flyer and manual outline; it is not the latest visual PDF. The current public PDF manual is available from /training-public and directly at /training/OECS_User_Manual_v4.pdf.",
-    "The public Training Hub also resolves through /user-guide, /payroll-user-guide, /guide and /manual. Download opens a PDF; Share uses device sharing or copies an absolute URL. Public documents must not contain private employee or payroll information."
-])
-section("8. Go-live checklist and known limits", [
-    "1. Confirm the account invitation is received and Payroll can sign in. Verify that creating and deleting users are denied by the server, not only hidden in the menu.",
-    "2. Replace fictional examples with validated real employee records. Confirm company identifiers, bank details, salary, tax rates, NIC/TAN and working-hour rules with the employer and accountant.",
-    "3. Verify a real payroll run, saved payslip read-back, PDF export and email delivery. Test permissions for each role, then complete production QuickBooks authorization and compare journal totals with saved payroll.",
-    "4. Test attendance, compliance, report approval, billing and voice with real inputs and permissions. Account-service downtime currently prevents provisioning and authenticated checks; these workflows must not be described as flawlessly verified.",
-    "5. Publish the updated application when ready; preview changes do not automatically update the published site. Keep this guide with your operating procedures."
-])
-SimpleDocTemplate(str(OUTPUT), pagesize=A4, rightMargin=48, leftMargin=48, topMargin=44, bottomMargin=48, title="OECS HR & Payroll - User Manual v4", author="OECS HR & Payroll").build(story, onFirstPage=footer, onLaterPages=footer)
-print(OUTPUT)
+GUIDE = [
+('OECS HR & Payroll', [('', 'User Guide v5 · The payroll manager’s workflow'), ('Prepare → Review → Approve → Report', 'A practical guide to employee folders, pay rates and hours, flexible payroll periods, departmental reports and the AI Payroll Officer.'), ('Caribbean operations, human control', 'Examples use fictional Smiley’s Tinting Services staff in Saint Lucia. Never use samples as live employee accounts. AI is an advisory reviewer: it cannot change pay, approve payroll or transfer money.')]),
+('1. Prepare the people and records', [
+('Sign in and confirm access', 'Use email/password, configured Google sign-in or an administrator-assigned PIN with your email. Keep your PIN private. Payroll managers can manage operational payroll and edit employee folders; account creation and deletion remain administrator-controlled.'),
+('Set up each employee folder', 'Open Employees → Live employees. Administrators can add employees without an email; this creates an employment record, not a login account. Managers edit existing folders. Complete Personal, Employment, Payroll and Emergency details; save, reopen and check the values.'),
+('Pick or enter HR details', 'Use searchable dropdowns for department, job title, reporting manager, location, city, nationality and schedule. You can enter your own values. Confirm department membership before choosing a payroll group.'),
+('Keep HR files private', 'In Documents, upload contracts, certifications or other HR files; choose an expiry date and whether the employee may see the file. HR manages files. Staff see only their own explicitly shared files. Downloads use temporary links. Employee files do not belong in the public Training Hub.'),
+('Before payroll', 'Review start/end dates, employment status, statutory IDs, bank details, deductions and additions. Expiry tracking helps identify renewals but does not certify legal compliance. Review actual attendance separately; simulated clock punches never feed live payroll.')]),
+('2. Set the rate and working hours', [
+('Pay basis is separate from payroll period', 'In the employee’s Payroll tab choose Monthly, Semi-monthly, Weekly, Daily or Hourly and enter the matching rate. Payroll saves a monthly-equivalent salary. The Run Payroll period then determines the share of that saved salary paid.'),
+('Weekly hours—not a fixed 9-to-5', 'Enter Standard daily hours and Hours per work week. Monthly hours = weekly hours × 52 ÷ 12. For example, 36 hours/week gives 156 hours/month; 40 hours/week gives approximately 173.33 hours/month.'),
+('Hourly example', 'At XCD 10/hour and 36 hours/week, monthly-equivalent pay is XCD 1,560. A weekly run pays approximately XCD 360 before deductions. These are contractual estimates, not a count of actual clocked hours.'),
+('Daily example', 'At XCD 80/day, 36 hours/week and 6 hours/day, the schedule implies 6 days/week: 80 × 6 × 52 ÷ 12 = XCD 2,080/month. If weekly hours are blank, conversion assumes five days/week using the daily hours.'),
+('Other bases and important limits', 'Monthly rate is unchanged; semi-monthly rate × 2; weekly rate × 52 ÷ 12. Save the folder to update the salary used by payroll. Run Payroll does not automatically pay actual attendance hours or calculate overtime. Its minimum-wage check uses an estimated daily-hours calculation; review unusual schedules manually.')]),
+('3. Choose who and when to pay', [
+('Open Run Payroll', 'Choose Live employees, the jurisdiction and one, two or any number of departments. Sample company is a separate fictional preview and never saves live payroll.'),
+('Monthly / Semi-monthly', 'Monthly covers a complete calendar month. Semi-monthly covers the 1st–15th or the 16th–month end and pays half the monthly salary.'),
+('Weekly', 'Choose Week starting. The end date is six days later. Salary is prorated by 12 ÷ 52 of the saved monthly equivalent.'),
+('Custom dates / final pay', 'Choose From and To, then tick only the employees to pay. Add a reason such as “Final pay — dismissal”. Custom pay counts Monday–Friday at monthly salary × 12 ÷ 260 per working day. XCD 2,600/month over eight weekdays gives XCD 960 basic pay.'),
+('Deductions and additions', 'The NIC ceiling and PAYE thresholds are scaled by the period factor. Monthly recurring creditor deductions are prorated. One-off additions assigned to the start month are included in full: check that a bonus is not reused in another run. Holidays are not excluded from custom weekday counting. Severance, notice pay, accrued leave and local statutory treatment need manual professional review.')]),
+('4. Review with the AI Payroll Officer', [
+('Review & Sync → Audit', 'Compare every employee’s basic pay, additions, gross, NIC, PAYE, creditor deductions and net. Continue to Audit. The existing warning checks the configured minimum wage, not every payroll or legal obligation.'),
+('Request the AI review', 'Select Review this payroll. The officer receives anonymous Employee N / Department N references, draft amounts and missing-ID/minimum-wage flags—not names, email, NIC/TAN values, bank details or private documents. It returns a draft summary, issues to check and next steps.'),
+('Act on exceptions', 'Match Employee N to the same row position in Employee Payroll Preview. Verify zero pay, deductions, missing statutory identifiers and any discrepancy. Edit employee details, additions or deductions in the appropriate page; return and review the refreshed draft. Changing period, departments or draft amounts discards the old AI review.'),
+('Human control remains essential', 'The officer has no access to saved run history, attendance, private HR documents or QuickBooks records. It cannot verify current laws, approve, save, edit figures or pay staff. Verify recommendations; an AI review is not a compliance certificate.'),
+('If AI is unavailable', 'No payroll is changed. Read the displayed error, review manually, and request a new review later if needed. No automatic replay of a failed AI request is performed. This is a contextual payroll reviewer, not an ongoing chat or autonomous payroll operator.')]),
+('5. Approve, check reports and arrange payment', [
+('Continue to Approve', 'Review the summary, department count, employee count, gross pay, employee/employer NIC, PAYE and total net pay. Only a manager or administrator can Approve & Save Payroll. AI does not perform this action.'),
+('Read the saved result', 'A successful live approval saves the run and employee payslips together. The server rejects overlapping paid dates per employee; an overlap is checked at approval, not by AI. If approval fails, read the message and correct the draft—do not assume staff were paid.'),
+('Departmental and consolidated reports', 'Open Reports or Payroll History and select the saved period. Compare Departmental with Consolidated totals; export PDF or CSV and retain the payroll record. Saved names and departments reflect the approved run rather than later folder changes.'),
+('Payslips and actual payment', 'Use saved employee payslips for delivery where supported. Sample payslips do not send mail. A saved payroll run is not a bank transfer: arrange wage payment separately and verify receipt. Check account-free employee delivery options manually.'),
+('QuickBooks handoff', 'Payroll Settings pairs earnings, NIC/PAYE liabilities, deductions, assets and bank accounts with QuickBooks accounts. Review Auto-map proposals; placeholders are not live accounts. QuickBooks Sync remains a simulation until production credentials and OAuth are configured. Verify production posting separately; no live journal or payment is promised.')]),
+('6. Training, operations and proven patterns', [
+('Current resources', f'Both Training Hubs include the latest v5 guide and v4 brochure. Download or share them from <link href="{PUBLIC}">{PUBLIC}</link>. Published links show the new revision only after the app is republished. Earlier uploaded documents are retained. Managers may upload additional public training material; never upload confidential employee data.'),
+('Hire-to-paid operations', 'Applicant Tracking supports recruitment; Compliance tracks licenses and expiry; rosters, sites, geofencing, guard tours, incident reports and invoicing support field operations. Verify attendance, alerts, voice processing and billing with real permissions before relying on automation. Device and simulated clocks remain separate; reset simulation for training only.'),
+('Examples from existing platforms', 'The workflow follows familiar patterns: Gusto’s Gus provides payroll/HR guidance with verification cautions; Rippling describes AI exception detection and approval before action; ADP describes anomaly detection and guided payroll resolution. These are examples, not connections or endorsements. Their capabilities are not automatically present in this app.'),
+('Official references · checked 20 October 2026', '<link href="https://support.gusto.com/article/250211164235690/use-gus-gustos-ai-assistant">Gusto: Use Gus, Gusto’s AI assistant</link><br/><link href="https://www.rippling.com/platform/ai">Rippling: AI for HR, payroll and IT</link><br/><link href="https://www.adp.com/what-we-offer/products/adp-workforce-now/payroll.aspx">ADP Workforce Now: Payroll</link>'),
+('Go-live checklist', 'Confirm employees and rates; validate local taxes and final-pay entitlements; review actual worked time; request and check AI advice; approve a real run; read saved reports/payslips; confirm wage payment and delivery separately. Current configured jurisdictions are Saint Lucia, Antigua and Barbuda, Saint Kitts and Nevis, Dominica and Grenada. Other islands require added, validated configurations—not automatic legal coverage.')]),
+]
+BROCHURE = [
+('OECS HR & Payroll', [('', 'Brochure / Flyer v4 · Caribbean workforce management'), ('From employee folder to approved payroll', 'Prepare HR records. Choose pay rates and hours. Run payroll for your dates and departments. Ask the AI Payroll Officer to review the draft, then approve with confidence and retain clear reports.'), ('Flexible for your workforce', 'Monthly • Semi-monthly • Weekly • Custom final-pay dates<br/>Hourly and daily rates • Weekly hours • Departmental and consolidated reports')]),
+('Your payroll manager’s workflow', [
+('01 / Prepare', 'Maintain employee folders, even without email. Select departments, job titles and schedules; add your own entries. Store contracts and certifications privately with expiry dates and controlled sharing.'),
+('02 / Calculate', 'Choose the employee’s rate and weekly hours. Hourly pay uses the saved monthly equivalent—not a fixed 9-to-5. Example: XCD 10/hour × 36 hours/week = XCD 1,560/month, or approximately XCD 360 for a weekly run before deductions.'),
+('03 / Select the run', 'Pay one department, two or many. Choose monthly, semi-monthly, weekly or custom dates and specific staff for final pay. Review prorated salary and deductions; manually check one-off additions and final-pay entitlements.'),
+('04 / Ask the AI Payroll Officer', 'Request a read-only review of anonymous draft amounts and flags. Get a summary, issues to investigate and next steps. Inspired by payroll assistance and review patterns in Gusto, Rippling and ADP—not integrations with those products.'),
+('05 / Approve and report', 'The manager approves; the server saves live payroll and payslips together and rejects overlapping paid dates. Export department and consolidated reports. Payment, payslip delivery and statutory filing are separate tasks to verify.'),
+('06 / Prepare the accounting handoff', 'Map payroll earnings, NIC/PAYE liabilities and deductions to QuickBooks accounts. QuickBooks scaffolding includes mapping and simulated sync; production authorization and posting still require setup and verification.')]),
+('Caribbean HR, with practical safeguards', [
+('A joined-up operational platform', 'Recruit applicants, track compliance expiry, organize rosters and sites, review attendance, record patrols and incidents, and prepare client invoices. Voice input and command navigation support field work where device and service permissions allow.'),
+('Multi-island configuration', 'Current payroll configurations cover Saint Lucia, Antigua and Barbuda, Saint Kitts and Nevis, Dominica and Grenada. The system can be extended for other islands with validated local rates and rules. Do not assume every Caribbean jurisdiction is already configured or certified.'),
+('AI assists. People decide.', 'AI does not change wages, approve runs, transfer money or certify statutory compliance. Payroll uses contractual monthly-equivalent estimates rather than actual attendance hours. Check overtime, holidays, severance and unusual schedules manually.'),
+('Practice without touching live payroll', 'Fictional Smiley’s Tinting Services samples and the resettable simulated attendance clock support training. They stay separate from live attendance, payroll, billing and employee accounts.'),
+('Share the guide and train your team', f'<link href="{PUBLIC}">{PUBLIC}</link><br/>Latest resources become available on the published site after republishing. Managers can upload company training documents. Keep confidential employee records in private folders.'),
+('Workflow references', '<link href="https://support.gusto.com/article/250211164235690/use-gus-gustos-ai-assistant">Gusto Gus</link> · <link href="https://www.rippling.com/platform/ai">Rippling AI</link> · <link href="https://www.adp.com/what-we-offer/products/adp-workforce-now/payroll.aspx">ADP Payroll</link><br/>Public examples checked 20 October 2026; no affiliation or integration implied.')]),
+]
+if __name__ == '__main__':
+    build('OECS_User_Manual_v5.pdf', 'User Guide v5', GUIDE)
+    build('OECS_Brochure_v4.pdf', 'Brochure v4', BROCHURE)
