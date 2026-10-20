@@ -1,4 +1,6 @@
 # Payroll account and Smiley’s samples
+- [ ] Add contextual AI Payroll Officer review with manager approval retained; verify a signed-in review.
+- [ ] Refresh public guide and brochure with flexible periods, employee rates/hours, HR files and a manager payroll walkthrough; surface latest PDFs in both Training Hubs.
 - [x] Enable consistent platform dropdowns and native date/time picker buttons; add searchable employee-folder selectors with custom entries and isolated directory suggestions. Verified signed-in custom selection, original-value save/reload, disabled read-only selectors, status filters and payroll island selection; 27 HR/payroll/access regression tests pass with no runtime errors.
 - [x] Add employees without email and private HR document folders: signed-in creation, upload/download, expiry edit/reload/delete, no-email payroll approval/report reload, ownership-spoof rejection and public file denial verified. 29 tests pass. Temporary test data removed. Staff sharing rules tested; a separate employee-session sharing flow was not exercised.
 - [x] Add multi-department payroll selection, atomic live approval and departmental/consolidated PDF/CSV reports. Verified one/two-department selection, downloads, live save/report/history/reload; removed temporary verification run. Seven department tests pass; samples remain isolated.
