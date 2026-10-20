@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { employeeFolderSchema, emptyEmployee, folderUpdate } from "@/lib/employee-folder";
 
 type ImportType = "employees" | "clients";
 
@@ -136,7 +137,7 @@ export default function CSVImportDialog({ open, onOpenChange, type, onSuccess }:
 
   const mappedFields = mappings.filter((m) => m.dbField !== "skip");
   const hasRequired = type === "employees"
-    ? mappedFields.some((m) => m.dbField === "email")
+    ? ["first_name", "last_name"].every(field => mappedFields.some(m => m.dbField === field))
     : mappedFields.some((m) => m.dbField === "name");
 
   const handleImport = async () => {
@@ -160,27 +161,17 @@ export default function CSVImportDialog({ open, onOpenChange, type, onSuccess }:
 
       try {
         if (type === "employees") {
-          // Create via invite-user edge function or direct profile insert
-          if (!record.email) { errorDetails.push(`Row ${i + 1}: Missing email`); errors++; continue; }
-          const { error } = await supabase.functions.invoke("invite-user", {
-            body: {
-              email: record.email,
-              first_name: record.first_name || "",
-              last_name: record.last_name || "",
-              role: "employee",
-              department: record.department || "",
-              job_title: record.job_title || "",
-              monthly_salary: record.monthly_salary || 0,
-              jurisdiction: record.jurisdiction || "LC",
-              nic_number: record.nic_number || "",
-              start_date: record.start_date || null,
-              phone: record.phone || "",
-              schedule: record.schedule || "9-to-5",
-              std_hours_per_day: record.std_hours_per_day || 8,
-            },
-          });
-          if (error) { errorDetails.push(`Row ${i + 1} (${record.email}): ${error.message}`); errors++; }
-          else success++;
+          const values = employeeFolderSchema.parse({ ...emptyEmployee, ...record });
+          if (!values.email) {
+            const { error } = await supabase.from("employee_records").insert({ ...folderUpdate(values), email: "" });
+            if (error) throw error;
+          } else {
+            const { data, error } = await supabase.functions.invoke("invite-user", { body: { email: values.email, first_name: values.first_name, last_name: values.last_name, role: "employee" } });
+            if (error || data?.error || !data?.user_id) throw new Error(data?.error || error?.message || "Unable to create employee");
+            const updated = await supabase.from("profiles").update(folderUpdate(values)).eq("user_id", data.user_id);
+            if (updated.error) throw new Error("Account created, but HR details need saving in the employee folder");
+          }
+          success++;
         } else {
           if (!record.name) { errorDetails.push(`Row ${i + 1}: Missing site name`); errors++; continue; }
           const { error } = await supabase.from("client_sites").insert({
@@ -270,7 +261,7 @@ export default function CSVImportDialog({ open, onOpenChange, type, onSuccess }:
               {!hasRequired && (
                 <Badge variant="destructive" className="text-xs">
                   <AlertCircle className="w-3 h-3 mr-1" />
-                  {type === "employees" ? "Email required" : "Site Name required"}
+                  {type === "employees" ? "First and last name required" : "Site Name required"}
                 </Badge>
               )}
             </div>
