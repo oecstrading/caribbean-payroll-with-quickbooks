@@ -118,7 +118,11 @@ export default function UserManagementPage() {
       const { data, error } = await supabase.functions.invoke("invite-user", {
         body: { email: inviteEmail.trim(), role: inviteRole, first_name: "", last_name: "" },
       });
-      if (error || data?.error) throw new Error(data?.error || error?.message || "Failed to invite");
+      if (error || data?.error) {
+        let detail = data?.error;
+        try { detail = detail || (await (error as any)?.context?.json())?.error; } catch { /* ignore */ }
+        throw new Error(detail || error?.message || "Failed to invite");
+      }
 
       toast.success(`Employee ${inviteEmail} created successfully`);
       setShowInvite(false);
