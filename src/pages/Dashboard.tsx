@@ -228,7 +228,7 @@ export default function DashboardPage() {
         </span>
       </div>
       {/* Page Header */}
-      <motion.div {...fadeUp} transition={{ delay: 0 }} className="relative overflow-hidden rounded-2xl shadow-lg">
+      <motion.div {...fadeUp} transition={{ delay: 0 }} onClick={() => navigate("/payroll")} role="link" className="relative overflow-hidden rounded-2xl shadow-lg cursor-pointer hover:shadow-xl transition-shadow">
         <img src={caribbeanHero} alt="Saint Lucia Pitons at sunset" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0" style={{ background: "linear-gradient(120deg, hsl(195 90% 18% / 0.92) 0%, hsl(330 80% 35% / 0.82) 55%, hsl(18 90% 45% / 0.75) 100%)" }} />
         <div className="relative px-6 py-7 md:px-8 md:py-9" style={{ color: "hsl(0 0% 100%)", textShadow: "0 1px 3px hsl(0 0% 0% / 0.45)" }}>
@@ -270,7 +270,7 @@ export default function DashboardPage() {
         <motion.div {...fadeUp} transition={{ delay: 0.25 }}>
           <Card className="carib-band shadow-card border-border/60 hover:shadow-lg transition-shadow">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-display">Quick Actions</CardTitle>
+              <CardTitle className="text-base font-display"><button type="button" onClick={() => navigate("/payroll")} className="hover:underline">Quick Actions →</button></CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               {quickActions.map((action) => (
@@ -354,7 +354,7 @@ export default function DashboardPage() {
         <motion.div {...fadeUp} transition={{ delay: 0.35 }}>
           <Card className="carib-band shadow-card border-border/60 hover:shadow-lg transition-shadow">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-display">February Payroll</CardTitle>
+              <CardTitle className="text-base font-display"><button type="button" onClick={() => navigate("/payroll")} className="hover:underline">February Payroll →</button></CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-3">
@@ -364,10 +364,10 @@ export default function DashboardPage() {
                   { label: "Total PAYE", value: formatCurrency(activeEmployees.reduce((s, e) => s + calculatePayroll(e.monthlySalary).paye, 0)), color: "text-destructive" },
                   { label: "Net Pay", value: formatCurrency(totalPayroll), color: "text-success" },
                 ].map((row) => (
-                  <div key={row.label} className="flex items-center justify-between py-1.5 border-b border-border/50 last:border-0">
+                  <button type="button" key={row.label} onClick={() => navigate(row.label === "Gross Pay" || row.label === "Net Pay" ? "/payroll" : "/reports")} className="w-full flex items-center justify-between py-1.5 px-1 rounded-md border-b border-border/50 last:border-0 hover:bg-muted transition-colors text-left">
                     <span className="text-sm text-muted-foreground">{row.label}</span>
                     <span className={`text-sm font-semibold ${row.color}`}>{row.value}</span>
-                  </div>
+                  </button>
                 ))}
               </div>
               <button
@@ -559,7 +559,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                   {rosterData.slice(0, 9).map((guard, i) => (
-                    <div key={i} className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
+                    <button type="button" onClick={() => navigate(guard.lateMinutes && guard.lateMinutes > 0 ? "/late-clockin-report" : "/attendance")} key={i} className={`w-full text-left flex items-center justify-between p-3 rounded-lg border transition-colors hover:shadow-md hover:-translate-y-0.5 ${
                       guard.lateMinutes && guard.lateMinutes > 0
                         ? "bg-destructive/10 border-destructive/30"
                         : guard.clockedIn
@@ -584,7 +584,7 @@ export default function DashboardPage() {
                           <XCircle size={16} className="text-destructive/60" />
                         )}
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
                 {rosterData.length > 9 && (
