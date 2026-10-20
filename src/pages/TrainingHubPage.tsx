@@ -1,3 +1,4 @@
+import { downloadFile } from "@/lib/download-file";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -242,7 +243,7 @@ export default function TrainingHubPage() {
         <h2 className="font-semibold text-foreground">Latest platform resources</h2>
         {TRAINING_RESOURCES.filter(doc => (filterCategory === "all" || filterCategory === doc.category) && `${doc.title} ${doc.description}`.toLowerCase().includes(searchQuery.toLowerCase())).map(doc => <div key={doc.id} className="flex items-center justify-between gap-3 py-2">
           <div className="min-w-0"><p className="font-medium text-foreground">{doc.title} <Badge variant="secondary">{doc.badge}</Badge></p><p className="text-sm text-muted-foreground">{doc.description}</p></div>
-          <Button asChild variant="outline" size="icon"><a href={doc.url} target="_blank" rel="noopener noreferrer" aria-label={`Download ${doc.title}`}><Download /></a></Button>
+          <Button variant="outline" size="icon" onClick={() => downloadFile(doc.url)} aria-label={`Download ${doc.title}`}><Download /></Button>
         </div>)}
       </section>
       <div className="flex flex-col sm:flex-row gap-3">
@@ -309,10 +310,8 @@ export default function TrainingHubPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <Button variant="outline" size="sm" asChild>
-                    <a href={doc.file_url} target="_blank" rel="noopener noreferrer">
-                      <Download className="h-4 w-4" />
-                    </a>
+                  <Button variant="outline" size="sm" onClick={() => downloadFile(doc.file_url, doc.file_name)} aria-label={`Download ${doc.title}`}>
+                    <Download className="h-4 w-4" />
                   </Button>
                   {isAdminOrManager && (
                     <Button variant="ghost" size="sm" onClick={() => deleteMutation.mutate({ id: doc.id, file_name: doc.file_name })}>
