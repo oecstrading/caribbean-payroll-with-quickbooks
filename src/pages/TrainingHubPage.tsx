@@ -102,20 +102,7 @@ export default function TrainingHubPage() {
     }
   };
 
-  const SEED_DOCS = [
-    {
-      title: "OECS Security Platform – Marketing Flyer",
-      description: "18-module marketing flyer showcasing all platform capabilities for client presentations",
-      category: "marketing",
-      content: `OECS HR & PAYROLL — SECURITY MANAGEMENT PLATFORM\n\nThe Caribbean's Most Complete Security Workforce Solution\n\n18 CORE MODULES:\n1. Smart Scheduling & Roster Management\n2. GPS Clock-In with Geofencing\n3. Real-Time Guard Tracking\n4. Panic Button & Emergency Alerts\n5. Voice-Powered Incident Reporting (AI)\n6. Guard Tour & Patrol Verification\n7. Late Clock-In Detection & Alerts\n8. Client Portal with Live Updates\n9. Automated Client Invoicing\n10. Multi-Island Payroll Engine\n11. Leave Management\n12. Applicant Tracking & Onboarding\n13. Compliance & License Tracking\n14. Equipment Management\n15. Daily Activity Reports\n16. Training Hub & Document Center\n17. Voice Commands & Navigation\n18. Management Analytics & KPIs\n\nBuilt for the OECS region — supporting XCD payroll, NIC calculations, and multi-jurisdiction compliance across St. Lucia, Antigua, Grenada, Dominica, St. Kitts & Nevis, and St. Vincent.\n\nContact us today for a demo!`,
-    },
-    {
-      title: "OECS Security Platform – User Manual",
-      description: "Comprehensive 12-section user manual covering all platform features and workflows",
-      category: "manual",
-      content: `OECS HR & PAYROLL — USER MANUAL\nVersion 2.0\n\nTABLE OF CONTENTS\n\n1. GETTING STARTED\n   - Account setup and first login\n   - Dashboard overview and navigation\n   - Role-based access (Admin, Manager, Guard)\n\n2. EMPLOYEE MANAGEMENT\n   - Adding employees and profiles\n   - CSV bulk import\n   - Salary and jurisdiction setup\n\n3. SCHEDULING & ROSTER\n   - Creating weekly rosters\n   - Assigning guards to client sites\n   - Shift templates and recurring schedules\n\n4. TIME & ATTENDANCE\n   - GPS clock-in/clock-out\n   - Geofence verification\n   - Late clock-in detection and alerts\n\n5. GUARD OPERATIONS\n   - Guard tour and patrol logging\n   - Checkpoint scanning\n   - Voice-activated reporting\n\n6. INCIDENT MANAGEMENT\n   - Filing incident reports (text & voice)\n   - AI-powered report generation\n   - Photo and audio attachments\n\n7. EMERGENCY RESPONSE\n   - Panic button activation\n   - Real-time manager notifications\n   - Resolution tracking\n\n8. PAYROLL\n   - Running payroll calculations\n   - NIC and PAYE deductions\n   - Payslip generation and email delivery\n\n9. CLIENT MANAGEMENT\n   - Site setup with GPS coordinates\n   - Client portal access codes\n   - Automated invoicing\n\n10. COMPLIANCE\n    - Guard license tracking\n    - Expiry alerts and renewals\n    - Applicant document verification\n\n11. REPORTS & ANALYTICS\n    - Late clock-in trend reports\n    - Guard performance metrics\n    - Exportable PDF reports\n\n12. TRAINING HUB\n    - Uploading company documents\n    - Category management\n    - Document search and filtering\n\nFor support, contact your system administrator.`,
-    },
-  ];
+  const SEED_DOCS = TRAINING_RESOURCES;
 
   const handleSeedDocuments = async () => {
     setSeeding(true);
@@ -130,8 +117,10 @@ export default function TrainingHubPage() {
           .maybeSingle();
         if (existing) continue;
 
-        const blob = new Blob([doc.content], { type: "text/plain" });
-        const fileName = `${Date.now()}_${doc.title.replace(/[^a-zA-Z0-9]/g, "_")}.txt`;
+        const response = await fetch(doc.url);
+        if (!response.ok) throw new Error("Latest PDF is unavailable");
+        const blob = await response.blob();
+        const fileName = `${Date.now()}_${doc.url.split("/").pop()}`;
 
         const { error: storageError } = await supabase.storage
           .from("training-docs")
