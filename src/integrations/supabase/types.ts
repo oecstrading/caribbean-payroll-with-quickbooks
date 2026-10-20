@@ -2297,6 +2297,7 @@ export type Database = {
         Args: { _employee: string; _shared: boolean }
         Returns: boolean
       }
+      client_portal_data: { Args: { _code: string }; Returns: Json }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       has_role: {
         Args: {
@@ -2306,6 +2307,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_manager: { Args: { _user_id: string }; Returns: boolean }
+      is_staff: { Args: { _user_id: string }; Returns: boolean }
       payroll_period_factor: {
         Args: { _end: string; _pay_type: string; _start: string }
         Returns: number

@@ -61,7 +61,7 @@ export default function DailyReportsPage() {
     const urls: string[] = [];
     for (const file of photos) {
       const ext = file.name.split(".").pop();
-      const path = `reports/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const path = `reports/${(await supabase.auth.getUser()).data.user?.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
       const { error } = await supabase.storage.from("field-photos").upload(path, file);
       if (!error) {
         const { data } = supabase.storage.from("field-photos").getPublicUrl(path);
