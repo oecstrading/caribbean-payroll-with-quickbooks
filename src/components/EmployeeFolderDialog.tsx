@@ -37,7 +37,7 @@ const sections: { id: string; label: string; icon: typeof User; fields: Field[] 
     { key: "pay_frequency", label: "How the employee is paid", options: [...payBases] }, { key: "pay_rate", label: "Pay rate", type: "number" },
     { key: "monthly_salary", label: "Monthly salary", type: "number" },
     { key: "nic_number", label: "NIC / social insurance number" }, { key: "tan_number", label: "Tax account number" },
-    { key: "schedule", label: "Work schedule" }, { key: "std_hours_per_day", label: "Standard daily hours", type: "number" }, { key: "ot_rate", label: "Overtime multiplier", type: "number" },
+    { key: "schedule", label: "Work schedule" }, { key: "std_hours_per_day", label: "Standard daily hours", options: ["4", "6", "7", "7.5", "8", "9", "10", "12"] }, { key: "weekly_hours", label: "Hours per work week" }, { key: "ot_rate", label: "Overtime multiplier", type: "number" },
   ] },
   { id: "emergency", label: "Emergency", icon: Heart, fields: [
     { key: "emergency_name", label: "Emergency contact name" }, { key: "emergency_relationship", label: "Relationship" }, { key: "emergency_phone", label: "Emergency phone", type: "tel" },
@@ -79,14 +79,15 @@ export default function EmployeeFolderDialog({ folder, creating, onClose, onSave
   };
   const preview = calculatePayroll(effectiveMonthlySalary(values), ST_LUCIA_CONFIG);
   const pickerOptions: Partial<Record<keyof EmployeeForm, string[]>> = {
-    department: directory.map(record => record.values.department),
-    job_title: directory.map(record => record.values.job_title),
+    department: ["Administration", "Accounts / Finance", "Human Resources", "Operations", "Sales", "Customer Service", "Installation", "Tinting", "Security", "Maintenance", "Logistics", "IT", ...directory.map(record => record.values.department)],
+    job_title: ["Managing Director", "General Manager", "Supervisor", "Team Lead", "Accountant", "Accounts Clerk", "HR Officer", "Administrative Assistant", "Receptionist", "Sales Representative", "Customer Service Representative", "Technician", "Installer", "Driver", "Security Officer", "Cleaner", "Apprentice", ...directory.map(record => record.values.job_title)],
     supervisor: [...directory.map(record => record.values.supervisor), ...directory.filter(record => record.id !== folder?.id && record.values.status === "Active").map(record => `${record.values.first_name} ${record.values.last_name}`)],
-    work_location: directory.map(record => record.values.work_location),
+    work_location: ["Head Office", "Main Branch", "Workshop", "Warehouse", "Client Site", "Remote", "Field / Mobile", ...directory.map(record => record.values.work_location)],
     country: ["Saint Lucia", "Antigua and Barbuda", "Saint Kitts and Nevis", "Dominica", "Grenada", "Saint Vincent and the Grenadines", "Barbados", "Trinidad and Tobago", "Jamaica", "Guyana", "Belize", "The Bahamas", "Haiti", "Dominican Republic", "Cuba", "Suriname", ...directory.map(record => record.values.country)],
-    nationality: directory.map(record => record.values.nationality),
-    city: directory.map(record => record.values.city),
-    schedule: directory.map(record => record.values.schedule),
+    nationality: ["Saint Lucian", "Antiguan", "Kittitian / Nevisian", "Dominican", "Grenadian", "Vincentian", "Barbadian", "Trinidadian", "Jamaican", "Guyanese", ...directory.map(record => record.values.nationality)],
+    city: ["Castries", "Gros Islet", "Rodney Bay", "Babonneau", "Dennery", "Micoud", "Vieux Fort", "Laborie", "Choiseul", "Soufrière", "Canaries", "Anse La Raye", "St. John's", "Basseterre", "Roseau", "St. George's", "Kingstown", ...directory.map(record => record.values.city)],
+    schedule: ["Mon–Fri, 8am–4pm", "Mon–Fri, 8am–5pm", "Mon–Fri, 9am–5pm", "Mon–Sat", "Rotating shifts", "Day shift (12 hours)", "Night shift (12 hours)", "Part-time", "Flexible", ...directory.map(record => record.values.schedule)],
+    weekly_hours: ["40", "37.5", "36", "35", "32", "30", "24", "20", "45", "48"],
     emergency_relationship: ["Spouse", "Partner", "Parent", "Child", "Sibling", "Friend", "Other", ...directory.map(record => record.values.emergency_relationship)],
   };
   return <>
