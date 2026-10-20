@@ -41,14 +41,15 @@ export default function PayrollPage() {
     let cancelled = false;
     setLoading(true); setLoadError("");
     const load = async () => {
-      const [profiles, deductions, additions] = await Promise.all([
+      const [profiles, deductions, additions, records] = await Promise.all([
         supabase.from("profiles").select("*").is("deleted_at", null).eq("jurisdiction", jurisdiction),
         supabase.from("employee_deductions").select("*, creditors(name)").eq("is_active", true),
         supabase.from("employee_additions").select("*").eq("is_active", true),
+        supabase.from("employee_records").select("*").is("deleted_at", null).eq("jurisdiction", jurisdiction),
       ]);
-      if (profiles.error || deductions.error || additions.error) throw profiles.error || deductions.error || additions.error;
+      if (profiles.error || deductions.error || additions.error || records.error) throw profiles.error || deductions.error || additions.error || records.error;
       if (cancelled) return;
-      setLiveEmployees((profiles.data || []).filter(p => p.status.toLowerCase() === "active").map(p => ({
+      setLiveEmployees([...(profiles.data || []), ...(records.data || [])].filter(p => p.status.toLowerCase() === "active").map(p => ({
         id: p.user_id, firstName: p.first_name, lastName: p.last_name, department: departmentName(p.department),
         monthlySalary: Number(p.monthly_salary || 0), stdHoursPerDay: Number(p.std_hours_per_day || 8),
         nicNumber: p.nic_number || "", personId: p.person_id || "", jobTitle: p.job_title || "", email: p.email,

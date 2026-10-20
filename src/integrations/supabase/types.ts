@@ -826,6 +826,201 @@ export type Database = {
           },
         ]
       }
+      employee_documents: {
+        Row: {
+          category: string
+          created_at: string
+          employee_key: string
+          employee_visible: boolean
+          expiry_date: string | null
+          file_name: string
+          file_size: number
+          id: string
+          storage_path: string
+          title: string
+          uploaded_by: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          employee_key: string
+          employee_visible?: boolean
+          expiry_date?: string | null
+          file_name: string
+          file_size: number
+          id?: string
+          storage_path: string
+          title: string
+          uploaded_by?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          employee_key?: string
+          employee_visible?: boolean
+          expiry_date?: string | null
+          file_name?: string
+          file_size?: number
+          id?: string
+          storage_path?: string
+          title?: string
+          uploaded_by?: string
+        }
+        Relationships: []
+      }
+      employee_payslips: {
+        Row: {
+          basic_pay: number
+          created_at: string
+          currency_code: string | null
+          department_snapshot: string | null
+          employee_name_snapshot: string | null
+          employee_nic: number
+          employer_nic: number
+          gross_pay: number
+          id: string
+          net_pay: number
+          overtime_pay: number
+          paye: number
+          payroll_run_id: string | null
+          period: string
+          total_deductions: number
+          user_id: string
+        }
+        Insert: {
+          basic_pay?: number
+          created_at?: string
+          currency_code?: string | null
+          department_snapshot?: string | null
+          employee_name_snapshot?: string | null
+          employee_nic?: number
+          employer_nic?: number
+          gross_pay?: number
+          id?: string
+          net_pay?: number
+          overtime_pay?: number
+          paye?: number
+          payroll_run_id?: string | null
+          period: string
+          total_deductions?: number
+          user_id: string
+        }
+        Update: {
+          basic_pay?: number
+          created_at?: string
+          currency_code?: string | null
+          department_snapshot?: string | null
+          employee_name_snapshot?: string | null
+          employee_nic?: number
+          employer_nic?: number
+          gross_pay?: number
+          id?: string
+          net_pay?: number
+          overtime_pay?: number
+          paye?: number
+          payroll_run_id?: string | null
+          period?: string
+          total_deductions?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_payslips_payroll_run_id_fkey"
+            columns: ["payroll_run_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_payslips_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "employee_records"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      employee_records: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          department: string | null
+          email: string
+          first_name: string
+          hr_details: Json
+          id: string
+          job_title: string | null
+          jurisdiction: string
+          last_name: string
+          monthly_salary: number | null
+          nic_number: string | null
+          ot_rate: number | null
+          person_id: string | null
+          phone: string | null
+          schedule: string | null
+          social_security_number: string | null
+          start_date: string | null
+          status: string
+          std_hours_per_day: number | null
+          tan_number: string | null
+          tax_id_number: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          department?: string | null
+          email?: string
+          first_name?: string
+          hr_details?: Json
+          id?: string
+          job_title?: string | null
+          jurisdiction?: string
+          last_name?: string
+          monthly_salary?: number | null
+          nic_number?: string | null
+          ot_rate?: number | null
+          person_id?: string | null
+          phone?: string | null
+          schedule?: string | null
+          social_security_number?: string | null
+          start_date?: string | null
+          status?: string
+          std_hours_per_day?: number | null
+          tan_number?: string | null
+          tax_id_number?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          department?: string | null
+          email?: string
+          first_name?: string
+          hr_details?: Json
+          id?: string
+          job_title?: string | null
+          jurisdiction?: string
+          last_name?: string
+          monthly_salary?: number | null
+          nic_number?: string | null
+          ot_rate?: number | null
+          person_id?: string | null
+          phone?: string | null
+          schedule?: string | null
+          social_security_number?: string | null
+          start_date?: string | null
+          status?: string
+          std_hours_per_day?: number | null
+          tan_number?: string | null
+          tax_id_number?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       equipment: {
         Row: {
           condition: string | null
@@ -2012,6 +2207,57 @@ export type Database = {
           },
         ]
       }
+      payroll_employee_directory: {
+        Row: {
+          account_linked: boolean | null
+          created_at: string | null
+          deleted_at: string | null
+          department: string | null
+          email: string | null
+          first_name: string | null
+          hr_details: Json | null
+          id: string | null
+          job_title: string | null
+          jurisdiction: string | null
+          last_name: string | null
+          monthly_salary: number | null
+          nic_number: string | null
+          ot_rate: number | null
+          person_id: string | null
+          phone: string | null
+          schedule: string | null
+          social_security_number: string | null
+          start_date: string | null
+          status: string | null
+          std_hours_per_day: number | null
+          tan_number: string | null
+          tax_id_number: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      payroll_payslip_directory: {
+        Row: {
+          basic_pay: number | null
+          created_at: string | null
+          currency_code: string | null
+          department_snapshot: string | null
+          employee_name_snapshot: string | null
+          employee_nic: number | null
+          employer_nic: number | null
+          gross_pay: number | null
+          id: string | null
+          net_pay: number | null
+          overtime_pay: number | null
+          paye: number | null
+          payroll_run_id: string | null
+          period: string | null
+          total_deductions: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       approve_department_payroll: {
@@ -2022,6 +2268,10 @@ export type Database = {
           _rows: Json
         }
         Returns: string
+      }
+      can_access_employee_document: {
+        Args: { _employee: string; _shared: boolean }
+        Returns: boolean
       }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       has_role: {

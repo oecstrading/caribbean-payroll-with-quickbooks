@@ -6,12 +6,14 @@ import PortalPayslips from "@/components/portal/PortalPayslips";
 import PortalBankInfo from "@/components/portal/PortalBankInfo";
 import PortalLeave from "@/components/portal/PortalLeave";
 import PortalProfile from "@/components/portal/PortalProfile";
+import EmployeeDocuments from "@/components/EmployeeDocuments";
 
 const tabs = [
   { id: "payslips", label: "My Payslips", icon: FileText },
   { id: "bank", label: "Bank Info", icon: CreditCard },
   { id: "leave", label: "Leave", icon: CalendarDays },
   { id: "profile", label: "My Profile", icon: User },
+  { id: "documents", label: "My Documents", icon: FileText },
 ] as const;
 
 type TabId = (typeof tabs)[number]["id"];
@@ -67,6 +69,7 @@ export default function PortalPage() {
         {activeTab === "bank" && <PortalBankInfo />}
         {activeTab === "leave" && <PortalLeave />}
         {activeTab === "profile" && <PortalProfile />}
+        {activeTab === "documents" && user && <EmployeeDocuments employeeKey={user.id} canManage={false} accountLinked />}
       </motion.div>
     </div>
   );

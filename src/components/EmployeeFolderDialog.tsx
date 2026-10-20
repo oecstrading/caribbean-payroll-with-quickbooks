@@ -11,12 +11,13 @@ import { employeeFolderSchema, emptyEmployee, type EmployeeFolder, type Employee
 import { calculatePayroll, ST_LUCIA_CONFIG, formatCurrency } from "@/lib/payroll-engine";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import EmployeeDocuments from "@/components/EmployeeDocuments";
 
 type Field = { key: keyof EmployeeForm; label: string; type?: string; options?: string[]; wide?: boolean };
 const sections: { id: string; label: string; icon: typeof User; fields: Field[] }[] = [
   { id: "personal", label: "Personal", icon: User, fields: [
     { key: "first_name", label: "First name *" }, { key: "last_name", label: "Last name *" },
-    { key: "email", label: "Work email *", type: "email" }, { key: "phone", label: "Phone", type: "tel" },
+    { key: "email", label: "Work email (optional)", type: "email" }, { key: "phone", label: "Phone", type: "tel" },
     { key: "date_of_birth", label: "Date of birth", type: "date" }, { key: "gender", label: "Gender", options: ["Female", "Male", "Non-binary", "Prefer not to say"] },
     { key: "marital_status", label: "Marital status", options: ["Single", "Married", "Divorced", "Widowed", "Prefer not to say"] }, { key: "nationality", label: "Nationality" },
     { key: "personal_email", label: "Personal email", type: "email" }, { key: "address", label: "Residential address", wide: true }, { key: "city", label: "City / district" }, { key: "country", label: "Country" },
@@ -81,11 +82,11 @@ export default function EmployeeFolderDialog({ folder, creating, onClose, onSave
             <span className="w-11 h-11 shrink-0 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm">{creating ? <User size={20} /> : `${values.first_name[0] || ""}${values.last_name[0] || ""}`}</span>
             <span className="min-w-0 break-words">{creating ? "Add employee" : `${folder?.values.first_name} ${folder?.values.last_name}`}</span>
           </DialogTitle>
-          <DialogDescription>{creating ? "New employee account and HR folder" : folder?.source === "sample" ? "Fictional sample • Changes last for this visit only" : folder?.deletedAt ? "Deleted folder • Historical records retained; sign-in access unchanged" : `${values.job_title || "Employee folder"} · ${values.department || "Unassigned department"}`}</DialogDescription>
+          <DialogDescription>{creating ? "New employee folder · Email is optional; without email, no sign-in account is created" : folder?.source === "sample" ? "Fictional sample • Changes last for this visit only" : folder?.deletedAt ? "Deleted folder • Historical records retained; sign-in access unchanged" : `${values.job_title || "Employee folder"} · ${values.department || "Unassigned department"}`}</DialogDescription>
         </DialogHeader>
         <Tabs value={tab} onValueChange={setTab} className="flex-1 overflow-y-auto">
           <div className="px-4 sm:px-6 pt-4 overflow-x-auto">
-            <TabsList className="w-full min-w-[440px] grid grid-cols-5 h-11">{sections.map((section) => <TabsTrigger key={section.id} value={section.id} className="gap-1.5"><section.icon size={14} /><span>{section.label}</span></TabsTrigger>)}</TabsList>
+            <TabsList className="w-full min-w-[590px] grid grid-cols-6 h-11">{sections.map((section) => <TabsTrigger key={section.id} value={section.id} className="gap-1.5"><section.icon size={14} /><span>{section.label}</span></TabsTrigger>)}<TabsTrigger value="documents" className="gap-1.5"><FileText size={14} />Documents</TabsTrigger></TabsList>
           </div>
           {sections.map((section) => <TabsContent key={section.id} value={section.id} className="px-6 pb-6 pt-3 mt-0">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">{section.fields.map((field) => {
@@ -104,11 +105,12 @@ export default function EmployeeFolderDialog({ folder, creating, onClose, onSave
               <div className="grid grid-cols-3 gap-3 text-center">{[["Gross", preview.grossMonthly], ["Deductions", preview.totalDeductions], ["Net pay", preview.netPay]].map(([label, amount]) => <div key={String(label)} className="bg-secondary rounded-md px-2 py-3"><p className="text-xs text-muted-foreground">{label}</p><p className="font-semibold text-sm sm:text-base text-foreground break-all">{formatCurrency(Number(amount))}</p></div>)}</div>
             </div>}
           </TabsContent>)}
+          <TabsContent value="documents" className="px-6 pb-6 pt-4 mt-0">{folder?.source === "live" ? <EmployeeDocuments employeeKey={folder.id} canManage={permissions.edit && !folder.deletedAt} accountLinked={folder.accountLinked !== false} /> : <p className="text-sm text-muted-foreground">{creating ? "Save the employee folder before adding documents." : "Documents are available for live employee folders only."}</p>}</TabsContent>
         </Tabs>
         <div className="border-t border-border p-4 sm:px-6 flex flex-wrap gap-2 justify-between bg-background">
           <div className="flex gap-2">
             {folder && permissions.delete && folder.id !== ownId && !editing && <Button className="h-11" variant={folder.deletedAt ? "secondary" : "ghost"} disabled={busy} onClick={() => folder.deletedAt ? remove(true) : setConfirmDelete(true)}>{folder.deletedAt ? <RotateCcw /> : <Trash2 />} {folder.deletedAt ? "Restore" : "Delete"}</Button>}
-            {folder?.source === "live" && !folder.deletedAt && !editing && <Button className="h-11" variant="outline" onClick={() => { onClose(); navigate(`/payslips?employee=${folder.id}`); }}><FileText />Payslips</Button>}
+            {folder?.source === "live" && !folder.deletedAt && !editing && <Button className="h-11" variant="outline" onClick={() => { onClose(); navigate(`/reports`); }}><FileText />Payroll reports</Button>}
           </div>
           <div className="flex gap-2 ml-auto">
             <Button variant="outline" className="h-11" disabled={busy} onClick={() => { if (editing && folder && !creating) { setValues(folder.values); setErrors({}); setEditing(false); } else onClose(); }}>{editing ? "Cancel" : "Close"}</Button>

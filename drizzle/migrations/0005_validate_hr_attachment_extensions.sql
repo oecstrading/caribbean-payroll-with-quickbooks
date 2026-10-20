@@ -1,0 +1,2 @@
+CREATE FUNCTION public.validate_hr_attachment_name() RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $$ BEGIN IF NEW.file_name !~* '\.(pdf|docx?|xlsx?|txt|png|jpe?g)$' THEN RAISE EXCEPTION 'Unsupported HR attachment file type'; END IF; RETURN NEW; END $$;
+CREATE TRIGGER validate_hr_attachment_name BEFORE INSERT OR UPDATE ON public.employee_documents FOR EACH ROW EXECUTE FUNCTION public.validate_hr_attachment_name();

@@ -29,11 +29,11 @@ export function departmentSummaries(rows: PayrollReportRow[]) {
   }));
 }
 export function payslipReportRow(slip: {
-  id: string; user_id: string; department_snapshot: string | null; employee_name_snapshot: string | null;
-  basic_pay: number; overtime_pay: number; gross_pay: number; employee_nic: number; employer_nic: number;
-  paye: number; total_deductions: number; net_pay: number;
+  id: string | null; user_id: string | null; department_snapshot: string | null; employee_name_snapshot: string | null;
+  basic_pay: number | null; overtime_pay: number | null; gross_pay: number | null; employee_nic: number | null; employer_nic: number | null;
+  paye: number | null; total_deductions: number | null; net_pay: number | null;
 }): PayrollReportRow {
-  return { id: slip.id, name: slip.employee_name_snapshot || slip.user_id.slice(0, 8),
+  return { id: slip.id || "", name: slip.employee_name_snapshot || slip.user_id?.slice(0, 8) || "Employee",
     department: slip.department_snapshot ?? "Not recorded (legacy)", basic: Number(slip.basic_pay), overtime: Number(slip.overtime_pay),
     gross: Number(slip.gross_pay), nic: Number(slip.employee_nic), employerNIC: Number(slip.employer_nic),
     paye: Number(slip.paye), deductions: Number(slip.total_deductions), net: Number(slip.net_pay) };
