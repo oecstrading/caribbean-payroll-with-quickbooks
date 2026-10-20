@@ -193,10 +193,10 @@ export default function DashboardPage() {
   const lateToday = sampleAttendance.filter((a) => a.late).length;
 
   const metrics = [
-    { label: "Total Employees", value: activeEmployees.length.toString(), icon: Users, color: "text-primary", bgColor: "bg-primary/10", path: "/employees" },
-    { label: "Monthly Gross", value: formatCurrency(totalGross, "$"), icon: DollarSign, color: "text-success", bgColor: "bg-success/10", path: "/payroll" },
-    { label: "On Clock Today", value: onClockToday.toString(), icon: Clock, color: "text-primary", bgColor: "bg-primary/10", path: "/attendance" },
-    { label: "Next Pay Date", value: "Mar 31", icon: CalendarDays, color: "text-accent-foreground", bgColor: "bg-accent/20", path: "/payroll" },
+    { label: "Total Employees", tile: "carib-sea", value: activeEmployees.length.toString(), icon: Users, color: "text-primary", bgColor: "bg-primary/10", path: "/employees" },
+    { label: "Monthly Gross", tile: "carib-palm", value: formatCurrency(totalGross, "$"), icon: DollarSign, color: "text-success", bgColor: "bg-success/10", path: "/payroll" },
+    { label: "On Clock Today", tile: "carib-coral", value: onClockToday.toString(), icon: Clock, color: "text-primary", bgColor: "bg-primary/10", path: "/attendance" },
+    { label: "Next Pay Date", tile: "carib-mango", value: "Mar 31", icon: CalendarDays, color: "text-accent-foreground", bgColor: "bg-accent/20", path: "/payroll" },
   ];
 
   const quickActions = [
@@ -211,7 +211,7 @@ export default function DashboardPage() {
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
-      className="p-4 md:p-6 max-w-7xl mx-auto space-y-4 md:space-y-6 relative"
+      className="carib-sand min-h-full p-4 md:p-6 max-w-7xl mx-auto space-y-4 md:space-y-6 relative"
     >
       {/* Pull to refresh indicator */}
       <div
@@ -246,17 +246,17 @@ export default function DashboardPage() {
         {metrics.map((metric, i) => (
           <motion.div key={metric.label} {...fadeUp} transition={{ delay: 0.05 * (i + 1) }}>
             <Card
-              className="shadow-card border-border/60 hover:shadow-md transition-shadow cursor-pointer group"
+              className={`carib-tile ${(metric as any).tile} border-0 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all cursor-pointer group`}
               onClick={() => navigate(metric.path)}
             >
               <CardContent className="p-5">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{metric.label}</p>
-                    <p className="text-2xl font-display font-bold text-foreground mt-1">{metric.value}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide opacity-90">{metric.label}</p>
+                    <p className="text-2xl font-display font-bold mt-1">{metric.value}</p>
                   </div>
-                  <div className={`p-2.5 rounded-lg ${metric.bgColor} group-hover:scale-110 transition-transform`}>
-                    <metric.icon size={20} className={metric.color} />
+                  <div className="relative z-10 p-2.5 rounded-lg bg-background/20 group-hover:scale-110 transition-transform">
+                    <metric.icon size={20} />
                   </div>
                 </div>
               </CardContent>
@@ -268,7 +268,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Quick Actions */}
         <motion.div {...fadeUp} transition={{ delay: 0.25 }}>
-          <Card className="shadow-card border-border/60">
+          <Card className="carib-band shadow-card border-border/60 hover:shadow-lg transition-shadow">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-display">Quick Actions</CardTitle>
             </CardHeader>
@@ -279,7 +279,7 @@ export default function DashboardPage() {
                   onClick={() => navigate(action.path)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
                     action.accent
-                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                      ? "carib-tile carib-coral shadow-md hover:brightness-110"
                       : "bg-secondary text-foreground hover:bg-muted"
                   }`}
                 >
@@ -294,7 +294,7 @@ export default function DashboardPage() {
 
         {/* Compliance Alerts */}
         <motion.div {...fadeUp} transition={{ delay: 0.3 }}>
-          <Card className="shadow-card border-border/60">
+          <Card className="carib-band shadow-card border-border/60 hover:shadow-lg transition-shadow">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-display flex items-center gap-2">
                 <AlertTriangle size={16} className="text-warning" />
@@ -352,7 +352,7 @@ export default function DashboardPage() {
 
         {/* Recent Payroll Summary */}
         <motion.div {...fadeUp} transition={{ delay: 0.35 }}>
-          <Card className="shadow-card border-border/60">
+          <Card className="carib-band shadow-card border-border/60 hover:shadow-lg transition-shadow">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-display">February Payroll</CardTitle>
             </CardHeader>
@@ -433,7 +433,7 @@ export default function DashboardPage() {
 
       {/* Field Operations Widget */}
       <motion.div {...fadeUp} transition={{ delay: 0.4 }}>
-        <Card className="shadow-card border-border/60">
+        <Card className="carib-band shadow-card border-border/60 hover:shadow-lg transition-shadow">
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-display flex items-center gap-2">
               <Briefcase size={16} className="text-primary" />
@@ -529,7 +529,7 @@ export default function DashboardPage() {
 
       {/* Today's Roster Widget */}
       <motion.div {...fadeUp} transition={{ delay: 0.45 }}>
-        <Card className="shadow-card border-border/60">
+        <Card className="carib-band shadow-card border-border/60 hover:shadow-lg transition-shadow">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base font-display flex items-center gap-2">
