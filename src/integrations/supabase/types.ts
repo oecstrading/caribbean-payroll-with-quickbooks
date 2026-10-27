@@ -2557,9 +2557,11 @@ export type Database = {
           first_name: string
           hr_details: Json
           id: string
+          is_employee: boolean
           job_title: string | null
           jurisdiction: string
           last_name: string
+          login_username: string | null
           monthly_salary: number | null
           nic_number: string | null
           org_id: string | null
@@ -2584,9 +2586,11 @@ export type Database = {
           first_name?: string
           hr_details?: Json
           id?: string
+          is_employee?: boolean
           job_title?: string | null
           jurisdiction?: string
           last_name?: string
+          login_username?: string | null
           monthly_salary?: number | null
           nic_number?: string | null
           org_id?: string | null
@@ -2611,9 +2615,11 @@ export type Database = {
           first_name?: string
           hr_details?: Json
           id?: string
+          is_employee?: boolean
           job_title?: string | null
           jurisdiction?: string
           last_name?: string
+          login_username?: string | null
           monthly_salary?: number | null
           nic_number?: string | null
           org_id?: string | null
@@ -3197,6 +3203,24 @@ export type Database = {
           },
         ]
       }
+      user_pin_attempts: {
+        Row: {
+          failures: number
+          locked_until: string | null
+          user_id: string
+        }
+        Insert: {
+          failures?: number
+          locked_until?: string | null
+          user_id: string
+        }
+        Update: {
+          failures?: number
+          locked_until?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_pins: {
         Row: {
           created_at: string
@@ -3750,6 +3774,7 @@ export type Database = {
         Args: { _employee: string; _shared: boolean }
         Returns: boolean
       }
+      claim_user_pin_attempt: { Args: { _user: string }; Returns: boolean }
       client_portal_data: { Args: { _code: string }; Returns: Json }
       company_configuration: { Args: never; Returns: Json }
       complete_company_setup: {
@@ -3948,6 +3973,10 @@ export type Database = {
         Returns: undefined
       }
       revoke_company_setup: { Args: { _id: string }; Returns: undefined }
+      save_own_staff_information: {
+        Args: { _details: Json; _user: string }
+        Returns: undefined
+      }
       save_workforce_settings: {
         Args: {
           _basis: string

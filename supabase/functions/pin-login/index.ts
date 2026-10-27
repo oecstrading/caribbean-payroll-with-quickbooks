@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import bcrypt from "npm:bcryptjs@2.4.3";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,7 +14,7 @@ Deno.serve(async (req) => {
   try {
     const { email, pin } = await req.json();
 
-    if (!email || !pin) {
+    if (typeof email !== "string" || email.length > 255 || typeof pin !== "string") {
       return new Response(JSON.stringify({ error: "Email and PIN are required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -28,15 +29,16 @@ Deno.serve(async (req) => {
       });
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !serviceRoleKey) throw new Error("Service unavailable");
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     // Find user by email from profiles
     const { data: profile, error: profileErr } = await supabase
       .from("profiles")
-      .select("user_id, status")
-      .eq("email", email.trim().toLowerCase())
+      .select("user_id, status, email, deleted_at")
+      .eq(email.includes("@") ? "email" : "login_username", email.trim().toLowerCase())
       .maybeSingle();
 
     if (profileErr || !profile) {
@@ -46,13 +48,15 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (profile.status !== "Active") {
+    if (profile.status !== "Active" || profile.deleted_at) {
       return new Response(JSON.stringify({ error: "Account is inactive" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    const { data: allowed, error: attemptError } = await supabase.rpc("claim_user_pin_attempt", { _user: profile.user_id });
+    if (attemptError || !allowed) return new Response(JSON.stringify({ error: "Too many attempts. Try again in 15 minutes." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     // Check PIN
     const { data: pinRecord, error: pinErr } = await supabase
       .from("user_pins")
@@ -75,18 +79,21 @@ Deno.serve(async (req) => {
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 
-    if (hashHex !== pinRecord.pin_hash) {
+    const valid = pinRecord.pin_hash.startsWith("$2") ? await bcrypt.compare(pin, pinRecord.pin_hash) : hashHex === pinRecord.pin_hash;
+    if (!valid) {
       return new Response(JSON.stringify({ error: "Invalid credentials" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    const { data: identity } = await supabase.auth.admin.getUserById(profile.user_id);
+    if (!identity.user?.email_confirmed_at || identity.user.email !== profile.email) return new Response(JSON.stringify({ error: "Confirm your email invitation before signing in" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     // Generate a session for this user
     // We use the admin API to generate a magic link token
     const { data: authData, error: authError } = await supabase.auth.admin.generateLink({
       type: "magiclink",
-      email: email.trim().toLowerCase(),
+      email: profile.email,
     });
 
     if (authError || !authData) {
@@ -97,7 +104,8 @@ Deno.serve(async (req) => {
     }
 
     // Verify the token to get a session
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    if (!anonKey) throw new Error("Service unavailable");
     const anonClient = createClient(supabaseUrl, anonKey);
     
     const tokenHash = authData.properties?.hashed_token;
@@ -120,6 +128,7 @@ Deno.serve(async (req) => {
       });
     }
 
+    await supabase.from("user_pin_attempts").delete().eq("user_id", profile.user_id);
     return new Response(
       JSON.stringify({
         access_token: session.session.access_token,

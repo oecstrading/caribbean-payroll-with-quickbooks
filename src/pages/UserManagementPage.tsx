@@ -13,6 +13,7 @@ import WorkspaceAccessDialog from "@/components/WorkspaceAccessDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
+import UserAccountDialog from "@/components/UserAccountDialog";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -29,6 +30,8 @@ interface UserWithRole {
   role: AppRole;
   companySuper: boolean;
   platformSuper: boolean;
+  login_username: string | null;
+  is_employee: boolean;
 }
 
 const roleColors: Record<AppRole, string> = {
@@ -45,11 +48,7 @@ export default function UserManagementPage() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<AppRole | null>(null);
   const [showInvite, setShowInvite] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState<AppRole>("employee");
-  const [inviting, setInviting] = useState(false);
   const [editUser, setEditUser] = useState<UserWithRole | null>(null);
-  const [editForm, setEditForm] = useState({ department: "", job_title: "", monthly_salary: 0, status: "Active" });
   const [pinUser, setPinUser] = useState<UserWithRole | null>(null);
   const [pinValue, setPinValue] = useState("");
   const [settingPin, setSettingPin] = useState(false);
@@ -69,6 +68,8 @@ export default function UserManagementPage() {
         const authority = authorityResults[index]?.data as { company_super_admin?: boolean; platform_super_admin?: boolean } | null;
         return {
           user_id: p.user_id,
+          login_username: p.login_username,
+          is_employee: p.is_employee,
           first_name: p.first_name,
           last_name: p.last_name,
           email: p.email,
@@ -124,50 +125,14 @@ export default function UserManagementPage() {
     finally { setDeleting(false); }
   };
 
-  const handleInvite = async () => {
-    if (!inviteEmail.trim()) return;
-    setInviting(true);
+  const resendInvitation = async (u: UserWithRole) => {
     try {
-      const { data, error } = await supabase.functions.invoke("invite-user", {
-        body: { email: inviteEmail.trim(), role: inviteRole, first_name: "", last_name: "" },
-      });
-      if (error || data?.error) {
-        let detail = data?.error;
-        try { detail = detail || (await (error as any)?.context?.json())?.error; } catch { /* ignore */ }
-        throw new Error(detail || error?.message || "Failed to invite");
-      }
-
-      toast.success(`Employee ${inviteEmail} created successfully`);
-      setShowInvite(false);
-      setInviteEmail("");
-      setInviteRole("employee");
-      setTimeout(fetchUsers, 1000);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to send invite");
-    } finally {
-      setInviting(false);
-    }
-  };
-
-  const handleEditSave = async () => {
-    if (!editUser) return;
-    try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          department: editForm.department,
-          job_title: editForm.job_title,
-          monthly_salary: editForm.monthly_salary,
-          status: editForm.status,
-        })
-        .eq("user_id", editUser.user_id);
-      if (error) throw error;
-      toast.success("Profile updated");
-      setEditUser(null);
-      fetchUsers();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to update");
-    }
+      const {data,error} = await supabase.functions.invoke("invite-user", {body:{action:"resend",user_id:u.user_id}});
+      let detail = data?.error;
+      if(error){try{detail=detail||(await error.context.json()).error}catch{/* fallback */}}
+      if(error||detail) throw new Error(detail||"Invitation could not be sent");
+      toast.success("Invitation / password setup email sent");
+    }catch(error){toast.error(error instanceof Error?error.message:"Unable to send invitation")}
   };
 
   const handleSetPin = async () => {
@@ -207,15 +172,15 @@ export default function UserManagementPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-xl md:text-2xl font-display font-bold text-foreground">User Management</h1>
-          <p className="text-sm text-muted-foreground mt-1">{users.length} users • Manage roles, access, and profiles</p>
+          <p className="text-sm text-muted-foreground mt-1">{users.length} accounts • Platform access & employee links</p>
         </div>
-        <button
+        <Button
           onClick={() => setShowInvite(true)}
           className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
         >
           <UserPlus size={16} />
-          Invite Employee
-        </button>
+          Add user
+        </Button>
       </div>
 
       {/* Role Stats */}
@@ -235,7 +200,7 @@ export default function UserManagementPage() {
               </div>
               <div>
                 <p className="text-lg font-display font-bold text-foreground">{users.filter((u) => u.role === r).length}</p>
-                <p className="text-xs text-muted-foreground capitalize">{r}s</p>
+                <p className="text-xs text-muted-foreground">{r === "employee" ? "Staff access" : `${r}s`}</p>
               </div>
             </CardContent>
           </Card>
@@ -290,7 +255,8 @@ export default function UserManagementPage() {
                         </div>
                         <div>
                           <p className="font-medium text-foreground">{u.first_name} {u.last_name}</p>
-                          <p className="text-xs text-muted-foreground">{u.email}</p>
+                          <p className="text-xs text-muted-foreground">{u.email.endsWith("@pin.invalid") ? u.login_username : u.email}</p>
+                          <Badge variant="outline">{u.is_employee ? "Employee + user" : "Platform user"}</Badge>
                         </div>
                       </div>
                     </td>
@@ -310,23 +276,18 @@ export default function UserManagementPage() {
                     </td>
                     <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="icon" title="Send invitation / password setup" aria-label={`Send invitation to ${u.email}`} disabled={u.email.endsWith("@pin.invalid")} onClick={() => resendInvitation(u)}><Mail size={16}/></Button>
                         <Button variant="ghost" size="sm" onClick={() => setAccessUser(u)}><Shield size={14} />Roles & access</Button>
                         {u.user_id !== currentUser?.id && (!u.companySuper || isCompanySuperAdmin) && (!u.platformSuper || isPlatformAdmin) && (u.role !== "admin" || isCompanySuperAdmin) && <Button variant="ghost" size="icon" title={`Delete ${u.email}`} aria-label={`Delete ${u.email}`} onClick={() => { setDeleteUser(u); setDeleteConfirmation(""); }}><Trash2 className="text-destructive" size={16} /></Button>}
-                        <button
+                        <Button
                           onClick={() => {
                             setEditUser(u);
-                            setEditForm({
-                              department: u.department,
-                              job_title: u.job_title,
-                              monthly_salary: u.monthly_salary,
-                              status: u.status,
-                            });
                           }}
                           className="p-1.5 rounded-md hover:bg-secondary transition-colors text-xs text-primary font-medium"
                         >
                           Edit
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           onClick={() => handleDeactivate(u.user_id, u.status)}
                           className="p-1.5 rounded-md hover:bg-secondary transition-colors"
                           title={u.status === "Active" ? "Deactivate" : "Activate"}
@@ -336,14 +297,14 @@ export default function UserManagementPage() {
                           ) : (
                             <CheckCircle size={14} className="text-success" />
                           )}
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           onClick={() => { setPinUser(u); setPinValue(""); }}
                           className="p-1.5 rounded-md hover:bg-secondary transition-colors text-xs text-primary font-medium"
                           title="Set PIN"
                         >
                           <Hash size={14} />
-                        </button>
+                        </Button>
                       </div>
                     </td>
                   </motion.tr>
@@ -363,120 +324,7 @@ export default function UserManagementPage() {
           <div className="flex justify-end gap-2"><Button variant="outline" disabled={deleting} onClick={() => setDeleteUser(null)}>Cancel</Button><Button variant="destructive" disabled={deleting || deleteConfirmation !== "DELETE"} onClick={handleDelete}><Trash2 />{deleting ? "Removing…" : "Delete permanently"}</Button></div>
         </DialogContent>
       </Dialog>
-      {/* Invite Dialog */}
-      <Dialog open={showInvite} onOpenChange={setShowInvite}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="font-display flex items-center gap-2">
-              <UserPlus size={18} className="text-primary" />
-              Invite Employee
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 mt-2">
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Email Address</label>
-              <div className="relative">
-                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  type="email"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  placeholder="employee@company.com"
-                  className="w-full pl-9 pr-4 py-2.5 bg-secondary border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-                />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Role</label>
-              <select
-                value={inviteRole}
-                onChange={(e) => setInviteRole(e.target.value as AppRole)}
-                className="w-full px-3 py-2.5 bg-secondary border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-              >
-                <option value="employee">Employee</option>
-                <option value="manager">Manager</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
-            <button
-              onClick={handleInvite}
-              disabled={inviting || !inviteEmail.trim()}
-              className="w-full px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
-            >
-              {inviting ? "Sending..." : "Send Invitation"}
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Profile Dialog */}
-      <Dialog open={!!editUser} onOpenChange={(o) => !o && setEditUser(null)}>
-        <DialogContent className="sm:max-w-md">
-          {editUser && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="font-display">Edit {editUser.first_name} {editUser.last_name}</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 mt-2">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Department</label>
-                  <input
-                    type="text"
-                    value={editForm.department}
-                    onChange={(e) => setEditForm({ ...editForm, department: e.target.value })}
-                    className="w-full px-3 py-2.5 bg-secondary border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Job Title</label>
-                  <input
-                    type="text"
-                    value={editForm.job_title}
-                    onChange={(e) => setEditForm({ ...editForm, job_title: e.target.value })}
-                    className="w-full px-3 py-2.5 bg-secondary border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Monthly Salary (XCD)</label>
-                  <input
-                    type="number"
-                    value={editForm.monthly_salary}
-                    onChange={(e) => setEditForm({ ...editForm, monthly_salary: Number(e.target.value) })}
-                    className="w-full px-3 py-2.5 bg-secondary border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Status</label>
-                  <select
-                    value={editForm.status}
-                    onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
-                    className="w-full px-3 py-2.5 bg-secondary border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  >
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                    <option value="On Leave">On Leave</option>
-                  </select>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleEditSave}
-                    className="flex-1 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
-                  >
-                    Save Changes
-                  </button>
-                  <button
-                    onClick={() => setEditUser(null)}
-                    className="px-4 py-2.5 bg-secondary text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-
+      <UserAccountDialog open={showInvite || !!editUser} user={editUser} canAddAdmin={isCompanySuperAdmin} onClose={() => {setShowInvite(false);setEditUser(null);}} onSaved={fetchUsers} />
       {/* Set PIN Dialog */}
       <Dialog open={!!pinUser} onOpenChange={(o) => !o && setPinUser(null)}>
         <DialogContent className="sm:max-w-sm">
@@ -490,12 +338,12 @@ export default function UserManagementPage() {
               </DialogHeader>
               <div className="space-y-4 mt-2">
                 <p className="text-sm text-muted-foreground">
-                  Set a 4-6 digit PIN to allow this user to sign in with their email and PIN instead of a password.
+                  Set a 4-6 digit PIN to allow this user to sign in with their email or username and PIN instead of a password.
                 </p>
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">PIN (4-6 digits)</label>
                   <input
-                    type="text"
+                    type="password"
                     inputMode="numeric"
                     maxLength={6}
                     value={pinValue}
@@ -504,13 +352,13 @@ export default function UserManagementPage() {
                     className="w-full px-3 py-2.5 bg-secondary border border-border rounded-lg text-sm text-foreground text-center tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
-                <button
+                <Button
                   onClick={handleSetPin}
                   disabled={settingPin || pinValue.length < 4}
                   className="w-full px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
                 >
                   {settingPin ? "Setting PIN..." : "Set PIN & Enable Login"}
-                </button>
+                </Button>
               </div>
             </>
           )}

@@ -29,7 +29,7 @@ async function processOrg(admin: ReturnType<typeof createClient>, orgId: string,
     const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0));
     const payDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), settings.pay_day));
     const [profiles, records, runs, alerts, shifts, loans] = await Promise.all([
-      admin.from("profiles").select("id, monthly_salary, nic_number, tan_number, status, department").eq("org_id", orgId).is("deleted_at", null),
+      admin.from("profiles").select("id, monthly_salary, nic_number, tan_number, status, department").eq("is_employee", true).eq("org_id", orgId).is("deleted_at", null),
       admin.from("employee_records").select("id, monthly_salary, nic_number, tan_number, status, department").eq("org_id", orgId).is("deleted_at", null).is("permanently_deleted_at", null),
       admin.from("payroll_runs").select("id, total_gross, period_start, period_end, created_at").eq("org_id", orgId).order("created_at", { ascending: false }).limit(12),
       admin.from("workforce_alerts").select("id", { count: "exact", head: true }).eq("org_id", orgId).is("resolved_at", null),

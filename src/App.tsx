@@ -20,6 +20,7 @@ import CompanySetupPage from "@/pages/CompanySetupPage";
 import StaffClockPage from "@/pages/StaffClockPage";
 import PayslipPage from "@/pages/PayslipPage";
 import AuthPage from "@/pages/AuthPage";
+import AcceptInvitationPage from "@/pages/AcceptInvitationPage";
 import PortalPage from "@/pages/PortalPage";
 import UserManagementPage from "@/pages/UserManagementPage";
 import GeofencingPage from "@/pages/GeofencingPage";
@@ -88,6 +89,8 @@ const AppRoutes = () => (
     <Route path="/time-clock/:companyId" element={<StaffClockPage />} />
     <Route path="/time-clock" element={<StaffClockPage />} />
     <Route path="/auth" element={<PublicRoute><AuthPage /></PublicRoute>} />
+    <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
+    <Route path="/reset-password" element={<AcceptInvitationPage />} />
     <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
       <Route path="/" element={<DashboardPage />} />
       <Route path="/employees" element={<EmployeesPage />} />

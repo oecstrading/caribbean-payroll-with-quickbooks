@@ -188,7 +188,7 @@ export default function AuthPage() {
       </div>
 
       {/* Right auth panel */}
-      <div className="flex-1 flex items-center justify-center p-8">
+      <div className="flex-1 flex items-center justify-center bg-background p-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -209,7 +209,7 @@ export default function AuthPage() {
               {isSignUp
                 ? "Sign up to access your employee portal"
                 : isPinMode
-                ? "Enter your email and PIN to sign in"
+                ? "Enter your email or username and PIN to sign in"
                 : "Sign in to your employee portal"}
             </p>
           </div>
@@ -261,14 +261,14 @@ export default function AuthPage() {
           {isPinMode ? (
             <form onSubmit={handlePinAuth} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Email</label>
+                <label className="text-xs font-medium text-muted-foreground">Email or username</label>
                 <div className="relative">
                   <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                   <input
-                    type="email"
+                    type="text"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@company.com"
+                    placeholder="Email or assigned username"
                     required
                     className="w-full pl-9 pr-4 py-2.5 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                   />

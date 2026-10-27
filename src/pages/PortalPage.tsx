@@ -19,7 +19,7 @@ const tabs = [
 type TabId = (typeof tabs)[number]["id"];
 
 export default function PortalPage() {
-  const [activeTab, setActiveTab] = useState<TabId>("payslips");
+  const [activeTab, setActiveTab] = useState<TabId>(new URLSearchParams(window.location.search).get("tab") === "profile" ? "profile" : "payslips");
   const { user, signOut } = useAuth();
 
   return (

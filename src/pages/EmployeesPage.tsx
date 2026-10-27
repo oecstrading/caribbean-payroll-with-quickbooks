@@ -34,7 +34,7 @@ export default function EmployeesPage() {
   const [finishingRemoval, setFinishingRemoval] = useState<string | null>(null);
   const fetchEmployees = useCallback(async () => {
     setLoading(true); setError("");
-    const [profiles, records] = await Promise.all([supabase.from("profiles").select("*").order("first_name"), supabase.from("employee_records").select("*").is("permanently_deleted_at", null).order("first_name")]);
+    const [profiles, records] = await Promise.all([supabase.from("profiles").select("*").eq("is_employee", true).order("first_name"), supabase.from("employee_records").select("*").is("permanently_deleted_at", null).order("first_name")]);
     if (profiles.error || records.error) setError("Employee records could not be loaded. Please try again.");
     else setLive([...(profiles.data || []).map(p => ({ ...profileToFolder(p), accountLinked: true })), ...(records.data || []).map(p => ({ ...profileToFolder(p), accountLinked: false }))]);
     const jobs = await supabase.from("employee_removal_jobs").select("employee_id").eq("status", "pending");
