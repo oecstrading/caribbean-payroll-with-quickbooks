@@ -13,7 +13,7 @@ import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function AttendancePage() {
-  const { isAdminOrManager } = useRole();
+  const { isAdminOrManager, demoMode } = useRole();
   const [companyId, setCompanyId] = useState<string>();
   useEffect(() => { supabase.rpc("current_org_id").then(({data}) => { if(data)setCompanyId(data); }); }, []);
   const [importedRecords, setImportedRecords] = useState<AttendanceRecord[]>([]);
@@ -37,7 +37,7 @@ export default function AttendancePage() {
     }
   };
 
-  if (!isAdminOrManager) return <div className="p-4 md:p-6 space-y-6"><StaffTimeClock companyId={companyId} /><AttendanceClock /></div>;
+  if (!isAdminOrManager) return <div className="p-4 md:p-6 space-y-6"><StaffTimeClock companyId={companyId} />{demoMode && <AttendanceClock />}</div>;
 
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-4 md:space-y-6">
@@ -51,13 +51,13 @@ export default function AttendancePage() {
             )}
           </p>
         </div>
-        <AttendanceCSVImport onImport={handleImport} />
+        {demoMode && <AttendanceCSVImport onImport={handleImport} />}
       </div>
 
       {/* Date Selector */}
       <StaffTimeClock companyId={companyId} />
       <WorkforceManagement />
-      <h2 className="text-lg font-display font-semibold">Fictional sample / imported demonstration timesheets</h2>
+      {demoMode && <><h2 className="text-lg font-display font-semibold">Fictional sample / imported demonstration timesheets</h2>
       <AttendanceClock />
       <div className="flex gap-2 flex-wrap">
         {dates.map((date) => (
@@ -175,7 +175,7 @@ export default function AttendancePage() {
             </tbody>
           </table>
         </div>
-      </Card>
+      </Card></>}
     </div>
   );
 }

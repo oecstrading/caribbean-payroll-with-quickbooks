@@ -77,7 +77,21 @@ function usePullToRefresh(onRefresh: () => Promise<void>) {
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const { canAccess, isAdminOrManager } = useRole();
+  const { canAccess, isAdminOrManager, demoMode } = useRole();
+  const [liveSummary, setLiveSummary] = useState({ employees: 0, gross: 0, net: 0, onClock: 0 });
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      const [p, e, r, shifts] = await Promise.all([
+        supabase.from("profiles").select("user_id").is("deleted_at", null).eq("status", "Active"),
+        supabase.from("employee_records").select("user_id").is("deleted_at", null).eq("status", "Active"),
+        supabase.from("payroll_runs").select("total_gross,total_net").order("created_at", { ascending: false }).limit(1).maybeSingle(),
+        supabase.from("workforce_shifts").select("id").not("clock_in", "is", null).is("clock_out", null).eq("shift_date", new Date().toISOString().slice(0, 10)),
+      ]);
+      if (active) setLiveSummary({ employees: (p.data?.length ?? 0) + (e.data?.length ?? 0), gross: Number(r.data?.total_gross ?? 0), net: Number(r.data?.total_net ?? 0), onClock: shifts.data?.length ?? 0 });
+    };
+    void load(); return () => { active = false; };
+  }, [canAccess]);
   const homeTarget = canAccess("/payroll") ? "/payroll" : "/portal";
   const [refreshKey, setRefreshKey] = useState(0);
   const [fieldOps, setFieldOps] = useState({ activeProjects: 0, pendingPayments: 0, pendingAmount: 0, checkedOut: 0, totalEquipment: 0, todayReports: 0, weeklyReports: [] as number[] });
@@ -187,7 +201,7 @@ export default function DashboardPage() {
   }, []);
 
   const { containerRef, pullDistance, refreshing, onTouchStart, onTouchMove, onTouchEnd, threshold } = usePullToRefresh(handleRefresh);
-  const activeEmployees = sampleEmployees.filter((e) => e.status === "Active");
+  const activeEmployees = demoMode ? sampleEmployees.filter((e) => e.status === "Active") : [];
   const totalPayroll = activeEmployees.reduce((sum, e) => {
     const result = calculatePayroll(e.monthlySalary, ST_LUCIA_CONFIG);
     return sum + result.netPay;
@@ -199,10 +213,10 @@ export default function DashboardPage() {
   const lateToday = sampleAttendance.filter((a) => a.late).length;
 
   const metrics = [
-    { label: "Total Employees", tile: "carib-sea", value: activeEmployees.length.toString(), icon: Users, color: "text-primary", bgColor: "bg-primary/10", path: "/employees" },
-    { label: "Monthly Gross", tile: "carib-palm", value: formatCurrency(totalGross, "$"), icon: DollarSign, color: "text-success", bgColor: "bg-success/10", path: "/payroll" },
-    { label: "On Clock Today", tile: "carib-coral", value: onClockToday.toString(), icon: Clock, color: "text-primary", bgColor: "bg-primary/10", path: "/attendance" },
-    { label: "Next Pay Date", tile: "carib-mango", value: "Mar 31", icon: CalendarDays, color: "text-accent-foreground", bgColor: "bg-accent/20", path: "/payroll" },
+    { label: "Total Employees", tile: "carib-sea", value: (demoMode ? activeEmployees.length : liveSummary.employees).toString(), icon: Users, color: "text-primary", bgColor: "bg-primary/10", path: "/employees" },
+    { label: "Latest Gross", tile: "carib-palm", value: formatCurrency(demoMode ? totalGross : liveSummary.gross, "$"), icon: DollarSign, color: "text-success", bgColor: "bg-success/10", path: "/payroll" },
+    { label: "On Clock Today", tile: "carib-coral", value: (demoMode ? onClockToday : liveSummary.onClock).toString(), icon: Clock, color: "text-primary", bgColor: "bg-primary/10", path: "/attendance" },
+    { label: "Latest Net Pay", tile: "carib-mango", value: formatCurrency(demoMode ? totalPayroll : liveSummary.net), icon: DollarSign, color: "text-accent-foreground", bgColor: "bg-accent/20", path: "/payroll" },
   ];
 
   const quickActions = [
@@ -258,7 +272,7 @@ export default function DashboardPage() {
         </div>
       </section>
       {/* Metrics */}
-      {canAccess("/attendance") && <><StaffTimeClock /><AttendanceClock /></>}
+      {canAccess("/attendance") && <><StaffTimeClock />{demoMode && <AttendanceClock />}</>}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {metrics.filter(metric => canAccess(metric.path)).map((metric, i) => (
           <motion.div key={metric.label} {...fadeUp} transition={{ delay: 0.05 * (i + 1) }}>
@@ -371,15 +385,13 @@ export default function DashboardPage() {
         {canAccess("/payroll") && <motion.div {...fadeUp} transition={{ delay: 0.35 }}>
           <Card className="carib-band shadow-card border-border/60 hover:shadow-lg transition-shadow">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-display"><button type="button" onClick={() => navigate("/payroll")} className="hover:underline">February Payroll →</button></CardTitle>
+              <CardTitle className="text-base font-display"><button type="button" onClick={() => navigate("/payroll")} className="hover:underline">Latest Payroll →</button></CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-3">
                 {[
-                  { label: "Gross Pay", value: formatCurrency(totalGross), color: "text-foreground" },
-                  { label: "Total NIC (Employee)", value: formatCurrency(activeEmployees.reduce((s, e) => s + calculatePayroll(e.monthlySalary).employeeNIC, 0)), color: "text-destructive" },
-                  { label: "Total PAYE", value: formatCurrency(activeEmployees.reduce((s, e) => s + calculatePayroll(e.monthlySalary).paye, 0)), color: "text-destructive" },
-                  { label: "Net Pay", value: formatCurrency(totalPayroll), color: "text-success" },
+                  { label: "Gross Pay", value: formatCurrency(demoMode ? totalGross : liveSummary.gross), color: "text-foreground" },
+                  { label: "Net Pay", value: formatCurrency(demoMode ? totalPayroll : liveSummary.net), color: "text-success" },
                 ].filter(row => canAccess(row.label === "Gross Pay" || row.label === "Net Pay" ? "/payroll" : "/reports")).map((row) => (
                   <button type="button" key={row.label} onClick={() => navigate(row.label === "Gross Pay" || row.label === "Net Pay" ? "/payroll" : "/reports")} className="w-full flex items-center justify-between py-1.5 px-1 rounded-md border-b border-border/50 last:border-0 hover:bg-muted transition-colors text-left">
                     <span className="text-sm text-muted-foreground">{row.label}</span>

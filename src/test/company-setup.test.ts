@@ -2,6 +2,13 @@ import { describe, it, expect } from "vitest";
 import { companySetupSchema, companySetupLink, setupToken } from "@/lib/company-setup";
 
 describe("company onboarding inputs", () => {
+  it("preserves selected company features", () => {
+    const result = companySetupSchema.parse({ company_name: "Smiley", email: "owner@example.com", modules: ["hr", "payroll", "reports", "leave", "attendance", "quickbooks", "settings"] });
+    expect(result.modules).toEqual(["hr", "payroll", "reports", "leave", "attendance", "quickbooks", "settings"]);
+  });
+  it("rejects unknown company features", () => {
+    expect(companySetupSchema.safeParse({ company_name: "Smiley", email: "owner@example.com", modules: ["superpowers"] }).success).toBe(false);
+  });
   it("requires a real administrator email", () => {
     expect(companySetupSchema.safeParse({ company_name: "New company", email: "customer" }).success).toBe(false);
   });

@@ -169,6 +169,27 @@
       "when": 1793098675088,
       "tag": "0023_workforce_payroll_snapshots",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793099134582,
+      "tag": "0024_company_feature_selection",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1793099247154,
+      "tag": "0025_protect_company_feature_changes",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1793099396143,
+      "tag": "0026_company_features_validation_fix",
+      "breakpoints": true
     }
   ]
 }

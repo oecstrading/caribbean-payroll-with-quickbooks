@@ -2070,6 +2070,8 @@ export type Database = {
       organizations: {
         Row: {
           created_at: string
+          demo_mode: boolean
+          enabled_modules: string[]
           id: string
           logo_url: string | null
           name: string
@@ -2077,6 +2079,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          demo_mode?: boolean
+          enabled_modules?: string[]
           id?: string
           logo_url?: string | null
           name: string
@@ -2084,6 +2088,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          demo_mode?: boolean
+          enabled_modules?: string[]
           id?: string
           logo_url?: string | null
           name?: string
@@ -3541,6 +3547,7 @@ export type Database = {
         Returns: boolean
       }
       client_portal_data: { Args: { _code: string }; Returns: Json }
+      company_configuration: { Args: never; Returns: Json }
       complete_company_setup: {
         Args: { _details: Json; _token: string; _user: string }
         Returns: string
@@ -3715,6 +3722,7 @@ export type Database = {
         Args: { _actor: string; _details: Json; _org: string }
         Returns: undefined
       }
+      validate_company_modules: { Args: { _modules: Json }; Returns: undefined }
       validate_company_setup: { Args: { _details: Json }; Returns: undefined }
       validate_workforce_pay: {
         Args: {

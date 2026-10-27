@@ -117,6 +117,10 @@ Deno.serve(async (req) => {
     };
 
     const action = body.action || "preview";
+    const { data: configuration } = await userClient.rpc("company_configuration");
+    if (action === "sync" && configuration?.demo_mode !== true) {
+      return new Response(JSON.stringify({ error: "A real QuickBooks connection is required. Simulated posting is disabled for production companies." }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
     const sandbox = !conn || conn.environment === "sandbox" || conn.status !== "connected";
 
     let response: any = { mode: sandbox ? "sandbox" : "live", lines: lines.length };
