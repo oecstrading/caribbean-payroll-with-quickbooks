@@ -55,7 +55,7 @@ const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading, signOut } = useAuth();
-  const { role, loading: accessLoading } = useRole();
+  const { role, loading: accessLoading, accessError, refreshAccess } = useRole();
   if (loading || (user && accessLoading)) {
     return (
       <div
@@ -72,6 +72,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
   if (!user) return <Navigate to="/auth" replace />;
+  if (accessError) return <main className="min-h-screen bg-background text-foreground flex items-center justify-center p-6"><div className="max-w-md space-y-4" role="alert"><h1 className="font-display text-2xl">Company access temporarily unavailable</h1><p className="text-muted-foreground">Lovable Cloud is currently unavailable, so we cannot verify your company access. This does not mean you need a new invitation. Please try again shortly.</p><div className="flex gap-3"><Button onClick={() => void refreshAccess()}>Try again</Button><Button variant="outline" onClick={() => void signOut()}>Sign out</Button></div></div></main>;
   if (!role) return <main className="min-h-screen bg-background text-foreground flex items-center justify-center p-6"><div className="max-w-md space-y-4"><h1 className="font-display text-2xl">Company invitation required</h1><p className="text-muted-foreground">Your account is signed in but has not been assigned to a company. Ask your company administrator for access.</p><Button onClick={() => void signOut()}>Sign out</Button></div></main>;
   return <>{children}</>;
 }
