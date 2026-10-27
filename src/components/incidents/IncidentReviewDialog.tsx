@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { downloadPDF } from "@/lib/export-utils";
+import PrivateMedia from "@/components/PrivateMedia";
 
 interface Incident {
   id: string;
@@ -110,7 +111,7 @@ export default function IncidentReviewDialog({ incident, onClose, onUpdated, get
           {incident.audio_url && (
             <div>
               <label className="text-xs text-muted-foreground font-medium block mb-1">Audio Recording</label>
-              <audio controls src={incident.audio_url} className="w-full h-8" />
+              <PrivateMedia bucket="incident-audio" stored={incident.audio_url} audio className="w-full h-8" />
             </div>
           )}
 
@@ -160,7 +161,7 @@ export default function IncidentReviewDialog({ incident, onClose, onUpdated, get
           {incident.photo_urls?.length > 0 && (
             <div className="grid grid-cols-2 gap-2">
               {incident.photo_urls.map((url, i) => (
-                <img key={i} src={url} alt="evidence" className="w-full h-32 object-cover rounded-lg border" />
+                <PrivateMedia key={i} bucket="field-photos" stored={url} alt="evidence" className="w-full h-32 object-cover rounded-lg border" />
               ))}
             </div>
           )}

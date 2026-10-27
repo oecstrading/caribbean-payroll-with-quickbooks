@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,20 +14,27 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    const { audioUrl, siteId } = await req.json();
-    if (!audioUrl) throw new Error("audioUrl is required");
+    const authorization = req.headers.get("Authorization");
+    const url = Deno.env.get("SUPABASE_URL"); const key = Deno.env.get("SUPABASE_ANON_KEY");
+    if (!authorization || !url || !key) return new Response(JSON.stringify({ error: "Sign in required" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const client = createClient(url, key, { global: { headers: { Authorization: authorization } } });
+    const { data: auth } = await client.auth.getUser();
+    if (!auth.user) return new Response(JSON.stringify({ error: "Sign in required" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const { audioPath, siteId } = await req.json();
+    if (typeof audioPath !== "string" || audioPath.length > 500 || !audioPath.startsWith(`reports/${auth.user.id}/`) || audioPath.includes("..") || typeof siteId !== "string" || !/^[0-9a-f-]{36}$/i.test(siteId)) return new Response(JSON.stringify({ error: "Invalid recording or site" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const { data: site } = await client.from("client_sites").select("id").eq("id", siteId).maybeSingle();
+    if (!site) return new Response(JSON.stringify({ error: "Site access denied" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const { data: audioBlob, error: fileError } = await client.storage.from("incident-audio").download(audioPath);
+    if (fileError || !audioBlob || audioBlob.size > 20000000) throw new Error("Recording unavailable or too large");
 
     // Step 1: Download the audio file
-    const audioResponse = await fetch(audioUrl);
-    if (!audioResponse.ok) throw new Error("Failed to fetch audio file");
-    const audioBlob = await audioResponse.blob();
 
     // Step 2: Convert audio to base64 for the AI model
     const audioBuffer = await audioBlob.arrayBuffer();
     const audioBase64 = btoa(String.fromCharCode(...new Uint8Array(audioBuffer)));
 
     // Step 3: Transcribe using Gemini's multimodal capabilities
-    const mimeType = audioUrl.includes(".webm") ? "audio/webm" : "audio/mp4";
+    const mimeType = audioPath.endsWith(".webm") ? "audio/webm" : "audio/mp4";
 
     const transcriptionResponse = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",

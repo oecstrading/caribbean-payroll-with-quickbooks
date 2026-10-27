@@ -113,6 +113,20 @@
       "when": 1793095540701,
       "tag": "0015_employee_loans_and_atomic_repayments",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1793095715045,
+      "tag": "0016_validate_loan_withholding",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1793095800528,
+      "tag": "0017_applicant_file_company_access",
+      "breakpoints": true
     }
   ]
 }

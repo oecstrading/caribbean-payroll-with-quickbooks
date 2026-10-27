@@ -4,7 +4,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
-import { RoleProvider } from "@/hooks/useRole";
+import { RoleProvider, useRole } from "@/hooks/useRole";
+import { Button } from "@/components/ui/button";
 import { CompanyProvider } from "@/hooks/useCompany";
 import AppLayout from "@/components/AppLayout";
 import DashboardPage from "@/pages/Dashboard";
@@ -48,8 +49,9 @@ import NotFound from "./pages/NotFound.tsx";
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-  if (loading) {
+  const { user, loading, signOut } = useAuth();
+  const { role, loading: accessLoading } = useRole();
+  if (loading || (user && accessLoading)) {
     return (
       <div
         className="min-h-screen flex items-center justify-center"
@@ -65,6 +67,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
   if (!user) return <Navigate to="/auth" replace />;
+  if (!role) return <main className="min-h-screen bg-background text-foreground flex items-center justify-center p-6"><div className="max-w-md space-y-4"><h1 className="font-display text-2xl">Company invitation required</h1><p className="text-muted-foreground">Your account is signed in but has not been assigned to a company. Ask your company administrator for access.</p><Button onClick={() => void signOut()}>Sign out</Button></div></main>;
   return <>{children}</>;
 }
 

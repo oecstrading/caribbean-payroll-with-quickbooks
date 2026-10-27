@@ -3134,6 +3134,7 @@ export type Database = {
         }
         Returns: string
       }
+      can_access_applicant_file: { Args: { _path: string }; Returns: boolean }
       can_access_employee_document: {
         Args: { _employee: string; _shared: boolean }
         Returns: boolean
