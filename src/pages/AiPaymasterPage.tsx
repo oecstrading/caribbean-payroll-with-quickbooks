@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import ReactMarkdownless from "react";
 import { Bot, Sparkles, AlertTriangle, TrendingUp, TrendingDown, Clock, Landmark, Users, CheckCircle2, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useRole } from "@/hooks/useRole";
 import { usePaymasterDraft } from "@/components/PaymasterAlert";
 
-void ReactMarkdownless;
 const money = (n: number | null | undefined) => n == null ? "—" : `XCD ${Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 type Flag = { severity: string; title: string; detail: string };
 type Suggestion = { action: string; path: string };
@@ -21,7 +19,7 @@ export default function AiPaymasterPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { toast } = useToast();
-  const { isAdmin } = useRole() as { isAdmin?: boolean };
+  const { isAdmin } = useRole();
   const { data: draft, isLoading } = usePaymasterDraft();
   const [running, setRunning] = useState(false);
   const { data: settings } = useQuery({

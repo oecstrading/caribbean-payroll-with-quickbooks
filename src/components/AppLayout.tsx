@@ -35,6 +35,7 @@ import {
   UserCheck,
   FileSpreadsheet,
   BookOpen,
+  Bot,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -61,6 +62,7 @@ const navItems: NavItem[] = [
   { path: "/employees", label: "Employees", icon: Users },
   { path: "/attendance", label: "Attendance", icon: Clock },
   { path: "/payroll", label: "Payroll", icon: DollarSign, bottomNav: true },
+  { path: "/ai-paymaster", label: "AI Paymaster", icon: Bot, managerOnly: true },
   { path: "/payroll-history", label: "Payroll History", icon: History },
   { path: "/quickbooks", label: "QuickBooks Sync", icon: Landmark, managerOnly: true },
   { path: "/payroll-settings", label: "Payroll Settings", icon: Settings, managerOnly: true },
