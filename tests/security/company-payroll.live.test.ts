@@ -14,7 +14,7 @@ const org = "11111111-1111-4111-8111-111111111111";
 const creditor = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa4";
 let loanId: string;
 const row = (changes = {}) => ({ user_id: own, department: "Automated security verification", basic_pay: 2600, overtime_pay: 0, gross_pay: 2600, employee_nic: 130, employer_nic: 130, paye: 100, total_deductions: 265, net_pay: 2335, loan_deductions: 35, ...changes });
-const approve = (rows = [row()], start = "2097-02-01", end = "2097-02-28") => client.rpc("approve_payroll_run", { _pay_type: "custom", _start: start, _end: end, _jurisdiction: "LC", _departments: ["Automated security verification"], _rows: rows, _notes: `Automated security verification ${own}` });
+const approve = (rows = [row()], start = "2097-02-01", end = "2097-02-28", payType = "monthly") => client.rpc("approve_payroll_run", { _pay_type: payType, _start: start, _end: end, _jurisdiction: "LC", _departments: ["Automated security verification"], _rows: rows, _notes: `Automated security verification ${own}` });
 const snapshot = async () => {
   const [loans, repayments, slips, runs] = await Promise.all([
     client.from("employee_loans").select("balance,is_active").eq("id", loanId).single(),
@@ -73,7 +73,7 @@ describe.sequential("live company isolation and atomic payroll approval", () => 
     const before = await snapshot(); const r = await approve(); expect(r.error?.message).toContain("already paid"); expect(await snapshot()).toEqual(before);
   });
   it("rejects a partially overlapping paid date range", async () => {
-    const before = await snapshot(); const r = await approve([row()], "2097-02-15", "2097-03-01"); expect(r.error?.message).toContain("already paid"); expect(await snapshot()).toEqual(before);
+    const before = await snapshot(); const r = await approve([row()], "2097-02-15", "2097-03-01", "custom"); expect(r.error?.message).toContain("already paid"); expect(await snapshot()).toEqual(before);
   });
   it("denies direct payroll-run writes outside the approval RPC", async () => {
     const r = await client.from("payroll_runs").insert({ period: "2097-02", status: "approved", total_gross: 2600, total_deductions: 265, total_net: 2335, employee_count: 1 }); expect(r.error).not.toBeNull();
