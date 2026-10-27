@@ -10,6 +10,7 @@ interface RoleContextType {
   role: AppRole | null;
   jurisdiction: string | null;
   loading: boolean;
+  accessError: boolean;
   isAdmin: boolean;
   isCompanySuperAdmin: boolean;
   isPlatformAdmin: boolean;
@@ -26,6 +27,7 @@ const RoleContext = createContext<RoleContextType>({
   role: null,
   jurisdiction: null,
   loading: true,
+  accessError: false,
   isAdmin: false,
   isCompanySuperAdmin: false,
   isPlatformAdmin: false,
@@ -43,6 +45,7 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
   const [role, setRole] = useState<AppRole | null>(null);
   const [jurisdiction, setJurisdiction] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [accessError, setAccessError] = useState(false);
   const [modules, setModules] = useState<string[]>([]);
   const [companyModules, setCompanyModules] = useState<string[]>([]);
   const [demoMode, setDemoMode] = useState(false);
@@ -50,7 +53,8 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
   const [authority, setAuthority] = useState({ company_super_admin: false, platform_super_admin: false });
   const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
   const refreshAccess = useCallback(async () => {
-    if (!user) { setRole(null); setModules([]); setAuthority({ company_super_admin: false, platform_super_admin: false }); setJurisdiction(null); setLoadedUserId(null); setLoading(false); return; }
+    if (!user) { setAccessError(false); setRole(null); setModules([]); setAuthority({ company_super_admin: false, platform_super_admin: false }); setJurisdiction(null); setLoadedUserId(null); setLoading(false); return; }
+    setAccessError(false);
     try {
       const [roleRes, profileRes, accessRes, companyRes, authorityRes, clockRes] = await Promise.all([
         supabase.from("user_roles").select("role").eq("user_id", user.id),
@@ -60,6 +64,7 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
         supabase.rpc("administrator_authority", { _user: user.id }),
         supabase.rpc("has_employee_clock_access", { _employee: user.id }),
       ]);
+      if ([roleRes, profileRes, accessRes, companyRes, authorityRes, clockRes].some(result => result.error)) throw new Error("Access verification unavailable");
       setClockEnabled(!clockRes.error && clockRes.data === true);
       const trusted = authorityRes.data as { company_super_admin?: boolean; platform_super_admin?: boolean } | null;
       setAuthority({ company_super_admin: !authorityRes.error && trusted?.company_super_admin === true, platform_super_admin: !authorityRes.error && trusted?.platform_super_admin === true });
@@ -70,7 +75,7 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
       const nextRole = roleRes.error || accessRes.error ? null : roles.includes("admin") ? "admin" : roles.includes("manager") ? "manager" : roles.includes("employee") ? "employee" : null;
       setRole(nextRole); setModules(nextRole ? (nextRole === "admin" ? roleModules(nextRole) : accessRes.data?.modules ?? roleModules(nextRole)).filter(m => enabled.includes(m)) : []);
       setJurisdiction(profileRes.data?.jurisdiction ?? null);
-    } catch { setRole(null); setModules([]); setAuthority({ company_super_admin: false, platform_super_admin: false }); }
+    } catch { setAccessError(true); setRole(null); setModules([]); setClockEnabled(false); setCompanyModules([]); setAuthority({ company_super_admin: false, platform_super_admin: false }); }
     setLoadedUserId(user.id); setLoading(false);
   }, [user?.id]);
   useEffect(() => {
@@ -89,7 +94,7 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
   const isGuard = role === "employee";
 
   return (
-    <RoleContext.Provider value={{ role: ready ? role : null, jurisdiction, loading: !ready, isAdmin: ready && isAdmin, isCompanySuperAdmin: ready && authority.company_super_admin, isPlatformAdmin: ready && authority.platform_super_admin, isManager: ready && isManager, isAdminOrManager: ready && isAdminOrManager, isGuard: ready && isGuard, modules: ready ? modules : [], demoMode: ready && demoMode, canAccess, refreshAccess }}>
+    <RoleContext.Provider value={{ role: ready ? role : null, jurisdiction, loading: !ready, accessError, isAdmin: ready && isAdmin, isCompanySuperAdmin: ready && authority.company_super_admin, isPlatformAdmin: ready && authority.platform_super_admin, isManager: ready && isManager, isAdminOrManager: ready && isAdminOrManager, isGuard: ready && isGuard, modules: ready ? modules : [], demoMode: ready && demoMode, canAccess, refreshAccess }}>
       {children}
     </RoleContext.Provider>
   );
