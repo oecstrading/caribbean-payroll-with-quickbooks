@@ -30,11 +30,15 @@ export default function EmployeesPage() {
   const [showImport, setShowImport] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [pendingRemovals, setPendingRemovals] = useState<string[]>([]);
+  const [finishingRemoval, setFinishingRemoval] = useState<string | null>(null);
   const fetchEmployees = useCallback(async () => {
     setLoading(true); setError("");
     const [profiles, records] = await Promise.all([supabase.from("profiles").select("*").order("first_name"), supabase.from("employee_records").select("*").is("permanently_deleted_at", null).order("first_name")]);
     if (profiles.error || records.error) setError("Employee records could not be loaded. Please try again.");
     else setLive([...(profiles.data || []).map(p => ({ ...profileToFolder(p), accountLinked: true })), ...(records.data || []).map(p => ({ ...profileToFolder(p), accountLinked: false }))]);
+    const jobs = await supabase.from("employee_removal_jobs").select("employee_id").eq("status", "pending");
+    setPendingRemovals((jobs.data || []).map(job => job.employee_id));
     setLoading(false);
   }, []);
   useEffect(() => { fetchEmployees(); }, [fetchEmployees]);
@@ -91,6 +95,15 @@ export default function EmployeesPage() {
     }
     close(); await fetchEmployees(); toast.success("Employee and sign-in account removed; financial records retained");
   };
+  const finishRemoval = async (employee_id: string) => {
+    setFinishingRemoval(employee_id);
+    try {
+      const { data, error } = await supabase.functions.invoke("delete-employee", { body: { employee_id, confirmation: "DELETE" } });
+      if (error || data?.error || !data?.success) throw new Error(data?.error || "Cleanup could not finish. Please try again.");
+      toast.success("Employee removal completed");
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Cleanup could not finish"); }
+    finally { setFinishingRemoval(null); await fetchEmployees(); }
+  };
   return <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-5">
     <div className="flex items-center justify-between flex-wrap gap-3">
       <div><h1 className="text-xl md:text-2xl font-display font-bold text-foreground">Employees</h1><p className="text-sm text-muted-foreground mt-1">{records.length} {mode === "sample" ? "fictional sample records" : mode === "deleted" ? "deleted folders" : "employee folders"}</p></div>
@@ -99,6 +112,7 @@ export default function EmployeesPage() {
       </div>
     </div>
     <Tabs value={mode} onValueChange={(value) => { setMode(value); setDepartment("All"); setStatus("All"); }}><TabsList className="h-11"><TabsTrigger value="live">Employees</TabsTrigger>{demoMode && <TabsTrigger value="sample">Sample company</TabsTrigger>}{permissions.delete && <TabsTrigger value="deleted">Deleted folders</TabsTrigger>}</TabsList></Tabs>
+    {permissions.delete && pendingRemovals.length > 0 && <section className="border-y border-border py-3 space-y-2"><p className="text-sm text-destructive">Employee removal needs final cleanup. Financial records are preserved.</p>{pendingRemovals.map(id => <div key={id} className="flex items-center justify-between gap-3"><span className="text-xs text-muted-foreground">Removal reference {id.slice(0, 8)}</span><Button variant="outline" disabled={Boolean(finishingRemoval)} onClick={() => finishRemoval(id)}><RefreshCw size={16} />{finishingRemoval === id ? "Finishing…" : "Finish removal"}</Button></div>)}</section>}
     {mode === "sample" && <p className="text-sm text-muted-foreground">Smiley's Tinting Services, Saint Lucia · Fictional staff and salaries · Not linked to live payroll</p>}
     <div className="flex flex-col sm:flex-row gap-3">
       <div className="relative flex-1"><Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" /><Input className="pl-9 h-11" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name, email or employee number" aria-label="Search employees" /></div>
