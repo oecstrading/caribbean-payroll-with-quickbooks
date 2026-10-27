@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate, Navigate } from "react-router-dom";
 import {
   LayoutDashboard,
   CalendarDays,
@@ -97,7 +97,7 @@ export default function AppLayout() {
   const [searchFocused, setSearchFocused] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { role, isAdmin, isAdminOrManager } = useRole();
+  const { role, loading: accessLoading, canAccess } = useRole();
   const { user, signOut } = useAuth();
   const company = useCompany();
 
@@ -113,11 +113,7 @@ export default function AppLayout() {
     setSearchQuery("");
   }, [location.pathname]);
 
-  const visibleNavItems = navItems.filter((item) => {
-    if (item.adminOnly && !isAdmin) return false;
-    if (item.managerOnly && !isAdminOrManager) return false;
-    return true;
-  });
+  const visibleNavItems = navItems.filter((item) => canAccess(item.path));
 
   // Search results based on nav items
   const searchResults = useMemo(() => {
@@ -131,9 +127,14 @@ export default function AppLayout() {
   const bottomNavItems = visibleNavItems.filter((item) => item.bottomNav).slice(0, 5);
 
   const handleNav = (path: string) => {
+    if (!canAccess(path)) return;
     navigate(path);
     setMobileOpen(false);
   };
+
+  if (accessLoading) return <div className="min-h-screen bg-background flex items-center justify-center text-primary">Loading your workspace…</div>;
+  if (!role) return <div className="min-h-screen bg-background flex flex-col gap-4 items-center justify-center text-foreground"><p>Your workspace access could not be loaded.</p><button onClick={signOut}>Sign out</button></div>;
+  if (!canAccess(location.pathname)) return <Navigate to="/" replace />;
 
   return (
     <>
@@ -316,14 +317,14 @@ export default function AppLayout() {
               <span className="hidden md:inline">🇱🇨 St. Lucia</span>
               <span className="md:hidden">🇱🇨</span>
             </button>
-            <button
+            {canAccess("/leave-management") && <button
               onClick={() => navigate("/leave-management")}
               className="relative p-2 rounded-lg hover:bg-secondary transition-colors"
               title="Notifications"
             >
               <Bell size={18} className="text-muted-foreground" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-accent rounded-full" />
-            </button>
+            </button>}
             <button
               onClick={() => navigate("/portal")}
               className="w-8 h-8 rounded-full bg-primary flex items-center justify-center hover:bg-primary/90 transition-colors"
@@ -337,7 +338,7 @@ export default function AppLayout() {
         {/* Page Content */}
         <main className="flex-1 overflow-y-auto bg-background pb-16 md:pb-0">
           <Outlet />
-          <PanicButton />
+          {canAccess("/guard-tour") && <PanicButton />}
         </main>
 
         {/* Mobile Bottom Navigation */}

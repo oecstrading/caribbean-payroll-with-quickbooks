@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 import { useRole } from "@/hooks/useRole";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+import WorkspaceAccessDialog from "@/components/WorkspaceAccessDialog";
+import { Button } from "@/components/ui/button";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -46,6 +48,7 @@ export default function UserManagementPage() {
   const [pinUser, setPinUser] = useState<UserWithRole | null>(null);
   const [pinValue, setPinValue] = useState("");
   const [settingPin, setSettingPin] = useState(false);
+  const [accessUser, setAccessUser] = useState<UserWithRole | null>(null);
   const fetchUsers = async () => {
     // Fetch profiles joined with roles
     const { data: profiles } = await supabase.from("profiles").select("*");
@@ -73,8 +76,8 @@ export default function UserManagementPage() {
   };
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    if (isAdmin) fetchUsers();
+  }, [isAdmin]);
 
   const filtered = users.filter(
     (u) =>
@@ -83,17 +86,8 @@ export default function UserManagementPage() {
   );
 
   const handleRoleChange = async (userId: string, newRole: AppRole) => {
-    try {
-      const { error } = await supabase
-        .from("user_roles")
-        .update({ role: newRole })
-        .eq("user_id", userId);
-      if (error) throw error;
-      toast.success(`Role updated to ${newRole}`);
-      fetchUsers();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to update role");
-    }
+    const user = users.find(u => u.user_id === userId);
+    if (user) setAccessUser(user);
   };
 
   const handleDeactivate = async (userId: string, currentStatus: string) => {
@@ -283,15 +277,7 @@ export default function UserManagementPage() {
                     </td>
                     <td className="py-3 px-4 text-foreground">{u.department || "—"}</td>
                     <td className="py-3 px-4">
-                      <select
-                        value={u.role}
-                        onChange={(e) => handleRoleChange(u.user_id, e.target.value as AppRole)}
-                        className={`px-2 py-1 rounded-md text-xs font-medium border-0 cursor-pointer ${roleColors[u.role]}`}
-                      >
-                        <option value="employee">Employee</option>
-                        <option value="manager">Manager</option>
-                        <option value="admin">Admin</option>
-                      </select>
+                      <Badge className={roleColors[u.role]} variant="secondary">{u.role}</Badge>
                     </td>
                     <td className="py-3 px-4">
                       <Badge
@@ -303,6 +289,7 @@ export default function UserManagementPage() {
                     </td>
                     <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => setAccessUser(u)}><Shield size={14} />Roles & access</Button>
                         <button
                           onClick={() => {
                             setEditUser(u);
@@ -345,6 +332,7 @@ export default function UserManagementPage() {
         </div>
       </Card>
 
+      <WorkspaceAccessDialog user={accessUser} onClose={() => setAccessUser(null)} onSaved={fetchUsers} />
       {/* Invite Dialog */}
       <Dialog open={showInvite} onOpenChange={setShowInvite}>
         <DialogContent className="sm:max-w-md">
