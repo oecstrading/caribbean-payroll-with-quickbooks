@@ -1,4 +1,5 @@
 # Payroll account and Smiley’s samples
+- [ ] Expand user management with separate employment designation, email invitations, username/PIN accounts, existing-user email login and protected personal-information entry.
 - [x] Add administrator staff PIN/method assignment, own-clock access and worked-hours readback. Verified PIN/method save/reload, disposable staff clock-in/out and manager readback; 16 local and one live method-permission test passed. Temporary records cleaned; no payroll approved. Voice microphone execution and a separate account-user session were not exercised.
 - [x] Fix the unassigned-record error in user removal: renamed the conflicting profile alias in the protected survivor check; disposable live removal regression and 13 permission tests passed. No real user was removed.
 - [x] Add verified-owner company/platform super-admin authority, role delegation and confirmed admin removal with financial-history protection. Owner authority save/reload verified; 22 local and five live safeguard checks passed. No other administrator was promoted or deleted during verification; destructive admin-removal end-to-end remains unexercised.
