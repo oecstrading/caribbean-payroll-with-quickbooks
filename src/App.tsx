@@ -12,6 +12,7 @@ import DashboardPage from "@/pages/Dashboard";
 import EmployeesPage from "@/pages/EmployeesPage";
 import AttendancePage from "@/pages/AttendancePage";
 import PayrollPage from "@/pages/PayrollPage";
+import AiPaymasterPage from "@/pages/AiPaymasterPage";
 import ReportsPage from "@/pages/ReportsPage";
 import SettingsPage from "@/pages/SettingsPage";
 import CompaniesPage from "@/pages/CompaniesPage";
@@ -92,6 +93,7 @@ const AppRoutes = () => (
       <Route path="/employees" element={<EmployeesPage />} />
       <Route path="/attendance" element={<AttendancePage />} />
       <Route path="/payroll" element={<PayrollPage />} />
+      <Route path="/ai-paymaster" element={<AiPaymasterPage />} />
       <Route path="/payroll-history" element={<PayrollHistoryPage />} />
       <Route path="/reports" element={<ReportsPage />} />
       <Route path="/payslips" element={<PayslipPage />} />

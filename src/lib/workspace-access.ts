@@ -21,7 +21,7 @@ export function roleModules(role: WorkspaceRole | null): WorkspaceModule[] {
 }
 export const ROUTE_MODULES: Record<string, WorkspaceModule | "home" | "portal" | "users"> = {
   "/": "home", "/portal": "portal", "/payslips": "portal", "/users": "users",
-  "/employees": "hr", "/payroll": "payroll", "/payroll-history": "payroll", "/deductions": "payroll",
+  "/employees": "hr", "/payroll": "payroll", "/ai-paymaster": "payroll", "/payroll-history": "payroll", "/deductions": "payroll",
   "/reports": "reports", "/attendance": "attendance", "/geofencing": "security", "/leave-management": "leave",
   "/projects": "field", "/equipment": "field", "/daily-reports": "field", "/crews": "field",
   "/contractors": "billing", "/project-profitability": "billing", "/invoicing": "billing",

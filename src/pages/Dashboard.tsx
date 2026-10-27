@@ -32,6 +32,7 @@ import { useRole } from "@/hooks/useRole";
 import { Button } from "@/components/ui/button";
 import { WORKSPACE_MODULES, ROUTE_MODULES } from "@/lib/workspace-access";
 import caribbeanHero from "@/assets/caribbean-hero.jpg";
+import PaymasterAlert from "@/components/PaymasterAlert";
 
 const fadeUp = {
   initial: { opacity: 0, y: 12 },
@@ -233,6 +234,7 @@ export default function DashboardPage() {
       onTouchEnd={onTouchEnd}
       className="carib-sand min-h-full p-4 md:p-6 max-w-7xl mx-auto space-y-4 md:space-y-6 relative"
     >
+      {canAccess("/ai-paymaster") && isAdminOrManager && <PaymasterAlert />}
       {/* Pull to refresh indicator */}
       <div
         className="flex items-center justify-center overflow-hidden transition-all duration-200 md:hidden"

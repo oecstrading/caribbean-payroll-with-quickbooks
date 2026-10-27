@@ -2221,6 +2221,133 @@ export type Database = {
           },
         ]
       }
+      paymaster_drafts: {
+        Row: {
+          acknowledged_at: string | null
+          active_loans: number
+          approved_run_id: string | null
+          change_pct: number | null
+          created_at: string
+          employee_count: number
+          flags: Json
+          id: string
+          last_gross: number | null
+          last_reminded_at: string | null
+          loan_repayments: number
+          missing_punches: number
+          org_id: string
+          pay_date: string
+          pending_shifts: number
+          period_end: string
+          period_start: string
+          projected_gross: number
+          reminder_count: number
+          status: string
+          suggestions: Json
+          summary: string | null
+          updated_at: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          active_loans?: number
+          approved_run_id?: string | null
+          change_pct?: number | null
+          created_at?: string
+          employee_count?: number
+          flags?: Json
+          id?: string
+          last_gross?: number | null
+          last_reminded_at?: string | null
+          loan_repayments?: number
+          missing_punches?: number
+          org_id: string
+          pay_date: string
+          pending_shifts?: number
+          period_end: string
+          period_start: string
+          projected_gross?: number
+          reminder_count?: number
+          status?: string
+          suggestions?: Json
+          summary?: string | null
+          updated_at?: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          active_loans?: number
+          approved_run_id?: string | null
+          change_pct?: number | null
+          created_at?: string
+          employee_count?: number
+          flags?: Json
+          id?: string
+          last_gross?: number | null
+          last_reminded_at?: string | null
+          loan_repayments?: number
+          missing_punches?: number
+          org_id?: string
+          pay_date?: string
+          pending_shifts?: number
+          period_end?: string
+          period_start?: string
+          projected_gross?: number
+          reminder_count?: number
+          status?: string
+          suggestions?: Json
+          summary?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paymaster_drafts_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      paymaster_settings: {
+        Row: {
+          enabled: boolean
+          last_run_at: string | null
+          lead_days: number
+          lock_until: string | null
+          org_id: string
+          paused_reason: string | null
+          pay_day: number
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          last_run_at?: string | null
+          lead_days?: number
+          lock_until?: string | null
+          org_id: string
+          paused_reason?: string | null
+          pay_day?: number
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          last_run_at?: string | null
+          lead_days?: number
+          lock_until?: string | null
+          org_id?: string
+          paused_reason?: string | null
+          pay_day?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paymaster_settings_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payroll_runs: {
         Row: {
           created_at: string
