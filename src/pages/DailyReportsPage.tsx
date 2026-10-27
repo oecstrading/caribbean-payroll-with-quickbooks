@@ -13,6 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRole } from "@/hooks/useRole";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import PrivateMedia from "@/components/PrivateMedia";
 
 interface DailyReport {
   id: string; project_id: string; submitted_by: string; report_date: string; weather: string;
@@ -64,8 +65,7 @@ export default function DailyReportsPage() {
       const path = `reports/${(await supabase.auth.getUser()).data.user?.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
       const { error } = await supabase.storage.from("field-photos").upload(path, file);
       if (!error) {
-        const { data } = supabase.storage.from("field-photos").getPublicUrl(path);
-        urls.push(data.publicUrl);
+        urls.push(path);
       }
     }
     return urls;
@@ -283,9 +283,7 @@ export default function DailyReportsPage() {
                     <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">Site Photos ({selected.photo_urls.length})</h4>
                     <div className="grid grid-cols-3 gap-2">
                       {selected.photo_urls.map((url, i) => (
-                        <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="aspect-square rounded-lg overflow-hidden border border-border hover:border-primary/50 transition-colors">
-                          <img src={url} alt={`Site photo ${i + 1}`} className="w-full h-full object-cover" />
-                        </a>
+                        <PrivateMedia key={i} bucket="field-photos" stored={url} alt={`Site photo ${i + 1}`} className="aspect-square w-full object-cover rounded-lg border border-border" />
                       ))}
                     </div>
                   </div>

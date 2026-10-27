@@ -71,8 +71,7 @@ export default function IncidentReportsPage() {
       const path = `incidents/${(await supabase.auth.getUser()).data.user?.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
       const { error } = await supabase.storage.from("field-photos").upload(path, file);
       if (!error) {
-        const { data } = supabase.storage.from("field-photos").getPublicUrl(path);
-        urls.push(data.publicUrl);
+        urls.push(path);
       }
     }
     setPhotoUrls(prev => [...prev, ...urls]);

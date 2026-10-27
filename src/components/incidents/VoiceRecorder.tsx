@@ -78,18 +78,17 @@ export default function VoiceRecorder({ siteId, onReportGenerated }: VoiceRecord
       const path = `reports/${(await supabase.auth.getUser()).data.user?.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
       const { error: uploadErr } = await supabase.storage.from("incident-audio").upload(path, blob);
       if (uploadErr) throw uploadErr;
-      const { data: urlData } = supabase.storage.from("incident-audio").getPublicUrl(path);
 
       // Process with AI
       const { data, error } = await supabase.functions.invoke("process-incident-report", {
-        body: { audioUrl: urlData.publicUrl, siteId },
+        body: { audioPath: path, siteId },
       });
       if (error) throw error;
 
       onReportGenerated({
         title: data.title,
         description: data.report,
-        audioUrl: urlData.publicUrl,
+        audioUrl: path,
         rawTranscript: data.transcript,
         aiDraft: data.report,
       });
