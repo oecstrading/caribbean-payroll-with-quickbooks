@@ -1,0 +1,15 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { NativeSelect } from "@/components/ui/native-select";
+import { toast } from "sonner";
+const fields=[['date_of_birth','Date of birth','date'],['gender','Gender','text'],['marital_status','Marital status','text'],['nationality','Nationality','text'],['address','Residential address','text'],['city','City / district','text'],['country','Country','text'],['personal_email','Personal email','email'],['emergency_name','Emergency contact name','text'],['emergency_relationship','Relationship','text'],['emergency_phone','Emergency phone','tel']] as const;
+const options:Record<string,string[]>={gender:['Female','Male','Non-binary','Prefer not to say'],marital_status:['Single','Married','Divorced','Widowed','Other'],emergency_relationship:['Spouse','Partner','Parent','Child','Sibling','Friend','Other']};
+export default function StaffPersonalDetails(){
+ const {user}=useAuth();const [values,setValues]=useState<Record<string,string>>({}),[saving,setSaving]=useState(false),[ready,setReady]=useState(false);
+ useEffect(()=>{if(!user)return;supabase.from('profiles').select('hr_details').eq('user_id',user.id).single().then(({data,error})=>{if(error){toast.error('Could not load personal details');return}const d=data?.hr_details;setValues(Object.fromEntries(fields.map(([k])=>[k,d&&typeof d==='object'&&!Array.isArray(d)&&typeof d[k]==='string'?d[k]:''])));setReady(true)})},[user]);
+ const save=async()=>{setSaving(true);try{const {data,error}=await supabase.functions.invoke('staff-information',{body:values});if(error||data?.error)throw new Error(data?.error||'Unable to save personal details');toast.success('Personal details saved')}catch(e){toast.error(e instanceof Error?e.message:'Unable to save')}finally{setSaving(false)}};
+ return <section className="space-y-4 border-t border-border pt-5"><h2 className="font-display font-semibold">Personal & emergency information</h2><div className="grid sm:grid-cols-2 gap-4">{fields.map(([key,label,type])=><label key={key} className="text-sm space-y-1.5">{label}{options[key]?<NativeSelect aria-label={label} value={values[key]||''} disabled={!ready} onChange={e=>setValues({...values,[key]:e.target.value})}><option value="">Select…</option>{options[key].map(o=><option key={o}>{o}</option>)}</NativeSelect>:<Input aria-label={label} type={type} maxLength={key==='address'?500:100} disabled={!ready} value={values[key]||''} onChange={e=>setValues({...values,[key]:e.target.value})}/>}</label>)}</div><div className="flex justify-end"><Button onClick={save} disabled={saving||!ready}>{saving?'Saving…':'Save personal details'}</Button></div></section>
+}

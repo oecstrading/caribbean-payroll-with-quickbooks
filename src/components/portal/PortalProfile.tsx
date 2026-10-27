@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import StaffPersonalDetails from "./StaffPersonalDetails";
 
 export default function PortalProfile() {
   const { user } = useAuth();
@@ -165,6 +166,7 @@ export default function PortalProfile() {
             {saving ? "Saving..." : "Save Changes"}
           </button>
         </div>
+        <StaffPersonalDetails />
       </CardContent>
     </Card>
   );
