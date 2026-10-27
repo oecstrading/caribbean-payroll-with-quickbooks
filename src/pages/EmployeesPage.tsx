@@ -16,7 +16,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 export default function EmployeesPage() {
-  const { role } = useRole();
+  const { role, demoMode } = useRole();
   const { user } = useAuth();
   const permissions = employeePermissions(role);
   const [live, setLive] = useState<EmployeeFolder[]>([]);
@@ -86,7 +86,7 @@ export default function EmployeesPage() {
         {permissions.create && <><Button variant="secondary" className="h-11" onClick={() => setShowImport(true)}><Upload />Import CSV</Button><Button className="h-11" onClick={() => { setSelected(null); setCreating(true); }}><UserPlus />Add employee</Button></>}
       </div>
     </div>
-    <Tabs value={mode} onValueChange={(value) => { setMode(value); setDepartment("All"); setStatus("All"); }}><TabsList className="h-11"><TabsTrigger value="live">Employees</TabsTrigger><TabsTrigger value="sample">Sample company</TabsTrigger>{permissions.delete && <TabsTrigger value="deleted">Deleted folders</TabsTrigger>}</TabsList></Tabs>
+    <Tabs value={mode} onValueChange={(value) => { setMode(value); setDepartment("All"); setStatus("All"); }}><TabsList className="h-11"><TabsTrigger value="live">Employees</TabsTrigger>{demoMode && <TabsTrigger value="sample">Sample company</TabsTrigger>}{permissions.delete && <TabsTrigger value="deleted">Deleted folders</TabsTrigger>}</TabsList></Tabs>
     {mode === "sample" && <p className="text-sm text-muted-foreground">Smiley's Tinting Services, Saint Lucia · Fictional staff and salaries · Not linked to live payroll</p>}
     <div className="flex flex-col sm:flex-row gap-3">
       <div className="relative flex-1"><Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" /><Input className="pl-9 h-11" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name, email or employee number" aria-label="Search employees" /></div>

@@ -1,3 +1,4 @@
+import { useRole } from "@/hooks/useRole";
 import SavedPayrollReports from "@/components/SavedPayrollReports";
 import { motion } from "framer-motion";
 import { FileText, Download, Printer, Calendar } from "lucide-react";
@@ -8,6 +9,7 @@ import { downloadCSV, downloadPDF } from "@/lib/export-utils";
 import { toast } from "sonner";
 
 export default function ReportsPage() {
+  const { demoMode } = useRole();
   const payrollData = sampleEmployees.filter((e) => e.status === "Active").map((e) => ({
     ...e,
     payroll: calculatePayroll(e.monthlySalary, ST_LUCIA_CONFIG),
@@ -119,7 +121,7 @@ export default function ReportsPage() {
       </div>
 
       <SavedPayrollReports />
-      <h2 className="text-lg font-display font-semibold text-foreground">Sample statutory reports · March 2026</h2>
+      {demoMode && <><h2 className="text-lg font-display font-semibold text-foreground">Sample statutory reports · March 2026</h2>
       {/* Government Reports */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {reports.map((report, i) => (
@@ -217,7 +219,7 @@ export default function ReportsPage() {
             </tfoot>
           </table>
         </div>
-      </Card>
+      </Card></>}
     </div>
   );
 }

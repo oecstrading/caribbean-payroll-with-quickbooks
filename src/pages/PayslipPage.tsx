@@ -1,3 +1,5 @@
+import { useRole } from "@/hooks/useRole";
+import SavedPayrollReports from "@/components/SavedPayrollReports";
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { Printer, ArrowLeft, Building, User, Calendar, DollarSign, Mail, Loader2, Download } from "lucide-react";
@@ -13,6 +15,7 @@ import { useAllEmployeeAdditions } from "@/hooks/useEmployeeAdditions";
 import { downloadCSV, downloadPDF } from "@/lib/export-utils";
 
 export default function PayslipPage() {
+  const { demoMode } = useRole();
   const navigate = useNavigate();
   const company = useCompany();
   const [searchParams] = useSearchParams();
@@ -106,6 +109,8 @@ export default function PayslipPage() {
       setEmailing(false);
     }
   };
+
+  if (!demoMode) return <div className="p-4 md:p-6 space-y-6"><h1 className="text-2xl font-display font-bold">Payslips</h1><SavedPayrollReports /></div>;
 
   if (!employee || !payroll) {
     return (

@@ -53,7 +53,7 @@ export default function PayrollPage() {
   const [loans, setLoans] = useState<{ user_id: string; balance: number; monthly_repayment: number }[]>([]);
   const [attendance, setAttendance] = useState<Record<string, PayHours>>({});
   const [payBases, setPayBases] = useState<Record<string, { basis: string; rate: number }>>({});
-  const { isAdminOrManager } = useRole();
+  const { isAdminOrManager, demoMode } = useRole();
   const config = getConfigByJurisdiction(source === "sample" ? "LC" : jurisdiction);
   useEffect(() => {
     let cancelled = false;
@@ -166,7 +166,7 @@ export default function PayrollPage() {
       </div>
 
       <section className="space-y-4 border-y border-border py-4">
-        <Tabs value={source} onValueChange={setSource}><TabsList><TabsTrigger value="live" disabled={processing}>Live employees</TabsTrigger><TabsTrigger value="sample" disabled={processing}>Sample company</TabsTrigger></TabsList></Tabs>
+        <Tabs value={source} onValueChange={setSource}><TabsList><TabsTrigger value="live" disabled={processing}>Live employees</TabsTrigger>{demoMode && <TabsTrigger value="sample" disabled={processing}>Sample company</TabsTrigger>}</TabsList></Tabs>
         <div className="flex flex-wrap gap-4">
           <div className="space-y-1"><Label htmlFor="pay-type">Pay period</Label><NativeSelect id="pay-type" value={payType} disabled={processing} onChange={e => changePayType(e.target.value as PayType)}>
             {(Object.keys(payTypeLabels) as PayType[]).map(t => <option key={t} value={t}>{payTypeLabels[t]}</option>)}</NativeSelect></div>

@@ -64,7 +64,7 @@ const PAYROLL_ITEM_LABELS: Record<string, string> = {
 };
 
 export default function QuickBooksPage() {
-  const { isAdmin, isManager } = useRole();
+  const { isAdmin, isManager, demoMode } = useRole();
   const canManage = isAdmin || isManager;
 
   const [conn, setConn] = useState<QboConn>({ status: "disconnected", environment: "sandbox" });
@@ -94,6 +94,7 @@ export default function QuickBooksPage() {
   useEffect(() => { load(); }, []);
 
   const connectSandbox = async () => {
+    if (!demoMode) return;
     setBusy(true);
     const payload = {
       status: "connected",
@@ -188,18 +189,17 @@ export default function QuickBooksPage() {
               </div>
               <div className="flex gap-2 pt-2">
                 {!isConnected ? (
-                  <Button onClick={connectSandbox} disabled={busy}>
-                    <Link2 size={16} className="mr-2" /> Connect Sandbox (Demo)
+                  <Button onClick={connectSandbox} disabled={busy || !demoMode}>
+                    <Link2 size={16} className="mr-2" /> {demoMode ? "Connect Sandbox (Demo)" : "Connection setup required"}
                   </Button>
                 ) : (
-                  <Button variant="destructive" onClick={disconnect} disabled={busy}>
+                  <Button variant="destructive" onClick={disconnect} disabled={busy || !demoMode}>
                     <Link2Off size={16} className="mr-2" /> Disconnect
                   </Button>
                 )}
               </div>
               <p className="text-xs text-muted-foreground pt-2 border-t">
-                <strong>Demo mode:</strong> generates a fake realm ID and simulates pushes to QBO. To go live,
-                add Intuit OAuth (QBO_CLIENT_ID / QBO_CLIENT_SECRET) and switch environment to <code>production</code>.
+                {demoMode ? "Sandbox demonstration connection." : "QuickBooks is enabled for this company. A real QuickBooks connection must be configured before payroll can be synced."}
               </p>
             </CardContent>
           </Card>
