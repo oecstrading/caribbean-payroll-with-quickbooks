@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Users, Shield, Mail, Search, MoreHorizontal, UserPlus, Ban, CheckCircle, Hash } from "lucide-react";
+import { Users, Shield, Mail, Search, MoreHorizontal, UserPlus, Ban, CheckCircle, Hash, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -11,6 +11,8 @@ import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 import WorkspaceAccessDialog from "@/components/WorkspaceAccessDialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useAuth } from "@/hooks/useAuth";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -25,6 +27,8 @@ interface UserWithRole {
   phone: string;
   monthly_salary: number;
   role: AppRole;
+  companySuper: boolean;
+  platformSuper: boolean;
 }
 
 const roleColors: Record<AppRole, string> = {
@@ -34,7 +38,8 @@ const roleColors: Record<AppRole, string> = {
 };
 
 export default function UserManagementPage() {
-  const { isAdmin } = useRole();
+  const { isAdmin, isCompanySuperAdmin, isPlatformAdmin } = useRole();
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -49,14 +54,19 @@ export default function UserManagementPage() {
   const [pinValue, setPinValue] = useState("");
   const [settingPin, setSettingPin] = useState(false);
   const [accessUser, setAccessUser] = useState<UserWithRole | null>(null);
+  const [deleteUser, setDeleteUser] = useState<UserWithRole | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [deleting, setDeleting] = useState(false);
   const fetchUsers = async () => {
     // Fetch profiles joined with roles
-    const { data: profiles } = await supabase.from("profiles").select("*");
+    const { data: profiles } = await supabase.from("profiles").select("*").is("deleted_at", null);
     const { data: roles } = await supabase.from("user_roles").select("*");
+    const authorityResults = await Promise.all((profiles ?? []).map(p => supabase.rpc("administrator_authority", { _user: p.user_id })));
 
     if (profiles && roles) {
-      const merged: UserWithRole[] = profiles.map((p) => {
+      const merged: UserWithRole[] = profiles.map((p, index) => {
         const userRole = roles.find((r) => r.user_id === p.user_id);
+        const authority = authorityResults[index]?.data as { company_super_admin?: boolean; platform_super_admin?: boolean } | null;
         return {
           user_id: p.user_id,
           first_name: p.first_name,
@@ -68,6 +78,8 @@ export default function UserManagementPage() {
           phone: p.phone || "",
           monthly_salary: Number(p.monthly_salary) || 0,
           role: (userRole?.role as AppRole) || "employee",
+          companySuper: authority?.company_super_admin === true,
+          platformSuper: authority?.platform_super_admin === true,
         };
       });
       setUsers(merged);
@@ -98,6 +110,18 @@ export default function UserManagementPage() {
     } catch (err: any) {
       toast.error(err.message || "Failed to update status");
     }
+  };
+  const handleDelete = async () => {
+    if (!deleteUser || deleteConfirmation !== "DELETE") return;
+    setDeleting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("delete-employee", { body: { employee_id: deleteUser.user_id, confirmation: deleteConfirmation } });
+      let detail = data?.error;
+      if (error) { try { detail = detail || (await error.context?.json())?.error; } catch { /* response unavailable */ } }
+      if (error || detail) throw new Error(detail || error?.message || "Removal failed");
+      toast.success("Account removed; financial records retained"); setDeleteUser(null); await fetchUsers();
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Removal failed"); }
+    finally { setDeleting(false); }
   };
 
   const handleInvite = async () => {
@@ -273,6 +297,8 @@ export default function UserManagementPage() {
                     <td className="py-3 px-4 text-foreground">{u.department || "—"}</td>
                     <td className="py-3 px-4">
                       <Badge className={roleColors[u.role]} variant="secondary">{u.role}</Badge>
+                      {u.companySuper && <Badge variant="outline">Company super admin</Badge>}
+                      {u.platformSuper && <Badge variant="outline">Platform super admin</Badge>}
                     </td>
                     <td className="py-3 px-4">
                       <Badge
@@ -285,6 +311,7 @@ export default function UserManagementPage() {
                     <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <Button variant="ghost" size="sm" onClick={() => setAccessUser(u)}><Shield size={14} />Roles & access</Button>
+                        {u.user_id !== currentUser?.id && (!u.companySuper || isCompanySuperAdmin) && (!u.platformSuper || isPlatformAdmin) && (u.role !== "admin" || isCompanySuperAdmin) && <Button variant="ghost" size="icon" title={`Delete ${u.email}`} aria-label={`Delete ${u.email}`} onClick={() => { setDeleteUser(u); setDeleteConfirmation(""); }}><Trash2 className="text-destructive" size={16} /></Button>}
                         <button
                           onClick={() => {
                             setEditUser(u);
@@ -328,6 +355,14 @@ export default function UserManagementPage() {
       </Card>
 
       <WorkspaceAccessDialog user={accessUser} onClose={() => setAccessUser(null)} onSaved={fetchUsers} />
+      <Dialog open={!!deleteUser} onOpenChange={open => { if (!open && !deleting) setDeleteUser(null); }}>
+        <DialogContent className="sm:max-w-md"><DialogHeader><DialogTitle>Delete account permanently</DialogTitle></DialogHeader>
+          <p className="text-sm break-all">{deleteUser?.email}</p>
+          <p className="text-sm text-muted-foreground">Sign-in access, HR files and attendance history will be removed. Approved payroll and loan repayment records will be retained. This cannot be undone.</p>
+          <Input aria-label="Delete confirmation" placeholder="Type DELETE" value={deleteConfirmation} disabled={deleting} onChange={e => setDeleteConfirmation(e.target.value)} />
+          <div className="flex justify-end gap-2"><Button variant="outline" disabled={deleting} onClick={() => setDeleteUser(null)}>Cancel</Button><Button variant="destructive" disabled={deleting || deleteConfirmation !== "DELETE"} onClick={handleDelete}><Trash2 />{deleting ? "Removing…" : "Delete permanently"}</Button></div>
+        </DialogContent>
+      </Dialog>
       {/* Invite Dialog */}
       <Dialog open={showInvite} onOpenChange={setShowInvite}>
         <DialogContent className="sm:max-w-md">
