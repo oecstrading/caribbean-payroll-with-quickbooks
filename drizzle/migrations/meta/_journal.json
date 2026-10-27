@@ -92,6 +92,27 @@
       "when": 1793093695018,
       "tag": "0012_workspace_storage_and_admin_guards",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1793095412406,
+      "tag": "0013_company_isolation",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1793095477167,
+      "tag": "0014_company_invitations_and_audit",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1793095540701,
+      "tag": "0015_employee_loans_and_atomic_repayments",
+      "breakpoints": true
     }
   ]
 }

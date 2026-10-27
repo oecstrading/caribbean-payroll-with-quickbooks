@@ -57,11 +57,14 @@ Deno.serve(async (req) => {
       });
     }
 
+    const { data: orgId, error: orgError } = await callerClient.rpc("current_org_id");
+    const { data: targetOrg, error: targetError } = await callerClient.rpc("employee_org_id", { _employee: user_id });
+    if (orgError || targetError || !orgId || targetOrg !== orgId) return new Response(JSON.stringify({ error: "Employee is not in your company" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     // Get employee email
     const { data: profile } = await adminClient
       .from("profiles")
       .select("email, first_name, last_name")
-      .eq("user_id", user_id)
+      .eq("org_id", orgId).eq("user_id", user_id)
       .maybeSingle();
 
     if (!profile?.email) {
@@ -74,7 +77,7 @@ Deno.serve(async (req) => {
     // Get company settings for sender info
     const { data: company } = await adminClient
       .from("company_settings")
-      .select("company_name")
+      .select("company_name").eq("org_id", orgId)
       .limit(1)
       .maybeSingle();
 

@@ -51,8 +51,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { email, role, first_name, last_name } = await req.json();
-    if (!email) {
+    const { data: orgId, error: orgError } = await callerClient.rpc("current_org_id");
+    if (orgError || !orgId) return new Response(JSON.stringify({ error: "Company membership required" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const { email, role = "employee", first_name, last_name } = await req.json();
+    if (typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 255 || !["admin", "manager", "employee"].includes(role)) {
       return new Response(JSON.stringify({ error: "Email is required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -75,13 +77,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Update role if not default employee
-    if (newUser.user && role && role !== "employee") {
-      await adminClient
-        .from("user_roles")
-        .update({ role })
-        .eq("user_id", newUser.user.id);
-    }
+    if (!newUser.user) throw new Error("Account creation did not finish");
+    const { error: assignmentError } = await adminClient.rpc("create_invited_profile", { _user_id: newUser.user.id, _org_id: orgId, _email: email.trim(), _first: first_name || "", _last: last_name || "", _role: role });
+    if (assignmentError) throw new Error("Account created but company assignment failed; contact your administrator before retrying.");
 
     return new Response(
       JSON.stringify({ success: true, user_id: newUser.user.id }),

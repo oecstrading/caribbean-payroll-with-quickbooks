@@ -16,6 +16,18 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const trusted = !!serviceKey && req.headers.get("Authorization") === `Bearer ${serviceKey}`;
+    let callerOrg: string | null = null;
+    if (!trusted) {
+      const callerClient = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: req.headers.get("Authorization") || "" } } });
+      const { data: auth } = await callerClient.auth.getUser();
+      if (!auth.user) return new Response(JSON.stringify({ error: "Sign in required" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      const { data: access } = await callerClient.rpc("has_workspace_access", { _user_id: auth.user.id, _module: "security" });
+      const { data: org } = await callerClient.rpc("current_org_id");
+      if (!access || !org) return new Response(JSON.stringify({ error: "Security workspace required" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      callerOrg = org;
+    }
     const now = new Date();
     const todayStr = now.toISOString().split("T")[0];
     const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -24,7 +36,7 @@ Deno.serve(async (req) => {
     // Fetch today's active guard assignments
     const { data: assignments, error: assignErr } = await adminClient
       .from("guard_assignments")
-      .select("user_id, site_id, shift_start, days_of_week")
+      .select("user_id, site_id, shift_start, days_of_week, org_id")
       .eq("is_active", true);
 
     if (assignErr) {
@@ -33,7 +45,7 @@ Deno.serve(async (req) => {
     }
 
     // Filter to today's scheduled assignments
-    const todayAssignments = (assignments || []).filter((a: any) => {
+    const todayAssignments = (assignments || []).filter(a => trusted || a.org_id === callerOrg).filter((a: any) => {
       if (!a.shift_start) return false;
       if (!a.days_of_week || a.days_of_week.length === 0) return true;
       return a.days_of_week.includes(todayDay);
@@ -78,6 +90,7 @@ Deno.serve(async (req) => {
       shift_start: string;
       late_minutes: number;
       clock_in_at: string | null;
+      org_id: string;
     }> = [];
 
     for (const a of todayAssignments) {
@@ -96,6 +109,7 @@ Deno.serve(async (req) => {
         const diffMs = new Date(clockInTime).getTime() - shiftTime.getTime();
         if (diffMs >= lateThresholdMs) {
           lateGuards.push({
+            org_id: a.org_id,
             user_id: a.user_id,
             site_id: a.site_id,
             shift_start: a.shift_start,
@@ -108,6 +122,7 @@ Deno.serve(async (req) => {
         const diffMs = now.getTime() - shiftTime.getTime();
         if (diffMs >= lateThresholdMs) {
           lateGuards.push({
+            org_id: a.org_id,
             user_id: a.user_id,
             site_id: a.site_id,
             shift_start: a.shift_start,
@@ -144,7 +159,7 @@ Deno.serve(async (req) => {
     // Fetch managers to notify
     const { data: adminRoles } = await adminClient
       .from("user_roles")
-      .select("user_id")
+      .select("user_id, org_id")
       .in("role", ["admin", "manager"]);
 
     const managerIds = (adminRoles || []).map((r: any) => r.user_id);
@@ -172,18 +187,20 @@ Deno.serve(async (req) => {
       .select("user_id, email, first_name")
       .in("user_id", managerIds);
 
-    const emailRecipients: string[] = [];
+    const recipientOrgs = new Map((adminRoles || []).map(r => [r.user_id, r.org_id]));
+    const emailRecipients: Array<{email:string;org_id:string}> = [];
     for (const mgr of managerProfiles || []) {
       const prefs = settingsMap.get(mgr.user_id);
       const wantsLateAlert = !prefs || prefs.alert_on_late_clock_in !== false;
       const wantsEmail = !prefs || prefs.enable_email !== false;
       if (wantsLateAlert && wantsEmail && mgr.email) {
-        emailRecipients.push(mgr.email);
+        emailRecipients.push({ email: mgr.email, org_id: recipientOrgs.get(mgr.user_id) || "" });
       }
     }
 
     // Build alert summary
     const alertSummary = lateGuards.map((g) => ({
+      org_id: g.org_id,
       guardName: profileMap.get(g.user_id) || "Unknown",
       siteName: siteMap.get(g.site_id) || "Unknown",
       shiftStart: g.shift_start,
@@ -201,7 +218,10 @@ Deno.serve(async (req) => {
         .map((a) => `• ${a.guardName} at ${a.siteName} — ${a.lateMinutes}m late (shift: ${a.shiftStart}) [${a.status}]`)
         .join("\n");
 
-      for (const email of emailRecipients) {
+      for (const recipient of emailRecipients) {
+        const email = recipient.email;
+        const companyAlerts = alertSummary.filter(a => a.org_id === recipient.org_id);
+        if (!companyAlerts.length) continue;
         try {
           await adminClient.functions.invoke("send-transactional-email", {
             body: {
@@ -210,9 +230,9 @@ Deno.serve(async (req) => {
               idempotencyKey: `late-clock-in-${todayStr}-${alertId}-${email}`,
               templateData: {
                 date: todayStr,
-                lateCount: lateGuards.length,
-                alerts: alertSummary,
-                summaryText: emailBody,
+                lateCount: companyAlerts.length,
+                alerts: companyAlerts,
+                summaryText: companyAlerts.map(a => `${a.guardName} at ${a.siteName} — ${a.lateMinutes}m late`).join("\n"),
               },
             },
           });
@@ -224,6 +244,7 @@ Deno.serve(async (req) => {
 
     // Record sent alerts to prevent duplicates
     const alertRecords = lateGuards.map((g) => ({
+      org_id: g.org_id,
       user_id: g.user_id,
       site_id: g.site_id,
       shift_date: todayStr,

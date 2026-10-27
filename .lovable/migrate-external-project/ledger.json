@@ -1,17 +1,89 @@
 {
   "source": "uploaded HTML prototypes",
   "capabilities": [
-    {"capability":"Prototype inventory","source":"index.html and index-2.html","outcome":"Both uploads are byte-identical single-file prototypes; source not executed","status":"inspected","next_action":"Compare application call sites and confirm major conflicts"},
-    {"capability":"Existing Caribbean interface and payroll workflows","source":"Current OECS platform","outcome":"Preserve existing implementation and visual design","status":"preserve","next_action":"Add only missing prototype capabilities"},
-    {"capability":"Database schema and company isolation","source":"Current Lovable Cloud plus requested organization schema","outcome":"Additive organization membership and tenant-bound data without replacing profiles or role tables","status":"pending_approval","next_action":"Approve scope affecting existing data, access policies, payroll RPCs and privileged functions"},
-    {"capability":"Existing records and auth identities","source":"Current platform","outcome":"Retain current accounts, durable employee keys and historical payroll","status":"preserve","next_action":"Confirm organization assignment before backfill; do not import prototype PINs as live identities"},
-    {"capability":"Prototype demonstration records","source":"Embedded employee arrays","outcome":"Inspect rates and deduction balances; keep fictional records separate from live accounts","status":"inspecting","next_action":"Extract nonsecret demonstration fields and seed through data tools after tenant setup"},
-    {"capability":"DeepSeek assistant","source":"Prototype scripted chat","outcome":"Additional real read-only AI assistant; preserve current AI Payroll Officer","status":"availability_check","next_action":"Check workspace DeepSeek availability and scope authorized context"},
-    {"capability":"Finance ledger and creditor repayment balances","source":"Prototype in-memory arrays","outcome":"Potential new production scope, not existing QBO mapping","status":"pending_approval","next_action":"Confirm whether to add local ledger and atomic repayment posting without treating approval as bank payment"},
-    {"capability":"Authentication and private files","source":"Current platform","outcome":"Keep existing Google/password/PIN methods and private employee documents","status":"preserve","next_action":"Tenant-scope policies and signed downloads, test cross-company denial"},
-    {"capability":"Prototype tax settings","source":"User approved test-only formula","outcome":"NIC 5%, PAYE threshold 1500 and flat 30% for demonstration only; preserve production engine","status":"approved_test_only","next_action":"Store separately under test organization; do not overwrite live jurisdiction configuration"},
-    {"capability":"External providers and endpoints","source":"Current platform","outcome":"Retain existing QuickBooks, email, client portal, voice and public training endpoints","status":"preserve","next_action":"Tenant-scope privileged calls and automation; QBO live verification still needs credentials"},
-    {"capability":"Prototype hosting and file bytes","source":"Standalone HTML","outcome":"Reference source only; not served as replacement app","status":"inspected","next_action":"No uploaded media migration detected"},
-    {"capability":"Cutover and verification","source":"Existing published platform","outcome":"No publication or production-ready claim before verified tenant and business flows","status":"pending","next_action":"Test two organizations, manager/employee permissions, payroll and AI; publish only when requested"}
+    {
+      "capability": "Prototype inventory",
+      "source": "index.html and index-2.html",
+      "outcome": "Both uploads are byte-identical single-file prototypes; source not executed",
+      "status": "inspected",
+      "next_action": "Compare application call sites and confirm major conflicts"
+    },
+    {
+      "capability": "Existing Caribbean interface and payroll workflows",
+      "source": "Current OECS platform",
+      "outcome": "Preserve existing implementation and visual design",
+      "status": "preserve",
+      "next_action": "Add only missing prototype capabilities"
+    },
+    {
+      "capability": "Database schema and company isolation",
+      "source": "Current Lovable Cloud plus requested organization schema",
+      "outcome": "Additive organization membership and tenant-bound data without replacing profiles or role tables",
+      "status": "approved",
+      "next_action": "Assign all existing records to Smiley\u2019s Tinting Plus; enforce org-scoped rows and privileged operations"
+    },
+    {
+      "capability": "Existing records and auth identities",
+      "source": "Current platform",
+      "outcome": "Retain current accounts, durable employee keys and historical payroll",
+      "status": "approved",
+      "next_action": "Backfill organization without changing account identities or payroll history"
+    },
+    {
+      "capability": "Prototype demonstration records",
+      "source": "Embedded employee arrays",
+      "outcome": "Inspect rates and deduction balances; keep fictional records separate from live accounts",
+      "status": "approved",
+      "next_action": "Store fictional employees separately from live directories; hourly hours are weekly contracted hours"
+    },
+    {
+      "capability": "DeepSeek assistant",
+      "source": "Prototype scripted chat",
+      "outcome": "Additional real read-only AI assistant; preserve current AI Payroll Officer",
+      "status": "deferred_by_user",
+      "next_action": "DeepSeek is absent from workspace model catalog; do not substitute a model"
+    },
+    {
+      "capability": "Finance ledger and creditor repayment balances",
+      "source": "Prototype in-memory arrays",
+      "outcome": "Add loan balances and repayment tracking only; no native ledger",
+      "status": "approved_loans_only",
+      "next_action": "Create audited loans with atomic payroll repayments"
+    },
+    {
+      "capability": "Authentication and private files",
+      "source": "Current platform",
+      "outcome": "Keep existing Google/password/PIN methods and private employee documents",
+      "status": "preserve",
+      "next_action": "Tenant-scope policies and signed downloads, test cross-company denial"
+    },
+    {
+      "capability": "Prototype tax settings",
+      "source": "User approved test-only formula",
+      "outcome": "NIC 5%, PAYE threshold 1500 and flat 30% for demonstration only; preserve production engine",
+      "status": "approved_test_only",
+      "next_action": "Store separately under test organization; do not overwrite live jurisdiction configuration"
+    },
+    {
+      "capability": "External providers and endpoints",
+      "source": "Current platform",
+      "outcome": "Retain existing QuickBooks, email, client portal, voice and public training endpoints",
+      "status": "preserve",
+      "next_action": "Tenant-scope privileged calls and automation; QBO live verification still needs credentials"
+    },
+    {
+      "capability": "Prototype hosting and file bytes",
+      "source": "Standalone HTML",
+      "outcome": "Reference source only; not served as replacement app",
+      "status": "inspected",
+      "next_action": "No uploaded media migration detected"
+    },
+    {
+      "capability": "Cutover and verification",
+      "source": "Existing published platform",
+      "outcome": "No publication or production-ready claim before verified tenant and business flows",
+      "status": "pending",
+      "next_action": "Test two organizations, manager/employee permissions, payroll and AI; publish only when requested"
+    }
   ]
 }
