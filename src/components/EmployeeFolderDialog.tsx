@@ -45,9 +45,10 @@ const sections: { id: string; label: string; icon: typeof User; fields: Field[] 
   { id: "notes", label: "Notes", icon: StickyNote, fields: [{ key: "notes", label: "Confidential HR notes", type: "textarea", wide: true }] },
 ];
 
-export default function EmployeeFolderDialog({ folder, creating, onClose, onSave, onDelete, permissions, ownId, directory = [] }: {
+export default function EmployeeFolderDialog({ folder, creating, onClose, onSave, onDelete, onPermanentDelete, permissions, ownId, directory = [] }: {
   folder: EmployeeFolder | null; creating: boolean; onClose: () => void;
   onSave: (values: EmployeeForm) => Promise<void>; onDelete: (restore: boolean) => Promise<void>;
+  onPermanentDelete: (confirmation: string) => Promise<void>;
   permissions: { edit: boolean; create: boolean; delete: boolean }; ownId?: string;
   directory?: EmployeeFolder[];
 }) {
@@ -55,6 +56,8 @@ export default function EmployeeFolderDialog({ folder, creating, onClose, onSave
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmPermanent, setConfirmPermanent] = useState(false);
+  const [confirmation, setConfirmation] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [tab, setTab] = useState("personal");
   const navigate = useNavigate();
@@ -76,6 +79,12 @@ export default function EmployeeFolderDialog({ folder, creating, onClose, onSave
   const remove = async (restore: boolean) => {
     setBusy(true);
     try { await onDelete(restore); setConfirmDelete(false); } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to update folder"); } finally { setBusy(false); }
+  };
+  const removePermanently = async () => {
+    setBusy(true);
+    try { await onPermanentDelete(confirmation); setConfirmPermanent(false); setConfirmation(""); }
+    catch (error) { toast.error(error instanceof Error ? error.message : "Unable to remove employee"); }
+    finally { setBusy(false); }
   };
   const preview = calculatePayroll(effectiveMonthlySalary(values), ST_LUCIA_CONFIG);
   const pickerOptions: Partial<Record<keyof EmployeeForm, string[]>> = {
@@ -132,8 +141,9 @@ export default function EmployeeFolderDialog({ folder, creating, onClose, onSave
           <TabsContent value="documents" className="px-6 pb-6 pt-4 mt-0">{folder?.source === "live" ? <EmployeeDocuments employeeKey={folder.id} canManage={permissions.edit && !folder.deletedAt} accountLinked={folder.accountLinked !== false} /> : <p className="text-sm text-muted-foreground">{creating ? "Save the employee folder before adding documents." : "Documents are available for live employee folders only."}</p>}</TabsContent>
         </Tabs>
         <div className="border-t border-border p-4 sm:px-6 flex flex-wrap gap-2 justify-between bg-background">
-          <div className="flex gap-2">
-            {folder && permissions.delete && folder.id !== ownId && !editing && <Button className="h-11" variant={folder.deletedAt ? "secondary" : "ghost"} disabled={busy} onClick={() => folder.deletedAt ? remove(true) : setConfirmDelete(true)}>{folder.deletedAt ? <RotateCcw /> : <Trash2 />} {folder.deletedAt ? "Restore" : "Delete"}</Button>}
+          <div className="flex gap-2 flex-wrap">
+            {folder && permissions.delete && folder.id !== ownId && !editing && <Button className="h-11" variant={folder.deletedAt ? "secondary" : "ghost"} disabled={busy} onClick={() => folder.deletedAt ? remove(true) : setConfirmDelete(true)}>{folder.deletedAt ? <RotateCcw /> : <Trash2 />} {folder.deletedAt ? "Restore" : "Archive"}</Button>}
+            {folder?.source === "live" && permissions.delete && folder.id !== ownId && !editing && <Button className="h-11" variant="destructive" disabled={busy} onClick={() => { setConfirmation(""); setConfirmPermanent(true); }}><Trash2 />Delete permanently</Button>}
             {folder?.source === "live" && !folder.deletedAt && !editing && <Button className="h-11" variant="outline" onClick={() => { onClose(); navigate(`/reports`); }}><FileText />Payroll reports</Button>}
           </div>
           <div className="flex gap-2 ml-auto">
@@ -146,6 +156,13 @@ export default function EmployeeFolderDialog({ folder, creating, onClose, onSave
     </Dialog>
     <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
       <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Delete this employee folder?</AlertDialogTitle><AlertDialogDescription>{folder?.source === "sample" ? "This removes the fictional record for this visit only." : "The folder will move to Deleted folders and can be restored. Payroll history is retained. This does not delete the sign-in account or revoke access."}</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel><AlertDialogAction disabled={busy} onClick={(event) => { event.preventDefault(); remove(false); }}>Delete folder</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+    </AlertDialog>
+    <AlertDialog open={confirmPermanent} onOpenChange={open => { if (!busy) setConfirmPermanent(open); }}>
+      <AlertDialogContent>
+        <AlertDialogHeader><AlertDialogTitle>Permanently remove {folder?.values.first_name} {folder?.values.last_name}?</AlertDialogTitle><AlertDialogDescription>The employee folder, HR files, attendance and leave history will be removed, along with any linked sign-in account. This cannot be undone. Payslips, loan balances and repayments, payroll totals and financial audit records remain available. Administrator accounts are protected.</AlertDialogDescription></AlertDialogHeader>
+        <div className="space-y-2"><Label htmlFor="permanent-delete-confirmation">Type DELETE to confirm</Label><Input id="permanent-delete-confirmation" autoComplete="off" value={confirmation} disabled={busy} onChange={event => setConfirmation(event.target.value)} /></div>
+        <AlertDialogFooter><AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel><Button variant="destructive" disabled={busy || confirmation !== "DELETE"} onClick={removePermanently}>{busy ? "Removing…" : "Delete permanently"}</Button></AlertDialogFooter>
+      </AlertDialogContent>
     </AlertDialog>
   </>;
 }

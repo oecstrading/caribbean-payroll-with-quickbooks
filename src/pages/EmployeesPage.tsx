@@ -1,6 +1,6 @@
 import { NativeSelect } from "@/components/ui/native-select";
 import { useCallback, useEffect, useState } from "react";
-import { Search, UserPlus, Upload, RefreshCw, MoreHorizontal, Users } from "lucide-react";
+import { Search, UserPlus, Upload, RefreshCw, MoreHorizontal, Users, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -32,7 +32,7 @@ export default function EmployeesPage() {
   const [error, setError] = useState("");
   const fetchEmployees = useCallback(async () => {
     setLoading(true); setError("");
-    const [profiles, records] = await Promise.all([supabase.from("profiles").select("*").order("first_name"), supabase.from("employee_records").select("*").order("first_name")]);
+    const [profiles, records] = await Promise.all([supabase.from("profiles").select("*").order("first_name"), supabase.from("employee_records").select("*").is("permanently_deleted_at", null).order("first_name")]);
     if (profiles.error || records.error) setError("Employee records could not be loaded. Please try again.");
     else setLive([...(profiles.data || []).map(p => ({ ...profileToFolder(p), accountLinked: true })), ...(records.data || []).map(p => ({ ...profileToFolder(p), accountLinked: false }))]);
     setLoading(false);
@@ -79,6 +79,18 @@ export default function EmployeesPage() {
     if (error || !data) throw new Error(error?.message || "Unable to update employee folder");
     close(); await fetchEmployees(); toast.success(restore ? "Employee folder restored" : "Employee folder deleted; history retained");
   };
+  const removePermanently = async (confirmation: string) => {
+    if (!permissions.delete || !selected || selected.source !== "live") throw new Error("Only administrators can permanently remove live employees");
+    const { data, error } = await supabase.functions.invoke("delete-employee", { body: { employee_id: selected.id, confirmation } });
+    if (error || data?.error || !data?.success) {
+      let message = data?.error || "Unable to remove employee";
+      if (error && "context" in error && error.context instanceof Response) {
+        try { const response = await error.context.json(); message = response.error || message; } catch { /* Keep the safe fallback. */ }
+      }
+      throw new Error(message);
+    }
+    close(); await fetchEmployees(); toast.success("Employee and sign-in account removed; financial records retained");
+  };
   return <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-5">
     <div className="flex items-center justify-between flex-wrap gap-3">
       <div><h1 className="text-xl md:text-2xl font-display font-bold text-foreground">Employees</h1><p className="text-sm text-muted-foreground mt-1">{records.length} {mode === "sample" ? "fictional sample records" : mode === "deleted" ? "deleted folders" : "employee folders"}</p></div>
@@ -98,12 +110,12 @@ export default function EmployeesPage() {
         {filtered.map((folder) => <tr key={folder.id} className="border-b border-border/50 hover:bg-secondary/30 transition-colors cursor-pointer" onClick={() => setSelected(folder)}>
           <td className="py-3 px-4"><div className="flex items-center gap-3"><div className="w-10 h-10 shrink-0 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-xs">{folder.values.first_name[0]}{folder.values.last_name[0]}</div><div><p className="font-medium text-foreground">{folder.values.first_name} {folder.values.last_name}</p><p className="text-xs text-muted-foreground">{folder.values.email}</p></div></div></td>
           <td className="py-3 px-4">{folder.values.department || "—"}</td><td className="py-3 px-4">{folder.values.job_title || "—"}</td><td className="py-3 px-4 text-muted-foreground">{folder.values.person_id || "—"}</td><td className="py-3 px-4 whitespace-nowrap">{formatCurrency(folder.values.monthly_salary)}</td><td className="py-3 px-4"><Badge variant={folder.values.status === "Active" ? "default" : "secondary"}>{folder.values.status}</Badge></td>
-          <td className="py-3 px-4"><Button variant="ghost" size="icon" className="h-11 w-11" aria-label={`Open ${folder.values.first_name} ${folder.values.last_name} folder`} onClick={(event) => { event.stopPropagation(); setSelected(folder); }}><MoreHorizontal /></Button></td>
+          <td className="py-3 px-4"><div className="flex"><Button variant="ghost" size="icon" className="h-11 w-11" aria-label={`Open ${folder.values.first_name} ${folder.values.last_name} folder`} onClick={(event) => { event.stopPropagation(); setSelected(folder); }}><MoreHorizontal /></Button>{permissions.delete && folder.id !== user?.id && <Button variant="ghost" size="icon" className="h-11 w-11 text-destructive" title="Delete employee" aria-label={`Delete ${folder.values.first_name} ${folder.values.last_name}`} onClick={event => { event.stopPropagation(); setSelected(folder); }}><Trash2 /></Button>}</div></td>
         </tr>)}
       </tbody></table></div>
       {!filtered.length && <div className="py-14 text-center text-muted-foreground"><Users className="mx-auto mb-3" /><p>{records.length ? "No employees match these filters" : mode === "deleted" ? "No deleted employee folders" : "No employee folders yet"}</p></div>}
     </div>}
-    <EmployeeFolderDialog folder={selected} creating={creating} onClose={close} onSave={save} onDelete={remove} permissions={permissions} ownId={user?.id} directory={(mode === "sample" ? samples : live).filter(record => !record.deletedAt)} />
+    <EmployeeFolderDialog folder={selected} creating={creating} onClose={close} onSave={save} onDelete={remove} onPermanentDelete={removePermanently} permissions={permissions} ownId={user?.id} directory={(mode === "sample" ? samples : live).filter(record => !record.deletedAt)} />
     {permissions.create && <CSVImportDialog open={showImport} onOpenChange={(open) => { setShowImport(open); if (!open) fetchEmployees(); }} type="employees" />}
   </div>;
 }
