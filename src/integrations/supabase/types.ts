@@ -1295,6 +1295,7 @@ export type Database = {
           nic_number: string | null
           org_id: string | null
           ot_rate: number | null
+          permanently_deleted_at: string | null
           person_id: string | null
           phone: string | null
           schedule: string | null
@@ -1322,6 +1323,7 @@ export type Database = {
           nic_number?: string | null
           org_id?: string | null
           ot_rate?: number | null
+          permanently_deleted_at?: string | null
           person_id?: string | null
           phone?: string | null
           schedule?: string | null
@@ -1349,6 +1351,7 @@ export type Database = {
           nic_number?: string | null
           org_id?: string | null
           ot_rate?: number | null
+          permanently_deleted_at?: string | null
           person_id?: string | null
           phone?: string | null
           schedule?: string | null
@@ -1364,6 +1367,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "employee_records_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_removal_jobs: {
+        Row: {
+          account_linked: boolean
+          completed_at: string | null
+          created_at: string
+          employee_id: string
+          id: string
+          org_id: string
+          requested_by: string
+          status: string
+          storage_paths: string[]
+        }
+        Insert: {
+          account_linked: boolean
+          completed_at?: string | null
+          created_at?: string
+          employee_id: string
+          id?: string
+          org_id: string
+          requested_by: string
+          status?: string
+          storage_paths?: string[]
+        }
+        Update: {
+          account_linked?: boolean
+          completed_at?: string | null
+          created_at?: string
+          employee_id?: string
+          id?: string
+          org_id?: string
+          requested_by?: string
+          status?: string
+          storage_paths?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_removal_jobs_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -3591,6 +3638,10 @@ export type Database = {
       current_org_id: { Args: never; Returns: string }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       employee_org_id: { Args: { _employee: string }; Returns: string }
+      finish_employee_removal: {
+        Args: { _actor: string; _job: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -3622,6 +3673,26 @@ export type Database = {
           name: string
           onboarding_status: string
         }[]
+      }
+      prepare_employee_removal: {
+        Args: { _actor: string; _confirmation: string; _employee: string }
+        Returns: {
+          account_linked: boolean
+          completed_at: string | null
+          created_at: string
+          employee_id: string
+          id: string
+          org_id: string
+          requested_by: string
+          status: string
+          storage_paths: string[]
+        }
+        SetofOptions: {
+          from: "*"
+          to: "employee_removal_jobs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       reconcile_workforce_attendance: {
         Args: { _org?: string }
