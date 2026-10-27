@@ -3391,6 +3391,7 @@ export type Database = {
       }
       workforce_schedules: {
         Row: {
+          allowed_methods: string[]
           break_minutes: number
           days_of_week: number[]
           employee_id: string
@@ -3402,6 +3403,7 @@ export type Database = {
           site_id: string | null
         }
         Insert: {
+          allowed_methods?: string[]
           break_minutes?: number
           days_of_week?: number[]
           employee_id: string
@@ -3413,6 +3415,7 @@ export type Database = {
           site_id?: string | null
         }
         Update: {
+          allowed_methods?: string[]
           break_minutes?: number
           days_of_week?: number[]
           employee_id?: string
@@ -3640,6 +3643,21 @@ export type Database = {
         }
         Returns: undefined
       }
+      configure_employee_clock_methods: {
+        Args: {
+          _break: number
+          _code: string
+          _days: number[]
+          _employee: string
+          _enabled: boolean
+          _end: string
+          _methods: string[]
+          _pin: string
+          _site: string
+          _start: string
+        }
+        Returns: undefined
+      }
       create_employee_loan: {
         Args: {
           _balance: number
@@ -3664,6 +3682,10 @@ export type Database = {
       }
       current_org_id: { Args: never; Returns: string }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
+      employee_clock_configuration: {
+        Args: { _employee: string }
+        Returns: Json
+      }
       employee_org_id: { Args: { _employee: string }; Returns: string }
       finish_employee_removal: {
         Args: { _actor: string; _job: string }
