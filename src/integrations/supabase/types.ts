@@ -3691,6 +3691,10 @@ export type Database = {
         Args: { _actor: string; _job: string }
         Returns: undefined
       }
+      has_employee_clock_access: {
+        Args: { _employee: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
