@@ -1,0 +1,41 @@
+CREATE TABLE public.company_super_administrators(user_id uuid PRIMARY KEY,org_id uuid NOT NULL REFERENCES public.organizations(id),created_at timestamptz NOT NULL DEFAULT now());
+GRANT SELECT ON public.company_super_administrators TO authenticated; GRANT ALL ON public.company_super_administrators TO service_role;
+ALTER TABLE public.company_super_administrators ENABLE ROW LEVEL SECURITY;
+CREATE POLICY company_super_admin_read ON public.company_super_administrators FOR SELECT TO authenticated USING(org_id=public.current_org_id() AND (user_id=auth.uid() OR public.has_role(auth.uid(),'admin')));
+CREATE FUNCTION public.is_company_super_admin(_user uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$ SELECT EXISTS(SELECT 1 FROM public.company_super_administrators s JOIN public.profiles p ON p.user_id=s.user_id AND p.org_id=s.org_id WHERE s.user_id=_user AND p.deleted_at IS NULL AND p.status='Active') $$;
+REVOKE ALL ON FUNCTION public.is_company_super_admin(uuid) FROM PUBLIC,anon; GRANT EXECUTE ON FUNCTION public.is_company_super_admin(uuid) TO authenticated,service_role;
+CREATE FUNCTION public.administrator_authority(_user uuid) RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public AS $$ BEGIN IF auth.uid() IS NULL OR NOT EXISTS(SELECT 1 FROM public.profiles WHERE user_id=_user AND org_id=public.current_org_id()) THEN RAISE EXCEPTION 'Company user required'; END IF; RETURN jsonb_build_object('company_super_admin',public.is_company_super_admin(_user),'platform_super_admin',EXISTS(SELECT 1 FROM public.platform_administrators WHERE user_id=_user)); END $$;
+REVOKE ALL ON FUNCTION public.administrator_authority(uuid) FROM PUBLIC,anon; GRANT EXECUTE ON FUNCTION public.administrator_authority(uuid) TO authenticated;
+CREATE FUNCTION public.set_administrator_authority(_user uuid,_company boolean,_platform boolean) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ DECLARE org uuid; actor uuid:=auth.uid(); platform_actor boolean:=public.is_platform_admin(); BEGIN
+org:=public.current_org_id(); IF actor IS NULL OR org IS NULL OR NOT public.is_company_super_admin(actor) THEN RAISE EXCEPTION 'Company super administrator required'; END IF;
+PERFORM pg_advisory_xact_lock(hashtextextended('administrator-authority',0));
+IF NOT EXISTS(SELECT 1 FROM public.profiles WHERE user_id=_user AND org_id=org AND deleted_at IS NULL AND status='Active') OR NOT public.has_role(_user,'admin') THEN RAISE EXCEPTION 'Select an active administrator in your company'; END IF;
+IF _company IS NULL OR _platform IS NULL THEN RAISE EXCEPTION 'Select authority'; END IF;
+IF EXISTS(SELECT 1 FROM public.platform_administrators WHERE user_id=_user) IS DISTINCT FROM _platform AND NOT platform_actor THEN RAISE EXCEPTION 'Platform super administrator required'; END IF;
+IF _user=actor AND (NOT _company OR (platform_actor AND NOT _platform)) THEN RAISE EXCEPTION 'You cannot remove your own super administrator authority'; END IF;
+IF NOT _company AND EXISTS(SELECT 1 FROM public.company_super_administrators WHERE user_id=_user) AND NOT EXISTS(SELECT 1 FROM public.company_super_administrators s JOIN public.profiles p ON p.user_id=s.user_id WHERE s.org_id=org AND s.user_id<>_user AND p.deleted_at IS NULL AND p.status='Active') THEN RAISE EXCEPTION 'Keep at least one company super administrator'; END IF;
+IF NOT _platform AND EXISTS(SELECT 1 FROM public.platform_administrators WHERE user_id=_user) AND NOT EXISTS(SELECT 1 FROM public.platform_administrators WHERE user_id<>_user) THEN RAISE EXCEPTION 'Keep at least one platform super administrator'; END IF;
+IF _company THEN INSERT INTO public.company_super_administrators(user_id,org_id) VALUES(_user,org) ON CONFLICT(user_id) DO NOTHING; ELSE DELETE FROM public.company_super_administrators WHERE user_id=_user AND org_id=org; END IF;
+IF _platform THEN IF NOT platform_actor THEN IF NOT EXISTS(SELECT 1 FROM public.platform_administrators WHERE user_id=_user) THEN RAISE EXCEPTION 'Platform super administrator required'; END IF; ELSE INSERT INTO public.platform_administrators(user_id) VALUES(_user) ON CONFLICT(user_id) DO NOTHING; END IF; ELSE DELETE FROM public.platform_administrators WHERE user_id=_user; END IF;
+INSERT INTO public.audit_logs(org_id,employee_id,action,details) VALUES(org,_user,'administrator_authority_changed',jsonb_build_object('actor',actor,'company',_company,'platform',_platform)); END $$;
+REVOKE ALL ON FUNCTION public.set_administrator_authority(uuid,boolean,boolean) FROM PUBLIC,anon; GRANT EXECUTE ON FUNCTION public.set_administrator_authority(uuid,boolean,boolean) TO authenticated;
+CREATE OR REPLACE FUNCTION public.protect_workspace_admin() RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $$ BEGIN IF OLD.role='admin' AND (TG_OP='DELETE' OR NEW.role<>'admin') THEN
+IF coalesce(auth.role(),'')<>'service_role' AND NOT public.is_company_super_admin(auth.uid()) THEN RAISE EXCEPTION 'Company super administrator required'; END IF;
+IF EXISTS(SELECT 1 FROM public.company_super_administrators WHERE user_id=OLD.user_id) OR EXISTS(SELECT 1 FROM public.platform_administrators WHERE user_id=OLD.user_id) THEN RAISE EXCEPTION 'Remove super administrator authority before changing role'; END IF;
+IF auth.uid()=OLD.user_id THEN RAISE EXCEPTION 'You cannot demote yourself'; END IF;
+END IF; IF TG_OP='DELETE' THEN RETURN OLD; END IF; RETURN NEW; END $$;
+DO $$ DECLARE definition text; BEGIN
+SELECT pg_get_functiondef('public.set_user_workspace_access(uuid,public.app_role,text[])'::regprocedure) INTO definition;
+definition:=replace(definition,'IF public.has_role(_user_id,''admin'') THEN','IF public.has_role(_user_id,''admin'') AND NOT public.is_company_super_admin(auth.uid()) THEN');
+definition:=replace(definition,'PERFORM pg_advisory_xact_lock(hashtext(_user_id::text));','PERFORM pg_advisory_xact_lock(hashtextextended(''administrator-authority'',0)); PERFORM pg_advisory_xact_lock(hashtext(_user_id::text));');
+EXECUTE definition;
+SELECT pg_get_functiondef('public.prepare_employee_removal(uuid,uuid,text)'::regprocedure) INTO definition;
+definition:=replace(definition,'IF _employee=_actor OR EXISTS(SELECT 1 FROM public.platform_administrators WHERE user_id=_employee) OR public.has_role(_employee,''admin'') THEN RAISE EXCEPTION ''Administrator accounts cannot be removed here'' USING ERRCODE=''42501''; END IF;', 'PERFORM pg_advisory_xact_lock(hashtextextended(''administrator-authority'',0));
+IF _employee=_actor THEN RAISE EXCEPTION ''You cannot delete your own account''; END IF;
+IF public.has_role(_employee,''admin'') AND NOT public.is_company_super_admin(_actor) THEN RAISE EXCEPTION ''Company super administrator required''; END IF;
+IF EXISTS(SELECT 1 FROM public.platform_administrators WHERE user_id=_employee) AND NOT EXISTS(SELECT 1 FROM public.platform_administrators WHERE user_id=_actor) THEN RAISE EXCEPTION ''Platform super administrator required''; END IF;
+IF EXISTS(SELECT 1 FROM public.company_super_administrators WHERE user_id=_employee) AND NOT EXISTS(SELECT 1 FROM public.company_super_administrators s JOIN public.profiles p ON p.user_id=s.user_id WHERE s.org_id=org AND s.user_id<>_employee AND p.deleted_at IS NULL AND p.status=''Active'') THEN RAISE EXCEPTION ''Keep at least one company super administrator''; END IF;
+IF EXISTS(SELECT 1 FROM public.platform_administrators WHERE user_id=_employee) AND NOT EXISTS(SELECT 1 FROM public.platform_administrators WHERE user_id<>_employee) THEN RAISE EXCEPTION ''Keep at least one platform super administrator''; END IF;');
+definition:=replace(definition,'DELETE FROM public.user_roles WHERE user_id=_employee;', 'DELETE FROM public.company_super_administrators WHERE user_id=_employee AND org_id=org; DELETE FROM public.platform_administrators WHERE user_id=_employee; DELETE FROM public.user_roles WHERE user_id=_employee;');
+EXECUTE definition;
+END $$;
