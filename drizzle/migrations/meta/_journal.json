@@ -176,6 +176,13 @@
       "when": 1793099134582,
       "tag": "0024_company_feature_selection",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1793099247154,
+      "tag": "0025_protect_company_feature_changes",
+      "breakpoints": true
     }
   ]
 }
