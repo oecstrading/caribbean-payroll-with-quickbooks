@@ -225,6 +225,13 @@
       "when": 1793102782030,
       "tag": "0031_protect_super_admin_account_status",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1793102807245,
+      "tag": "0032_retain_admin_role_on_access_save",
+      "breakpoints": true
     }
   ]
 }
