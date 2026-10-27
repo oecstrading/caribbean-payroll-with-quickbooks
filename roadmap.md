@@ -1,4 +1,6 @@
 # Payroll account and Smiley’s samples
+- [ ] Integrate missing Enterprise Hub capabilities; inspect uploaded prototypes and seek approval for organization assignment, tenant isolation and new finance posting before major changes.
+- [ ] Add separate DeepSeek assistant; blocked until workspace model availability and approved tenant context are confirmed.
 - [x] Add administrator-managed role/access settings, filtered workspaces and protected pages. Verified manager access save/reload; billing denied hides navigation/cards, direct billing/users URLs redirect, billing reads return no rows, self-elevation rejected. Original Payroll manager operational access restored. 43 regression tests pass.
 - [x] Add contextual AI Payroll Officer review with manager approval retained; signed-in live review returned zero-pay/missing-ID flags and reconciliation; no payroll approved. Four privacy/access tests pass.
 - [x] Refresh v5 guide and v4 brochure with flexible periods, rates/hours, HR files, AI review and manager walkthrough using official platform examples; all ten PDF pages visually inspected with no clipping or overlap. Both Training Hubs use latest static PDFs; previous uploads retained.
