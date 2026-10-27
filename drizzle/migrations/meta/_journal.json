@@ -85,6 +85,13 @@
       "when": 1793093541277,
       "tag": "0011_role_based_workspaces",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793093695018,
+      "tag": "0012_workspace_storage_and_admin_guards",
+      "breakpoints": true
     }
   ]
 }
