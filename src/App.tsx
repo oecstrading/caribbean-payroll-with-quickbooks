@@ -14,6 +14,8 @@ import AttendancePage from "@/pages/AttendancePage";
 import PayrollPage from "@/pages/PayrollPage";
 import ReportsPage from "@/pages/ReportsPage";
 import SettingsPage from "@/pages/SettingsPage";
+import CompaniesPage from "@/pages/CompaniesPage";
+import CompanySetupPage from "@/pages/CompanySetupPage";
 import PayslipPage from "@/pages/PayslipPage";
 import AuthPage from "@/pages/AuthPage";
 import PortalPage from "@/pages/PortalPage";
@@ -80,6 +82,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 
 const AppRoutes = () => (
   <Routes>
+    <Route path="/company-setup" element={<CompanySetupPage />} />
     <Route path="/auth" element={<PublicRoute><AuthPage /></PublicRoute>} />
     <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
       <Route path="/" element={<DashboardPage />} />
@@ -115,6 +118,7 @@ const AppRoutes = () => (
       <Route path="/quickbooks" element={<QuickBooksPage />} />
       <Route path="/payroll-settings" element={<PayrollSettingsPage />} />
       <Route path="/settings" element={<SettingsPage />} />
+      <Route path="/companies" element={<CompaniesPage />} />
     </Route>
     <Route path="/client-portal" element={<ClientPortalPage />} />
     <Route path="/training-public" element={<PublicTrainingPage />} />

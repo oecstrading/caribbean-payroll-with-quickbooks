@@ -43,6 +43,7 @@ import { useCompany } from "@/hooks/useCompany";
 import { useAuth } from "@/hooks/useAuth";
 import PanicButton from "@/components/PanicButton";
 import VoiceCommandListener from "@/components/VoiceCommandListener";
+import { supabase } from "@/integrations/supabase/client";
 
 interface NavItem {
   path: string;
@@ -91,6 +92,7 @@ const navItems: NavItem[] = [
 ];
 
 export default function AppLayout() {
+  const [platformAdmin, setPlatformAdmin] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -100,6 +102,12 @@ export default function AppLayout() {
   const { role, loading: accessLoading, canAccess } = useRole();
   const { user, signOut } = useAuth();
   const company = useCompany();
+  useEffect(() => {
+    setPlatformAdmin(false);
+    let cancelled = false;
+    if (user) supabase.rpc("is_platform_admin").then(({ data, error }) => { if (!cancelled) setPlatformAdmin(!error && !!data); });
+    return () => { cancelled = true; };
+  }, [user?.id]);
 
   const userInitials = useMemo(() => {
     const first = user?.user_metadata?.first_name?.[0] || user?.email?.[0] || "U";
@@ -113,7 +121,7 @@ export default function AppLayout() {
     setSearchQuery("");
   }, [location.pathname]);
 
-  const visibleNavItems = navItems.filter((item) => canAccess(item.path));
+  const visibleNavItems = [...navItems.filter((item) => canAccess(item.path)), ...(platformAdmin ? [{ path: "/companies", label: "Companies", icon: Building2 }] : [])];
 
   // Search results based on nav items
   const searchResults = useMemo(() => {
@@ -127,14 +135,14 @@ export default function AppLayout() {
   const bottomNavItems = visibleNavItems.filter((item) => item.bottomNav).slice(0, 5);
 
   const handleNav = (path: string) => {
-    if (!canAccess(path)) return;
+    if (!(path === "/companies" ? platformAdmin : canAccess(path))) return;
     navigate(path);
     setMobileOpen(false);
   };
 
   if (accessLoading) return <div className="min-h-screen bg-background flex items-center justify-center text-primary">Loading your workspace…</div>;
   if (!role) return <div className="min-h-screen bg-background flex flex-col gap-4 items-center justify-center text-foreground"><p>Your workspace access could not be loaded.</p><button onClick={signOut}>Sign out</button></div>;
-  if (!canAccess(location.pathname)) return <Navigate to="/" replace />;
+  if (location.pathname !== "/companies" && !canAccess(location.pathname)) return <Navigate to="/" replace />;
 
   return (
     <>

@@ -1,4 +1,5 @@
 # Application rules
+- Platform company administration uses a separate protected authority table, never company-admin roles; invitation redemption runs through an authenticated Edge Function and service-only atomic RPC with verified email, hashed expiring one-use tokens, row locks and no existing-company reassignment. Platform company editing exposes metadata only, never customer payroll or HR data.
 - Live security tests use an RLS-bound requesting-user session and fixed account-free fixtures, never privileged credentials; run setup/cleanup through approved data tools and keep live writes opt-in outside normal CI tests.
 - Organization membership is server-controlled; tenant RLS, relational validation and company-scoped privileged functions must agree so cross-company identifiers never authorize access. Signup identities without assigned membership cannot access company records.
 - Clear client query caches when the authenticated identity changes so a prior company's fetched data cannot appear in another workspace.

@@ -1,5 +1,13 @@
 # Pre-deployment security regression tests
 
+## Company onboarding checks
+
+After minting the requesting platform administrator's session, run:
+
+`RUN_COMPANY_ONBOARDING_SECURITY=1 bunx vitest run --config vitest.security.config.ts tests/security/company-onboarding.live.test.ts`
+
+These five checks perform denied operations only: direct company creation, privileged assignment/edit RPC calls, reassignment of an existing member, and anonymous listing/invitation generation. They need no fixtures and intentionally remain opt-in. Successful customer activation additionally requires a real invited customer's verified account; reserved example-domain accounts cannot receive verification email.
+
 `bun run test:security` runs local loan/period/workspace regression checks without contacting Cloud.
 
 `bun run test:security:live` exercises actual RLS and approval functions, not mocks. It intentionally fails if the signed-in administrator session or prepared fixtures are missing. Never use a service-role token for these assertions.
