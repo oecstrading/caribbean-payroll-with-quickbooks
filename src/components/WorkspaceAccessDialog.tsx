@@ -15,15 +15,22 @@ export default function WorkspaceAccessDialog({ user, onClose, onSaved }: { user
   const [modules, setModules] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const { refreshAccess } = useRole();
+  const [companySuper, setCompanySuper] = useState(false);
+  const [platformSuper, setPlatformSuper] = useState(false);
+  const { refreshAccess, isCompanySuperAdmin, isPlatformAdmin } = useRole();
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
     setRole(user.role); setModules([]); setLoading(true);
-    supabase.from("user_workspace_access").select("modules").eq("user_id", user.user_id).maybeSingle().then(({ data, error }) => {
+    setCompanySuper(false); setPlatformSuper(false);
+    Promise.all([supabase.from("user_workspace_access").select("modules").eq("user_id", user.user_id).maybeSingle(), supabase.rpc("administrator_authority", { _user: user.user_id })]).then(([{ data, error }, authority]) => {
       if (cancelled) return;
-      if (error) { toast.error("Could not load workspace access"); onClose(); }
-      else setModules(data?.modules ?? roleModules(user.role));
+      if (error || authority.error) { toast.error("Could not load workspace access"); onClose(); }
+      else {
+        setModules(data?.modules ?? roleModules(user.role));
+        const trusted = authority.data as { company_super_admin?: boolean; platform_super_admin?: boolean } | null;
+        setCompanySuper(trusted?.company_super_admin === true); setPlatformSuper(trusted?.platform_super_admin === true);
+      }
       setLoading(false);
     });
     return () => { cancelled = true; };
@@ -37,16 +44,24 @@ export default function WorkspaceAccessDialog({ user, onClose, onSaved }: { user
     await refreshAccess();
     toast.success("Role and workspace access saved"); onSaved(); onClose();
   };
+  const saveAuthority = async () => {
+    if (!user) return;
+    setSaving(true);
+    const { error } = await supabase.rpc("set_administrator_authority", { _user: user.user_id, _company: companySuper, _platform: platformSuper });
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    await refreshAccess(); onSaved(); onClose(); toast.success("Super administrator authority saved");
+  };
   return <Dialog open={!!user} onOpenChange={open => { if (!open && !saving) onClose(); }}>
     <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
       <DialogHeader><DialogTitle className="flex items-center gap-2"><Shield /> Roles & access</DialogTitle></DialogHeader>
       <p className="text-sm text-muted-foreground break-all">{user?.first_name} {user?.last_name} · {user?.email}</p>
       <label className="space-y-2 text-sm font-medium">Role
-        <NativeSelect aria-label="Workspace role" value={role} disabled={loading || saving || user?.role === "admin"} onChange={e => { const next = e.target.value as WorkspaceRole; setRole(next); setModules(roleModules(next)); }}>
+        <NativeSelect aria-label="Workspace role" value={role} disabled={loading || saving || (user?.role === "admin" && (!isCompanySuperAdmin || companySuper || platformSuper))} onChange={e => { const next = e.target.value as WorkspaceRole; setRole(next); setModules(roleModules(next)); }}>
           <option value="employee">Employee</option><option value="manager">Manager</option><option value="admin">Administrator</option>
         </NativeSelect>
       </label>
-      {role === "admin" ? <p className="text-sm text-primary">Full administrator access · All pages and user management</p> : <>
+      {role === "admin" ? <p className="text-sm text-primary">Administrator access · Enabled company pages and user management</p> : <>
         <div className="flex items-center justify-between gap-2"><span className="text-sm text-muted-foreground">Dashboard and personal portal always included</span><Button variant="ghost" size="sm" disabled={loading || saving} onClick={() => setModules(roleModules(role))}>Role defaults</Button></div>
         {["People & payroll", "Operations", "Workspace"].map(group => <section key={group} className="space-y-2 border-t border-border pt-3">
           <h3 className="text-sm font-semibold">{group}</h3>
@@ -55,6 +70,13 @@ export default function WorkspaceAccessDialog({ user, onClose, onSaved }: { user
           </label>)}</div>
         </section>)}
       </>}
+      {user?.role === "admin" && isCompanySuperAdmin && <section className="space-y-3 border-t border-border pt-4">
+        <h3 className="text-sm font-semibold">Super administrator authority</h3>
+        <label className="flex items-center gap-3 min-h-11 text-sm"><Checkbox aria-label="Company super administrator" checked={companySuper} disabled={loading || saving} onCheckedChange={v => setCompanySuper(v === true)} />Company super administrator</label>
+        <label className="flex items-center gap-3 min-h-11 text-sm"><Checkbox aria-label="Platform super administrator" checked={platformSuper} disabled={loading || saving || !isPlatformAdmin} onCheckedChange={v => setPlatformSuper(v === true)} />Platform super administrator</label>
+        <p className="text-sm text-muted-foreground">Platform authority includes company setup and feature configuration, not access to other companies’ payroll or HR records.</p>
+        <Button variant="secondary" onClick={saveAuthority} disabled={loading || saving}><Shield />Save super admin authority</Button>
+      </section>}
       <div className="flex justify-end gap-2 border-t border-border pt-4"><Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button><Button onClick={save} disabled={loading || saving}><Save />{saving ? "Saving…" : "Save access"}</Button></div>
     </DialogContent>
   </Dialog>;

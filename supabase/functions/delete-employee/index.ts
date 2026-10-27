@@ -19,7 +19,7 @@ Deno.serve(async req => {
     const body: unknown = await req.json();
     if (!validRemovalBody(body)) return reply({ error: "Choose an employee and type DELETE to confirm" }, 400);
     const admin = createClient(url, service);
-    const [actor, roles, hr, profile, record, targetRoles, platform] = await Promise.all([
+    const [actor, roles, hr, profile, record, targetRoles, platform, superAdmin, actorPlatform] = await Promise.all([
       admin.from("profiles").select("org_id,deleted_at").eq("user_id", user.id).maybeSingle(),
       admin.from("user_roles").select("role").eq("user_id", user.id),
       caller.rpc("has_workspace_access", { _user_id: user.id, _module: "hr" }),
@@ -27,9 +27,11 @@ Deno.serve(async req => {
       admin.from("employee_records").select("org_id").eq("user_id", body.employee_id).maybeSingle(),
       admin.from("user_roles").select("role").eq("user_id", body.employee_id),
       admin.from("platform_administrators").select("user_id").eq("user_id", body.employee_id).maybeSingle(),
+      admin.rpc("is_company_super_admin", { _user: user.id }),
+      admin.from("platform_administrators").select("user_id").eq("user_id", user.id).maybeSingle(),
     ]);
-    if ([actor, roles, hr, profile, record, targetRoles, platform].some(r => r.error)) return reply({ error: "Unable to verify removal permissions" }, 503);
-    if (actor.data?.deleted_at || !removalAllowed({ id: user.id, org_id: actor.data?.org_id ?? null, admin: Boolean(roles.data?.some(r => r.role === "admin")), hr: hr.data === true }, { id: body.employee_id, org_id: profile.data?.org_id ?? record.data?.org_id ?? null, admin: Boolean(targetRoles.data?.some(r => r.role === "admin")), platform: Boolean(platform.data) })) return reply({ error: "Only your company administrator can remove a non-administrator employee" }, 403);
+    if ([actor, roles, hr, profile, record, targetRoles, platform, superAdmin, actorPlatform].some(r => r.error)) return reply({ error: "Unable to verify removal permissions" }, 503);
+    if (actor.data?.deleted_at || !removalAllowed({ id: user.id, org_id: actor.data?.org_id ?? null, admin: Boolean(roles.data?.some(r => r.role === "admin")), hr: hr.data === true, superAdmin: superAdmin.data === true, platform: Boolean(actorPlatform.data) }, { id: body.employee_id, org_id: profile.data?.org_id ?? record.data?.org_id ?? null, admin: Boolean(targetRoles.data?.some(r => r.role === "admin")), platform: Boolean(platform.data) })) return reply({ error: "Company super administrator authority is required to remove administrators; you cannot delete yourself or another company's users" }, 403);
     const { data: job, error: prepareError } = await admin.rpc("prepare_employee_removal", { _actor: user.id, _employee: body.employee_id, _confirmation: body.confirmation });
     if (prepareError || !job) return reply({ error: prepareError?.message || "Unable to prepare removal" }, 400);
     if (job.status === "complete") return reply({ success: true, financial_history_retained: true });
