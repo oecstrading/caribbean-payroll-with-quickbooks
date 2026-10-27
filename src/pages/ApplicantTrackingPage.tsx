@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { privateFileUrl } from "@/lib/private-storage";
 
 interface Applicant {
   id: string;
@@ -106,11 +107,10 @@ export default function ApplicantTrackingPage() {
     const filePath = `${applicantId}/${Date.now()}-${file.name}`;
     const { error: uploadErr } = await supabase.storage.from("applicant-docs").upload(filePath, file);
     if (uploadErr) { toast.error("Upload failed"); return; }
-    const { data: urlData } = supabase.storage.from("applicant-docs").getPublicUrl(filePath);
     await supabase.from("applicant_documents").insert({
       applicant_id: applicantId,
       document_type: docType,
-      file_url: urlData.publicUrl,
+      file_url: filePath,
       file_name: file.name,
     } as any);
     toast.success("Document uploaded");
@@ -346,7 +346,7 @@ export default function ApplicantTrackingPage() {
                             <span className="text-foreground">{d.file_name}</span>
                             <Badge variant="outline" className="text-[10px]">{d.document_type}</Badge>
                           </div>
-                          <a href={d.file_url} target="_blank" rel="noopener" className="text-primary text-xs hover:underline">View</a>
+                          <Button variant="ghost" size="sm" onClick={async () => { try { const url = await privateFileUrl("applicant-docs", d.file_url); const a = document.createElement("a"); a.href = url; a.target = "_blank"; a.rel = "noopener noreferrer"; a.click(); } catch { toast.error("Unable to open this document"); } }}>View</Button>
                         </div>
                       ))}
                     </div>
