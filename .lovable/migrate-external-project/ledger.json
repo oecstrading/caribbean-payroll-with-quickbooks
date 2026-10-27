@@ -18,23 +18,23 @@
     {
       "capability": "Database schema and company isolation",
       "source": "Current Lovable Cloud plus requested organization schema",
-      "outcome": "Additive organization membership and tenant-bound data without replacing profiles or role tables",
-      "status": "approved",
-      "next_action": "Assign all existing records to Smiley\u2019s Tinting Plus; enforce org-scoped rows and privileged operations"
+      "outcome": "Organization columns/backfill, restrictive policies, relational triggers and scoped privileged calls applied",
+      "status": "implemented_partially_verified",
+      "next_action": "Cross-company employee read and loan-create denial verified; complete second-user/provider/file-flow verification remains"
     },
     {
       "capability": "Existing records and auth identities",
       "source": "Current platform",
-      "outcome": "Retain current accounts, durable employee keys and historical payroll",
-      "status": "approved",
-      "next_action": "Backfill organization without changing account identities or payroll history"
+      "outcome": "Existing accounts and business rows assigned to Smiley\u2019s without changing IDs",
+      "status": "implemented",
+      "next_action": "No auth-provider replacement or password migration needed"
     },
     {
       "capability": "Prototype demonstration records",
       "source": "Embedded employee arrays",
-      "outcome": "Inspect rates and deduction balances; keep fictional records separate from live accounts",
-      "status": "approved",
-      "next_action": "Store fictional employees separately from live directories; hourly hours are weekly contracted hours"
+      "outcome": "Four fictional employees and loan examples stored in prototype_employees, separate from live directories",
+      "status": "stored",
+      "next_action": "Demonstration-only; no raw PIN or fabricated auth users"
     },
     {
       "capability": "DeepSeek assistant",
@@ -46,23 +46,23 @@
     {
       "capability": "Finance ledger and creditor repayment balances",
       "source": "Prototype in-memory arrays",
-      "outcome": "Add loan balances and repayment tracking only; no native ledger",
-      "status": "approved_loans_only",
-      "next_action": "Create audited loans with atomic payroll repayments"
+      "outcome": "Loan create/reload, atomic final payroll deduction of 35 and zero-balance/history readback verified",
+      "status": "verified",
+      "next_action": "Temporary verification records removed; QuickBooks posting unchanged"
     },
     {
       "capability": "Authentication and private files",
       "source": "Current platform",
-      "outcome": "Keep existing Google/password/PIN methods and private employee documents",
-      "status": "preserve",
-      "next_action": "Tenant-scope policies and signed downloads, test cross-company denial"
+      "outcome": "Company-scoped HR/applicant storage; operational media now private with signed URL renderers; unassigned auth identities show invitation-required",
+      "status": "implemented_partially_verified",
+      "next_action": "Full applicant/media/second-user/invitation verification still pending; branding and explicitly public training remain public"
     },
     {
       "capability": "Prototype tax settings",
       "source": "User approved test-only formula",
-      "outcome": "NIC 5%, PAYE threshold 1500 and flat 30% for demonstration only; preserve production engine",
-      "status": "approved_test_only",
-      "next_action": "Store separately under test organization; do not overwrite live jurisdiction configuration"
+      "outcome": "NIC 5%, threshold 1500 and flat PAYE 30% stored with test_only enforcement",
+      "status": "stored_test_only",
+      "next_action": "Live statutory engine unchanged"
     },
     {
       "capability": "External providers and endpoints",
@@ -81,9 +81,9 @@
     {
       "capability": "Cutover and verification",
       "source": "Existing published platform",
-      "outcome": "No publication or production-ready claim before verified tenant and business flows",
-      "status": "pending",
-      "next_action": "Test two organizations, manager/employee permissions, payroll and AI; publish only when requested"
+      "outcome": "32 regression tests pass; signed-in loan-to-payroll flow and cross-company denial verified; current build OK",
+      "status": "partially_verified",
+      "next_action": "DeepSeek deferred; live QBO credentials missing; public UI publication not requested; full production readiness not claimed"
     }
   ]
 }
