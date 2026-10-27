@@ -99,6 +99,13 @@
       "when": 1793095412406,
       "tag": "0013_company_isolation",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1793095477167,
+      "tag": "0014_company_invitations_and_audit",
+      "breakpoints": true
     }
   ]
 }

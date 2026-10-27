@@ -3024,6 +3024,17 @@ export type Database = {
         Returns: boolean
       }
       client_portal_data: { Args: { _code: string }; Returns: Json }
+      create_invited_profile: {
+        Args: {
+          _email: string
+          _first: string
+          _last: string
+          _org_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: undefined
+      }
       current_org_id: { Args: never; Returns: string }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       employee_org_id: { Args: { _employee: string }; Returns: string }
