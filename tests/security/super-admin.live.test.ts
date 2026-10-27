@@ -26,8 +26,10 @@ describe.sequential("owner super administrator safeguards", () => {
     expect(profile.error).toBeNull(); expect(profile.data?.deleted_at).toBeNull();
   });
   it("blocks browser writes to company super administrator authority", async () => {
-    const result = await client.from("company_super_administrators").update({ user_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb1" }).eq("user_id", id);
-    expect(result.error).not.toBeNull();
+    const result = await client.from("company_super_administrators").update({ user_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb1" }).eq("user_id", id).select("user_id");
+    expect(result.data ?? []).toEqual([]);
+    const retained = await client.from("company_super_administrators").select("user_id").eq("user_id", id).single();
+    expect(retained.error).toBeNull(); expect(retained.data?.user_id).toBe(id);
   });
   it("rejects assigning platform authority to a missing or foreign-company account", async () => {
     const result = await client.rpc("set_administrator_authority", { _user: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb1", _company: true, _platform: true });
