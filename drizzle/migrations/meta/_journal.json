@@ -148,6 +148,13 @@
       "when": 1793097896575,
       "tag": "0020_workforce_clock_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1793097934101,
+      "tag": "0021_workforce_clock_access",
+      "breakpoints": true
     }
   ]
 }

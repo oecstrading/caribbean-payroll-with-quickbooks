@@ -3494,6 +3494,20 @@ export type Database = {
         Args: { _details: Json; _token: string; _user: string }
         Returns: string
       }
+      configure_employee_clock: {
+        Args: {
+          _break: number
+          _code: string
+          _days: number[]
+          _employee: string
+          _enabled?: boolean
+          _end: string
+          _pin: string
+          _site?: string
+          _start: string
+        }
+        Returns: undefined
+      }
       create_employee_loan: {
         Args: {
           _balance: number
@@ -3569,6 +3583,17 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      record_workforce_punch: {
+        Args: {
+          _direction: string
+          _employee: string
+          _lat?: number
+          _lon?: number
+          _mode: string
+          _org: string
+        }
+        Returns: Json
+      }
       reset_attendance_simulation: {
         Args: { _enabled: boolean; _start: string }
         Returns: {
@@ -3605,6 +3630,16 @@ export type Database = {
         }
       }
       revoke_company_setup: { Args: { _id: string }; Returns: undefined }
+      save_workforce_settings: {
+        Args: {
+          _basis: string
+          _multiplier: number
+          _payroll: boolean
+          _threshold: number
+          _timezone: string
+        }
+        Returns: undefined
+      }
       set_employee_loan_active: {
         Args: { _active: boolean; _loan: string }
         Returns: undefined
@@ -3625,6 +3660,10 @@ export type Database = {
       verify_guard_location: {
         Args: { _lat: number; _lon: number; _site_id: string }
         Returns: Json
+      }
+      workforce_pin_employee: {
+        Args: { _code: string; _org: string; _pin: string }
+        Returns: string
       }
     }
     Enums: {
