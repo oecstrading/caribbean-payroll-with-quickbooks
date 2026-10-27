@@ -46,18 +46,21 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
   const [modules, setModules] = useState<string[]>([]);
   const [companyModules, setCompanyModules] = useState<string[]>([]);
   const [demoMode, setDemoMode] = useState(false);
+  const [clockEnabled, setClockEnabled] = useState(false);
   const [authority, setAuthority] = useState({ company_super_admin: false, platform_super_admin: false });
   const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
   const refreshAccess = useCallback(async () => {
     if (!user) { setRole(null); setModules([]); setAuthority({ company_super_admin: false, platform_super_admin: false }); setJurisdiction(null); setLoadedUserId(null); setLoading(false); return; }
     try {
-      const [roleRes, profileRes, accessRes, companyRes, authorityRes] = await Promise.all([
+      const [roleRes, profileRes, accessRes, companyRes, authorityRes, clockRes] = await Promise.all([
         supabase.from("user_roles").select("role").eq("user_id", user.id),
         supabase.from("profiles").select("jurisdiction").eq("user_id", user.id).maybeSingle(),
         supabase.from("user_workspace_access").select("modules").eq("user_id", user.id).maybeSingle(),
         supabase.rpc("company_configuration"),
         supabase.rpc("administrator_authority", { _user: user.id }),
+        supabase.rpc("has_employee_clock_access", { _employee: user.id }),
       ]);
+      setClockEnabled(!clockRes.error && clockRes.data === true);
       const trusted = authorityRes.data as { company_super_admin?: boolean; platform_super_admin?: boolean } | null;
       setAuthority({ company_super_admin: !authorityRes.error && trusted?.company_super_admin === true, platform_super_admin: !authorityRes.error && trusted?.platform_super_admin === true });
       const roles = roleRes.data?.map(r => r.role) ?? [];
@@ -78,7 +81,7 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
     return () => { window.removeEventListener("focus", refresh); window.clearInterval(interval); };
   }, [refreshAccess]);
   const ready = !loading && loadedUserId === (user?.id ?? null);
-  const canAccess = useCallback((path: string) => ready && canOpenPath(role, modules, path, companyModules), [ready, role, modules, companyModules]);
+  const canAccess = useCallback((path: string) => ready && canOpenPath(role, modules, path, companyModules, clockEnabled), [ready, role, modules, companyModules, clockEnabled]);
 
   const isAdmin = role === "admin";
   const isManager = role === "manager";

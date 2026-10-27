@@ -2,6 +2,11 @@ import { describe, it, expect } from "vitest";
 import { canOpenPath, roleModules } from "@/lib/workspace-access";
 
 describe("role-based workspaces", () => {
+  it("allows configured staff to use their clock without widening other module access", () => {
+    expect(canOpenPath("employee", [], "/attendance", ["attendance"], true)).toBe(true);
+    expect(canOpenPath("employee", [], "/payroll", ["attendance", "payroll"], true)).toBe(false);
+    expect(canOpenPath("employee", [], "/attendance", [], true)).toBe(false);
+  });
   it("restricts even administrators to purchased company features", () => {
     const smiley = ["hr", "payroll", "reports", "leave", "attendance", "quickbooks", "settings"];
     expect(canOpenPath("admin", [], "/guard-tour", smiley)).toBe(false);
