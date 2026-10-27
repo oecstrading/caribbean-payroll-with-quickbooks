@@ -1,6 +1,7 @@
 import { useState, useEffect, createContext, useContext } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface AuthContextType {
   user: User | null;
@@ -17,9 +18,11 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  useEffect(() => { queryClient.clear(); }, [user?.id, queryClient]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
