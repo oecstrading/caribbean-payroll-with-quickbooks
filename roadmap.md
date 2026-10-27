@@ -1,4 +1,5 @@
 # Payroll account and Smiley’s samples
+- [ ] Add and run automated company-isolation, loan-withholding and approval regression tests before deployment; leave deployment unchanged.
 - [x] Integrate approved Enterprise Hub company membership, tenant isolation, audit records and employee loan tracking; existing data assigned to Smiley’s and four fictional prototype employees stored separately. Signed-in cross-company employee reads and loan creation denied; loan create/reload/payroll approval/repayment history verified. 32 regression tests pass; temporary records removed. Full provider/second-user verification is not a production-ready certification.
 - [ ] Add separate DeepSeek assistant; blocked because DeepSeek is absent from the workspace catalogue; user approved deferral without substitution.
 - [x] Add administrator-managed role/access settings, filtered workspaces and protected pages. Verified manager access save/reload; billing denied hides navigation/cards, direct billing/users URLs redirect, billing reads return no rows, self-elevation rejected. Original Payroll manager operational access restored. 43 regression tests pass.
