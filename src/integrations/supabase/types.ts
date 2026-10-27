@@ -503,6 +503,59 @@ export type Database = {
           },
         ]
       }
+      company_setup_invitations: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          company_name: string
+          created_at: string
+          created_by: string
+          defaults: Json
+          email: string
+          expires_at: string
+          id: string
+          org_id: string | null
+          revoked_at: string | null
+          token_hash: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          company_name: string
+          created_at?: string
+          created_by: string
+          defaults?: Json
+          email: string
+          expires_at?: string
+          id?: string
+          org_id?: string | null
+          revoked_at?: string | null
+          token_hash: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          company_name?: string
+          created_at?: string
+          created_by?: string
+          defaults?: Json
+          email?: string
+          expires_at?: string
+          id?: string
+          org_id?: string | null
+          revoked_at?: string | null
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_setup_invitations_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contractor_payments: {
         Row: {
           amount: number
@@ -2020,18 +2073,21 @@ export type Database = {
           id: string
           logo_url: string | null
           name: string
+          onboarding_status: string
         }
         Insert: {
           created_at?: string
           id?: string
           logo_url?: string | null
           name: string
+          onboarding_status?: string
         }
         Update: {
           created_at?: string
           id?: string
           logo_url?: string | null
           name?: string
+          onboarding_status?: string
         }
         Relationships: []
       }
@@ -2228,6 +2284,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      platform_administrators: {
+        Row: {
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       post_order_signoffs: {
         Row: {
@@ -3140,6 +3211,10 @@ export type Database = {
         Returns: boolean
       }
       client_portal_data: { Args: { _code: string }; Returns: Json }
+      complete_company_setup: {
+        Args: { _details: Json; _token: string; _user: string }
+        Returns: string
+      }
       create_employee_loan: {
         Args: {
           _balance: number
@@ -3177,10 +3252,25 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_manager: { Args: { _user_id: string }; Returns: boolean }
+      is_platform_admin: { Args: never; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      issue_company_setup: {
+        Args: { _create_now?: boolean; _details: Json }
+        Returns: Json
+      }
       payroll_period_factor: {
         Args: { _end: string; _pay_type: string; _start: string }
         Returns: number
+      }
+      platform_companies: {
+        Args: never
+        Returns: {
+          created_at: string
+          details: Json
+          id: string
+          name: string
+          onboarding_status: string
+        }[]
       }
       record_simulated_punch: {
         Args: { _type: string }
@@ -3235,6 +3325,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      revoke_company_setup: { Args: { _id: string }; Returns: undefined }
       set_employee_loan_active: {
         Args: { _active: boolean; _loan: string }
         Returns: undefined
@@ -3247,6 +3338,11 @@ export type Database = {
         }
         Returns: undefined
       }
+      update_platform_company: {
+        Args: { _actor: string; _details: Json; _org: string }
+        Returns: undefined
+      }
+      validate_company_setup: { Args: { _details: Json }; Returns: undefined }
       verify_guard_location: {
         Args: { _lat: number; _lon: number; _site_id: string }
         Returns: Json

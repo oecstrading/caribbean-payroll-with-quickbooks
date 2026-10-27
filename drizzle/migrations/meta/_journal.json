@@ -127,6 +127,13 @@
       "when": 1793095800528,
       "tag": "0017_applicant_file_company_access",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1793096955694,
+      "tag": "0018_secure_company_onboarding",
+      "breakpoints": true
     }
   ]
 }
