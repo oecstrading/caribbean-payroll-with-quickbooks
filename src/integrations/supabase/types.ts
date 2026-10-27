@@ -3090,6 +3090,285 @@ export type Database = {
           },
         ]
       }
+      workforce_alerts: {
+        Row: {
+          created_at: string
+          employee_id: string
+          id: string
+          missing_type: string
+          org_id: string
+          resolved_at: string | null
+          shift_id: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          id?: string
+          missing_type: string
+          org_id: string
+          resolved_at?: string | null
+          shift_id: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          id?: string
+          missing_type?: string
+          org_id?: string
+          resolved_at?: string | null
+          shift_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workforce_alerts_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workforce_alerts_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "workforce_shifts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workforce_clock_credentials: {
+        Row: {
+          employee_code: string
+          employee_id: string
+          enabled: boolean
+          failed_attempts: number
+          locked_until: string | null
+          org_id: string
+          pin_hash: string
+        }
+        Insert: {
+          employee_code: string
+          employee_id: string
+          enabled?: boolean
+          failed_attempts?: number
+          locked_until?: string | null
+          org_id: string
+          pin_hash: string
+        }
+        Update: {
+          employee_code?: string
+          employee_id?: string
+          enabled?: boolean
+          failed_attempts?: number
+          locked_until?: string | null
+          org_id?: string
+          pin_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workforce_clock_credentials_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workforce_clock_settings: {
+        Row: {
+          attendance_payroll: boolean
+          org_id: string
+          overtime_basis: string
+          overtime_multiplier: number
+          overtime_threshold: number
+          timezone: string
+        }
+        Insert: {
+          attendance_payroll?: boolean
+          org_id: string
+          overtime_basis?: string
+          overtime_multiplier?: number
+          overtime_threshold?: number
+          timezone?: string
+        }
+        Update: {
+          attendance_payroll?: boolean
+          org_id?: string
+          overtime_basis?: string
+          overtime_multiplier?: number
+          overtime_threshold?: number
+          timezone?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workforce_clock_settings_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workforce_punches: {
+        Row: {
+          direction: string
+          employee_id: string
+          id: string
+          latitude: number | null
+          longitude: number | null
+          mode: string
+          org_id: string
+          punched_at: string
+          shift_id: string
+        }
+        Insert: {
+          direction: string
+          employee_id: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          mode: string
+          org_id: string
+          punched_at?: string
+          shift_id: string
+        }
+        Update: {
+          direction?: string
+          employee_id?: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          mode?: string
+          org_id?: string
+          punched_at?: string
+          shift_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workforce_punches_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workforce_punches_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "workforce_shifts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workforce_schedules: {
+        Row: {
+          break_minutes: number
+          days_of_week: number[]
+          employee_id: string
+          enabled: boolean
+          id: string
+          org_id: string
+          shift_end: string
+          shift_start: string
+          site_id: string | null
+        }
+        Insert: {
+          break_minutes?: number
+          days_of_week?: number[]
+          employee_id: string
+          enabled?: boolean
+          id?: string
+          org_id: string
+          shift_end: string
+          shift_start: string
+          site_id?: string | null
+        }
+        Update: {
+          break_minutes?: number
+          days_of_week?: number[]
+          employee_id?: string
+          enabled?: boolean
+          id?: string
+          org_id?: string
+          shift_end?: string
+          shift_start?: string
+          site_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workforce_schedules_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workforce_schedules_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "client_sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workforce_shifts: {
+        Row: {
+          approved_hours: number | null
+          break_minutes: number
+          clock_in: string | null
+          clock_out: string | null
+          employee_id: string
+          id: string
+          org_id: string
+          review_notes: string | null
+          review_status: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          scheduled_end: string | null
+          scheduled_start: string | null
+          shift_date: string
+        }
+        Insert: {
+          approved_hours?: number | null
+          break_minutes?: number
+          clock_in?: string | null
+          clock_out?: string | null
+          employee_id: string
+          id?: string
+          org_id: string
+          review_notes?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          scheduled_end?: string | null
+          scheduled_start?: string | null
+          shift_date: string
+        }
+        Update: {
+          approved_hours?: number | null
+          break_minutes?: number
+          clock_in?: string | null
+          clock_out?: string | null
+          employee_id?: string
+          id?: string
+          org_id?: string
+          review_notes?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          scheduled_end?: string | null
+          scheduled_start?: string | null
+          shift_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workforce_shifts_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       geofence_violations: {

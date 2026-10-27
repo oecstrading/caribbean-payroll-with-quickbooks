@@ -141,6 +141,13 @@
       "when": 1793097153822,
       "tag": "0019_company_setup_metadata_consistency",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1793097896575,
+      "tag": "0020_workforce_clock_tables",
+      "breakpoints": true
     }
   ]
 }
