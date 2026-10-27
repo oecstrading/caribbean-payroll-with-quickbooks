@@ -16,7 +16,7 @@ export default function StaffTimeClock({ companyId }: { companyId?: string }) {
   if(action==="punch") {
    body.direction=next;
    // Location is optional unless the company's server-side work-site rule requires it.
-   const position=await new Promise<GeolocationPosition|null>(resolve=>{if(!navigator.geolocation)return resolve(null);navigator.geolocation.getCurrentPosition(resolve,()=>resolve(null),{timeout:8000,maximumAge:30000});});
+   const position=await new Promise<GeolocationPosition|null>(resolve=>{if(!navigator.geolocation)return resolve(null);const deadline=window.setTimeout(()=>resolve(null),8500);navigator.geolocation.getCurrentPosition(p=>{clearTimeout(deadline);resolve(p);},()=>{clearTimeout(deadline);resolve(null);},{timeout:8000,maximumAge:30000});});
    if(position)Object.assign(body,{latitude:position.coords.latitude,longitude:position.coords.longitude});
   }
   const {data,error}=await supabase.functions.invoke("workforce-clock",{body});
