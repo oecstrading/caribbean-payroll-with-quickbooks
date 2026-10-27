@@ -3208,6 +3208,57 @@ export type Database = {
           },
         ]
       }
+      workforce_payroll_snapshots: {
+        Row: {
+          basis: string
+          created_at: string
+          employee_id: string
+          hours: Json
+          id: string
+          org_id: string
+          payroll_run_id: string
+          rate: number
+          shift_ids: string[]
+        }
+        Insert: {
+          basis: string
+          created_at?: string
+          employee_id: string
+          hours: Json
+          id?: string
+          org_id: string
+          payroll_run_id: string
+          rate: number
+          shift_ids: string[]
+        }
+        Update: {
+          basis?: string
+          created_at?: string
+          employee_id?: string
+          hours?: Json
+          id?: string
+          org_id?: string
+          payroll_run_id?: string
+          rate?: number
+          shift_ids?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workforce_payroll_snapshots_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workforce_payroll_snapshots_payroll_run_id_fkey"
+            columns: ["payroll_run_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workforce_punches: {
         Row: {
           direction: string
