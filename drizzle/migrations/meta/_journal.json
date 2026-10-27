@@ -218,6 +218,13 @@
       "when": 1793102703640,
       "tag": "0030_super_admin_delegation",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1793102782030,
+      "tag": "0031_protect_super_admin_account_status",
+      "breakpoints": true
     }
   ]
 }
