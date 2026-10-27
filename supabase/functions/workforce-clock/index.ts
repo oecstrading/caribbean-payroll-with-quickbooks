@@ -20,16 +20,24 @@ Deno.serve(async req => {
    const authorization=req.headers.get("Authorization"); if(!authorization?.startsWith("Bearer ")) return reply({error:"Sign in or enter your company employee code and PIN"},401);
    const caller=createClient(url,anon,{global:{headers:{Authorization:authorization}}});
    const {data:{user},error}=await caller.auth.getUser(); if(error||!user) return reply({error:"Sign in or enter your employee code and PIN"},401);
-   const access=await caller.rpc("has_workspace_access",{_user_id:user.id,_module:"attendance"}); if(!access.data) return reply({error:"Attendance access required"},403);
+   const [access,clockAccess]=await Promise.all([caller.rpc("has_workspace_access",{_user_id:user.id,_module:"attendance"}),caller.rpc("has_employee_clock_access",{_employee:user.id})]); if(!access.data&&!clockAccess.data) return reply({error:"Attendance access required"},403);
    const company=await caller.rpc("current_org_id"); if(!company.data) return reply({error:"Company membership required"},403);
    employee=user.id; org=company.data;
   }
   const active=await admin.from("payroll_employee_directory").select("user_id").eq("user_id",employee).eq("org_id",org).is("deleted_at",null).ilike("status","active").maybeSingle();
   if(!active.data) return reply({error:"Active employee required"},403);
+  const [schedule,company]=await Promise.all([admin.from("workforce_schedules").select("enabled,allowed_methods").eq("org_id",org).eq("employee_id",employee).maybeSingle(),admin.from("organizations").select("enabled_modules").eq("id",org).single()]);
+  if(schedule.error||company.error) return reply({error:"Unable to check clock configuration"},503);
+  if(!company.data?.enabled_modules.includes("attendance")||!schedule.data?.enabled) return reply({error:"Your administrator must enable your staff time clock"},403);
+  const methods=schedule.data.allowed_methods;
+  const identityMethod=body.pin?"pin":"account";
+  if(!methods.includes(identityMethod)||body.mode==="voice"&&!methods.includes("voice")) return reply({error:"This clock method is not enabled by your administrator"},403);
   if(body.action==="status") {
    const [sh,sc]=await Promise.all([admin.from("workforce_shifts").select("clock_in,clock_out").eq("org_id",org).eq("employee_id",employee).not("clock_in","is",null).is("clock_out",null).order("clock_in",{ascending:false}).limit(1).maybeSingle(),admin.from("workforce_schedules").select("site_id").eq("org_id",org).eq("employee_id",employee).eq("enabled",true).maybeSingle()]);
    if(sh.error||sc.error) return reply({error:"Unable to read clock status"},500);
-   return reply({next:sh.data?"clock_out":"clock_in",clock_in:sh.data?.clock_in??null,location_required:!!sc.data?.site_id});
+   const history=await admin.from("workforce_shifts").select("shift_date,clock_in,clock_out,approved_hours,review_status").eq("org_id",org).eq("employee_id",employee).order("shift_date",{ascending:false}).limit(14);
+   if(history.error) return reply({error:"Unable to read worked hours"},500);
+   return reply({next:sh.data?"clock_out":"clock_in",clock_in:sh.data?.clock_in??null,location_required:!!sc.data?.site_id,allowed_methods:methods,history:history.data});
   }
   if(!body.direction) return reply({error:"Choose clock in or clock out"},400);
   const result=await admin.rpc("record_workforce_punch",{_employee:employee,_org:org,_direction:body.direction,_mode:body.pin?"pin":body.mode,_lat:body.latitude??null,_lon:body.longitude??null});

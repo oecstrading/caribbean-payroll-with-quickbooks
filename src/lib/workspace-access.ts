@@ -31,9 +31,10 @@ export const ROUTE_MODULES: Record<string, WorkspaceModule | "home" | "portal" |
   "/training": "training", "/quickbooks": "quickbooks", "/payroll-settings": "quickbooks", "/settings": "settings",
 };
 const EMPLOYEE_ROUTES = new Set(["/", "/portal", "/payslips", "/attendance", "/projects", "/equipment", "/daily-reports", "/crews", "/guard-tour", "/incidents", "/training"]);
-export function canOpenPath(role: WorkspaceRole | null, modules: readonly string[], path: string, companyModules: readonly string[] = WORKSPACE_MODULES.map(m => m.id)): boolean {
+export function canOpenPath(role: WorkspaceRole | null, modules: readonly string[], path: string, companyModules: readonly string[] = WORKSPACE_MODULES.map(m => m.id), clockEnabled = false): boolean {
   const module = ROUTE_MODULES[path];
   if (!role || !module) return false;
+  if (path === "/attendance" && clockEnabled && companyModules.includes("attendance")) return true;
   if (!["home", "portal", "users"].includes(module) && !companyModules.includes(module)) return false;
   if (role === "admin") return true;
   if (module === "users") return false;
