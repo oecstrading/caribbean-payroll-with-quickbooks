@@ -1,4 +1,7 @@
 # Application rules
+- Organization membership is server-controlled; tenant RLS, relational validation and company-scoped privileged functions must agree so cross-company identifiers never authorize access. Signup identities without assigned membership cannot access company records.
+- Employee loans are separate from fixed deductions: bounded period repayments and balance updates occur only inside the atomic payroll approval RPC and must be withheld from net pay; this is not creditor remittance or accounting posting.
+- Prototype employees and flat test taxes remain in separate demonstration data, never authentication profiles or production statutory configuration.
 - Workspace module defaults and route eligibility live in workspace-access; server-stored per-user module overrides may narrow role access, never elevate employees. Navigation, dashboard cards and direct page guards share the same access check; restrictive database policies and authenticated RPC guards enforce module access independently. Refresh roles from live protected tables, not stale JWT claims. Administrator roles retain full access.
 - Account-free employees use employee_records with a durable employment key, never fabricated auth users; payroll reads both directories atomically and saves account-free payslips separately to preserve auth-bound foreign keys.
 - Employee HR files use private storage and employee_documents metadata; HR manages files, staff read only explicitly shared own files, and downloads use short-lived signed URLs to keep confidential records private.
