@@ -8,6 +8,7 @@ vi.mock("@/hooks/useAuth", () => ({
 }));
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
+    rpc: async () => ({ data: { modules: ["hr", "payroll", "attendance", "settings"], demo_mode: false }, error: null }),
     from: (table: string) => ({
       select: () => ({ eq: () => table === "user_roles" ? Promise.resolve({ data: [{ role: mocks.role }], error: null }) : ({ maybeSingle: async () => ({
         data: table === "user_workspace_access" ? null : { jurisdiction: "LC" }, error: null,

@@ -2,6 +2,13 @@ import { describe, it, expect } from "vitest";
 import { canOpenPath, roleModules } from "@/lib/workspace-access";
 
 describe("role-based workspaces", () => {
+  it("restricts even administrators to purchased company features", () => {
+    const smiley = ["hr", "payroll", "reports", "leave", "attendance", "quickbooks", "settings"];
+    expect(canOpenPath("admin", [], "/guard-tour", smiley)).toBe(false);
+    expect(canOpenPath("admin", [], "/projects", smiley)).toBe(false);
+    expect(canOpenPath("admin", [], "/quickbooks", smiley)).toBe(true);
+    expect(canOpenPath("admin", [], "/users", smiley)).toBe(true);
+  });
   it("keeps administrators fully enabled even with empty custom access", () => {
     expect(canOpenPath("admin", [], "/users")).toBe(true);
     expect(canOpenPath("admin", [], "/payroll")).toBe(true);
