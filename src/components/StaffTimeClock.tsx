@@ -19,9 +19,10 @@ export default function StaffTimeClock({ companyId }: { companyId?: string }) {
   if(pinMode) { if(!resolvedCompany||!code||!/^\d{4,6}$/.test(pin)) throw new Error("Enter your employee code and 4–6 digit PIN"); Object.assign(body,{org_id:resolvedCompany,employee_code:code,pin}); }
   if(action==="punch") {
    body.direction=next;
-   // Location is optional unless the company's server-side work-site rule requires it.
-   const position=await new Promise<GeolocationPosition|null>(resolve=>{if(!navigator.geolocation)return resolve(null);const deadline=window.setTimeout(()=>resolve(null),8500);navigator.geolocation.getCurrentPosition(p=>{clearTimeout(deadline);resolve(p);},()=>{clearTimeout(deadline);resolve(null);},{timeout:8000,maximumAge:30000});});
-   if(position)Object.assign(body,{latitude:position.coords.latitude,longitude:position.coords.longitude});
+   // Every punch must carry the device location (anti buddy-punching); the server rejects punches without it.
+   const position=await new Promise<GeolocationPosition|null>(resolve=>{if(!navigator.geolocation)return resolve(null);const deadline=window.setTimeout(()=>resolve(null),15500);navigator.geolocation.getCurrentPosition(p=>{clearTimeout(deadline);resolve(p);},()=>{clearTimeout(deadline);resolve(null);},{enableHighAccuracy:true,timeout:15000,maximumAge:0});});
+   if(!position)throw new Error("Location is required to clock in or out. Allow location access for this site and try again.");
+   Object.assign(body,{latitude:position.coords.latitude,longitude:position.coords.longitude});
   }
   const {data,error}=await supabase.functions.invoke("workforce-clock",{body});
   if(error) { let message=error.message; if(error.context instanceof Response){const detail=await error.context.json().catch(()=>null);message=detail?.error??message;} throw new Error(message); }

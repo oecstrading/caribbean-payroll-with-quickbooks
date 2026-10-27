@@ -40,6 +40,7 @@ Deno.serve(async req => {
    return reply({next:sh.data?"clock_out":"clock_in",clock_in:sh.data?.clock_in??null,location_required:!!sc.data?.site_id,allowed_methods:methods,history:history.data});
   }
   if(!body.direction) return reply({error:"Choose clock in or clock out"},400);
+  if(body.latitude===undefined||body.longitude===undefined) return reply({error:"Location is required to clock in or out. Turn on location for this browser and try again."},400);
   const result=await admin.rpc("record_workforce_punch",{_employee:employee,_org:org,_direction:body.direction,_mode:body.pin?"pin":body.mode,_lat:body.latitude??null,_lon:body.longitude??null});
   if(result.error) return reply({error:result.error.message},400);
   return reply(result.data);
