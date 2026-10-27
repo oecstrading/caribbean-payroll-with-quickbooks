@@ -57,6 +57,8 @@ Deno.serve(async req => {
         : await admin.auth.admin.createUser({ email: `${crypto.randomUUID()}@pin.invalid`, password: crypto.randomUUID() + "aA1!", email_confirm: true, user_metadata: { first_name: v.first_name, last_name: v.last_name } });
       if (result.error || !result.data.user) throw result.error || new Error("Account creation failed");
       id = result.data.user.id; created = true; invitationSent = Boolean(v.email);
+      const { data: existingProfile } = await admin.from("profiles").select("org_id").eq("user_id", id).single();
+      if (existingProfile?.org_id) return reply({ error: "This account already belongs to a company. Edit its existing user instead." }, 400);
       const { error } = await admin.rpc("create_invited_profile", { _user_id: id, _org_id: org, _email: v.email, _first: v.first_name, _last: v.last_name, _role: v.role });
       if (error) { await admin.auth.admin.deleteUser(id); throw error; }
     }
