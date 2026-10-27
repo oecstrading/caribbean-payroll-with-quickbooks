@@ -16,7 +16,7 @@ import { useNavigate } from "react-router-dom";
 import { simulatedTime, simulationStartSchema, nextSimulatedPunch } from "@/lib/simulation-time";
 import { toast } from "sonner";
 
-type Settings = Database["public"]["Tables"]["attendance_simulation_clock"]["Row"];
+type Settings = Database["public"]["Tables"]["organization_simulation_clock"]["Row"];
 type Punch = Database["public"]["Tables"]["simulated_attendance_punches"]["Row"];
 export default function AttendanceClock() {
   const { user } = useAuth();
@@ -33,7 +33,7 @@ export default function AttendanceClock() {
   const [time, setTime] = useState("08:00");
   const load = useCallback(async () => {
     if (!user) return;
-    const result = await supabase.from("attendance_simulation_clock").select("*").maybeSingle();
+    const result = await supabase.from("organization_simulation_clock").select("*").maybeSingle();
     if (result.error) { setError("The simulated clock is unavailable."); setLoading(false); return; }
     setSettings(result.data); setError("");
     if (result.data) {
@@ -57,7 +57,7 @@ export default function AttendanceClock() {
     start.setHours(hours, minutes, 0, 0);
     if (!/^\d{2}:\d{2}$/.test(time) || hours > 23 || minutes > 59 || !simulationStartSchema.safeParse(start).success) { toast.error("Choose a valid date and time between 2000 and 2100."); return; }
     setBusy(true);
-    const { error } = await supabase.rpc("reset_attendance_simulation", { _start: start.toISOString(), _enabled: enabled });
+    const { error } = await supabase.rpc("reset_company_simulation", { _start: start.toISOString(), _enabled: enabled });
     if (error) toast.error(error.message);
     else { await load(); setOpen(false); toast.success(enabled ? "Simulated attendance clock reset" : "Simulation stopped; real attendance unchanged"); }
     setBusy(false);

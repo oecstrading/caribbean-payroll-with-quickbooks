@@ -39,7 +39,8 @@ export default function TrainingHubPage() {
   const [seeding, setSeeding] = useState(false);
 
   const { data: documents = [], isLoading } = useQuery({
-    queryKey: ["training-documents"],
+    queryKey: ["training-documents", user?.id],
+    enabled: !!user,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("training_documents")
@@ -70,7 +71,9 @@ export default function TrainingHubPage() {
     }
     setUploading(true);
     try {
-      const fileName = `${Date.now()}_${selectedFile.name}`;
+      const { data: orgId, error: orgError } = await supabase.rpc("current_org_id");
+      if (orgError || !orgId) throw new Error("Company membership required");
+      const fileName = `${orgId}/${Date.now()}_${selectedFile.name}`;
       const { error: storageError } = await supabase.storage
         .from("training-docs")
         .upload(fileName, selectedFile);
@@ -121,7 +124,9 @@ export default function TrainingHubPage() {
         const response = await fetch(doc.url);
         if (!response.ok) throw new Error("Latest PDF is unavailable");
         const blob = await response.blob();
-        const fileName = `${Date.now()}_${doc.url.split("/").pop()}`;
+        const { data: orgId, error: orgError } = await supabase.rpc("current_org_id");
+        if (orgError || !orgId) throw new Error("Company membership required");
+        const fileName = `${orgId}/${Date.now()}_${doc.url.split("/").pop()}`;
 
         const { error: storageError } = await supabase.storage
           .from("training-docs")

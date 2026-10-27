@@ -1,5 +1,6 @@
 import { useState, useEffect, createContext, useContext } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface CompanyInfo {
   company_name: string;
@@ -26,16 +27,20 @@ const defaultInfo: CompanyInfo = {
 const CompanyContext = createContext<CompanyInfo>(defaultInfo);
 
 export function CompanyProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const [info, setInfo] = useState<CompanyInfo>(defaultInfo);
 
   useEffect(() => {
+    setInfo(defaultInfo);
+    if (!user) return;
+    let cancelled = false;
     supabase
       .from("company_settings")
       .select("*")
       .limit(1)
       .maybeSingle()
       .then(({ data }) => {
-        if (data) {
+        if (data && !cancelled) {
           setInfo({
             company_name: data.company_name || defaultInfo.company_name,
             logo_url: data.logo_url || "",
@@ -48,7 +53,8 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
           });
         }
       });
-  }, []);
+    return () => { cancelled = true; };
+  }, [user?.id]);
 
   return (
     <CompanyContext.Provider value={info}>
