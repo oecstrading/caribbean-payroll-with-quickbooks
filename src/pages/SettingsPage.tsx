@@ -158,7 +158,9 @@ export default function SettingsPage() {
     setUploading(true);
     try {
       const ext = file.name.split(".").pop();
-      const filePath = `logo-${Date.now()}.${ext}`;
+      const { data: orgId, error: orgError } = await supabase.rpc("current_org_id");
+      if (orgError || !orgId) throw new Error("Company membership required");
+      const filePath = `${orgId}/logo-${Date.now()}.${ext}`;
       const { error: uploadErr } = await supabase.storage.from("company-assets").upload(filePath, file, { upsert: true });
       if (uploadErr) throw uploadErr;
       const { data: urlData } = supabase.storage.from("company-assets").getPublicUrl(filePath);

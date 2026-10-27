@@ -50,6 +50,9 @@ Deno.serve(async (req) => {
       );
     }
 
+    const { data: orgId, error: orgError } = await supabase.rpc("current_org_id");
+    const { data: permittedSite } = await adminClient.from("client_sites").select("id").eq("id", site_id).eq("org_id", orgId).maybeSingle();
+    if (orgError || !orgId || !permittedSite) return new Response(JSON.stringify({ error: "Site is not in your company" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     // Try PostGIS RPC first, fallback to Haversine
     let distance = 0;
     let withinGeofence = false;
@@ -67,7 +70,7 @@ Deno.serve(async (req) => {
       const { data: site, error: siteError } = await adminClient
         .from("client_sites")
         .select("id, name, latitude, longitude, radius_meters")
-        .eq("id", site_id)
+        .eq("org_id", orgId).eq("id", site_id)
         .single();
 
       if (siteError || !site) {
@@ -115,6 +118,7 @@ Deno.serve(async (req) => {
     const { data: punch, error: punchError } = await adminClient
       .from("clock_punches")
       .insert({
+        org_id: orgId,
         user_id: userId,
         punch_type,
         latitude,

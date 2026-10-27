@@ -46,6 +46,8 @@ Deno.serve(async (req) => {
     if (checks.some(check => check.error || !check.data)) {
       return new Response(JSON.stringify({ error: "Payroll and QuickBooks workspace access required" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+    const { data: orgId, error: orgError } = await userClient.rpc("current_org_id");
+    if (orgError || !orgId) return new Response(JSON.stringify({ error: "Company membership required" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const body: SyncRequest = await req.json();
     if (!body.payroll_run_id) {
       return new Response(JSON.stringify({ error: "payroll_run_id required" }), {
@@ -55,10 +57,10 @@ Deno.serve(async (req) => {
     }
 
     const [{ data: run }, { data: slips }, { data: mappings }, { data: conn }] = await Promise.all([
-      supabase.from("payroll_runs").select("*").eq("id", body.payroll_run_id).maybeSingle(),
-      supabase.from("payslips").select("*").eq("payroll_run_id", body.payroll_run_id),
-      supabase.from("qbo_account_mappings").select("*"),
-      supabase.from("qbo_connection").select("*").limit(1).maybeSingle(),
+      supabase.from("payroll_runs").select("*").eq("org_id", orgId).eq("id", body.payroll_run_id).maybeSingle(),
+      supabase.from("payslips").select("*").eq("org_id", orgId).eq("payroll_run_id", body.payroll_run_id),
+      supabase.from("qbo_account_mappings").select("*").eq("org_id", orgId),
+      supabase.from("qbo_connection").select("*").eq("org_id", orgId).limit(1).maybeSingle(),
     ]);
 
     if (!run) {
@@ -137,6 +139,7 @@ Deno.serve(async (req) => {
     const { data: log } = await supabase
       .from("qbo_sync_log")
       .insert({
+        org_id: orgId,
         payroll_run_id: body.payroll_run_id,
         sync_type: "journal_entry",
         qbo_entity_id: qboId,

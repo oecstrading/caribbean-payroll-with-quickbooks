@@ -64,6 +64,9 @@ Deno.serve(async (req) => {
       });
     }
 
+    const { data: orgId, error: orgError } = await callerClient.rpc("current_org_id");
+    const { data: targetOrg, error: targetError } = await callerClient.rpc("employee_org_id", { _employee: user_id });
+    if (orgError || targetError || !orgId || targetOrg !== orgId) return new Response(JSON.stringify({ error: "Employee is not in your company" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     // Hash PIN
     const encoder = new TextEncoder();
     const data = encoder.encode(pin + user_id);
@@ -75,7 +78,7 @@ Deno.serve(async (req) => {
     const { error } = await adminClient
       .from("user_pins")
       .upsert(
-        { user_id, pin_hash: hashHex, is_enabled: true, updated_at: new Date().toISOString() },
+        { org_id: orgId, user_id, pin_hash: hashHex, is_enabled: true, updated_at: new Date().toISOString() },
         { onConflict: "user_id" }
       );
 
