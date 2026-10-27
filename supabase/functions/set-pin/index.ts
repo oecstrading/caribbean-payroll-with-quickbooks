@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import bcrypt from "npm:bcryptjs@2.4.3";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,9 +20,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    if (!supabaseUrl || !serviceRoleKey || !anonKey) throw new Error("Service unavailable");
 
     // Verify caller is admin/manager
     const callerClient = createClient(supabaseUrl, anonKey, {
@@ -38,8 +40,8 @@ Deno.serve(async (req) => {
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
     // Check caller role
-    const { data: roleCheck } = await adminClient.rpc("is_admin_or_manager", { _user_id: caller.id });
-    if (!roleCheck) {
+    const { data: roleCheck } = await adminClient.from("user_roles").select("role").eq("user_id", caller.id).single();
+    if (roleCheck?.role !== "admin") {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -50,7 +52,7 @@ Deno.serve(async (req) => {
     if (accessError || !access) return new Response(JSON.stringify({ error: "Employee management access required" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const { user_id, pin } = await req.json();
 
-    if (!user_id || !pin) {
+    if (typeof user_id !== "string" || !/^[0-9a-f-]{36}$/i.test(user_id) || typeof pin !== "string") {
       return new Response(JSON.stringify({ error: "user_id and pin are required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -67,12 +69,13 @@ Deno.serve(async (req) => {
     const { data: orgId, error: orgError } = await callerClient.rpc("current_org_id");
     const { data: targetOrg, error: targetError } = await callerClient.rpc("employee_org_id", { _employee: user_id });
     if (orgError || targetError || !orgId || targetOrg !== orgId) return new Response(JSON.stringify({ error: "Employee is not in your company" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    // Hash PIN
-    const encoder = new TextEncoder();
-    const data = encoder.encode(pin + user_id);
-    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+    const [{ data: targetRole }, { data: authority }, { data: targetAuthority }] = await Promise.all([
+      adminClient.from("user_roles").select("role").eq("user_id", user_id).single(),
+      callerClient.rpc("administrator_authority", { _user: caller.id }),
+      callerClient.rpc("administrator_authority", { _user: user_id }),
+    ]);
+    if (user_id !== caller.id && ((targetRole?.role === "admin" && authority?.company_super_admin !== true) || (targetAuthority?.platform_super_admin === true && authority?.platform_super_admin !== true))) return new Response(JSON.stringify({ error: "Super administrator authority required" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const hashHex = await bcrypt.hash(pin, 12);
 
     // Upsert pin
     const { error } = await adminClient
@@ -89,6 +92,7 @@ Deno.serve(async (req) => {
       });
     }
 
+    await adminClient.from("user_pin_attempts").delete().eq("user_id", user_id);
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

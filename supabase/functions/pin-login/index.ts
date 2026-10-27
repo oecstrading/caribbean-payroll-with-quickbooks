@@ -87,6 +87,8 @@ Deno.serve(async (req) => {
       });
     }
 
+    const { data: identity } = await supabase.auth.admin.getUserById(profile.user_id);
+    if (!identity.user?.email_confirmed_at || identity.user.email !== profile.email) return new Response(JSON.stringify({ error: "Confirm your email invitation before signing in" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     // Generate a session for this user
     // We use the admin API to generate a magic link token
     const { data: authData, error: authError } = await supabase.auth.admin.generateLink({
