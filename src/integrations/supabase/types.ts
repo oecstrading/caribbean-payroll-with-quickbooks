@@ -3565,6 +3565,10 @@ export type Database = {
           onboarding_status: string
         }[]
       }
+      reconcile_workforce_attendance: {
+        Args: { _org?: string }
+        Returns: number
+      }
       record_simulated_punch: {
         Args: { _type: string }
         Returns: {
@@ -3629,6 +3633,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      review_workforce_shift: {
+        Args: { _hours: number; _notes: string; _shift: string }
+        Returns: undefined
+      }
       revoke_company_setup: { Args: { _id: string }; Returns: undefined }
       save_workforce_settings: {
         Args: {
@@ -3657,8 +3665,22 @@ export type Database = {
         Returns: undefined
       }
       validate_company_setup: { Args: { _details: Json }; Returns: undefined }
+      validate_workforce_pay: {
+        Args: {
+          _basic: number
+          _employee: string
+          _end: string
+          _ot: number
+          _start: string
+        }
+        Returns: undefined
+      }
       verify_guard_location: {
         Args: { _lat: number; _lon: number; _site_id: string }
+        Returns: Json
+      }
+      workforce_pay_hours: {
+        Args: { _employee: string; _end: string; _start: string }
         Returns: Json
       }
       workforce_pin_employee: {
