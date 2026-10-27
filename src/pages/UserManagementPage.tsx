@@ -85,11 +85,6 @@ export default function UserManagementPage() {
       (!roleFilter || u.role === roleFilter)
   );
 
-  const handleRoleChange = async (userId: string, newRole: AppRole) => {
-    const user = users.find(u => u.user_id === userId);
-    if (user) setAccessUser(user);
-  };
-
   const handleDeactivate = async (userId: string, currentStatus: string) => {
     const newStatus = currentStatus === "Active" ? "Inactive" : "Active";
     try {
