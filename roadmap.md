@@ -1,4 +1,5 @@
 # Payroll account and Smiley’s samples
+- [ ] Add documentation-guided mobile staff clock, company missing-punch alerts and attendance-aware AI payroll preparation; verify staff-to-manager flow.
 - [x] Add platform-admin company setup, email-bound hashed seven-day one-use invitation links, atomic customer onboarding and company metadata editing. Verified admin prepare/edit/reload, wrong-email denial, revoke/reload denial and mobile sign-in; 12 local and 5 live security checks passed. Temporary company removed.
 - [ ] Verify successful customer activation end-to-end with a real invited customer's verified email; reserved test email cannot sign up and no customer session is available.
 - [x] Add and run pre-deployment security tests: 30 local checks and 14 live RLS/RPC checks passed, including foreign-company reads/writes, cross-company loans, changed salary, duplicate employees, withheld/capped repayments, full rollback, valid approval and repeat/overlap denial. Live fixture cleanup supplied; deployment unchanged.
