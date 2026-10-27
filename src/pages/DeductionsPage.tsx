@@ -7,6 +7,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { supabase } from "@/integrations/supabase/client";
 import { useRole } from "@/hooks/useRole";
 import { toast } from "sonner";
+import EmployeeLoans from "@/components/EmployeeLoans";
+import { Button } from "@/components/ui/button";
 
 interface Creditor {
   id: string;
@@ -89,7 +91,7 @@ const additionTypeColors: Record<string, string> = {
 
 export default function DeductionsPage() {
   const { isAdminOrManager } = useRole();
-  const [tab, setTab] = useState<"creditors" | "deductions" | "additions">("creditors");
+  const [tab, setTab] = useState<"creditors" | "deductions" | "additions" | "loans">("creditors");
   const [creditors, setCreditors] = useState<Creditor[]>([]);
   const [deductions, setDeductions] = useState<EmployeeDeduction[]>([]);
   const [additions, setAdditions] = useState<EmployeeAddition[]>([]);
@@ -118,7 +120,7 @@ export default function DeductionsPage() {
       supabase.from("creditors").select("*").order("name"),
       supabase.from("employee_deductions").select("*").order("created_at", { ascending: false }),
       supabase.from("employee_additions").select("*").order("created_at", { ascending: false }),
-      supabase.from("profiles").select("user_id, first_name, last_name, email, department"),
+      supabase.from("payroll_employee_directory").select("user_id, first_name, last_name, email, department").is("deleted_at", null),
     ]);
     setCreditors((credRes.data as Creditor[]) || []);
     setDeductions((dedRes.data as EmployeeDeduction[]) || []);
@@ -307,6 +309,7 @@ export default function DeductionsPage() {
 
       {/* Tabs */}
       <div className="flex flex-wrap rounded-lg bg-secondary p-1 w-fit gap-1">
+        <Button variant={tab === "loans" ? "default" : "ghost"} onClick={() => setTab("loans")}><DollarSign size={14} />Loans</Button>
         <button
           onClick={() => setTab("creditors")}
           className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -337,6 +340,7 @@ export default function DeductionsPage() {
       </div>
 
       {/* Creditors Tab */}
+      {tab === "loans" && <EmployeeLoans />}
       {tab === "creditors" && (
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-3">

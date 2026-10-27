@@ -22,6 +22,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { calculatePeriodPayroll, defaultRange, periodFactor, periodLabel, payTypeLabels, workingDays, type PayType } from "@/lib/pay-period";
 import PayrollOfficer from "@/components/PayrollOfficer";
 import { anonymousReviewRows } from "@/lib/payroll-review";
+import { loanDeduction } from "@/lib/employee-loans";
 
 const steps = ["Review & Sync", "Audit", "Approve & Run"];
 
@@ -48,20 +49,23 @@ export default function PayrollPage() {
   const [loadError, setLoadError] = useState("");
   const [deductionsMap, setDeductionsMap] = useState<Record<string, import("@/lib/payroll-engine").CreditorDeduction[]>>({});
   const [additionsMap, setAdditionsMap] = useState<Record<string, import("@/lib/payroll-engine").PayrollAddition[]>>({});
+  const [loans, setLoans] = useState<{ user_id: string; balance: number; monthly_repayment: number }[]>([]);
   const { isAdminOrManager } = useRole();
   const config = getConfigByJurisdiction(source === "sample" ? "LC" : jurisdiction);
   useEffect(() => {
     let cancelled = false;
     setLoading(true); setLoadError("");
     const load = async () => {
-      const [profiles, deductions, additions, records] = await Promise.all([
+      const [profiles, deductions, additions, records, loanRows] = await Promise.all([
         supabase.from("profiles").select("*").is("deleted_at", null).eq("jurisdiction", jurisdiction),
         supabase.from("employee_deductions").select("*, creditors(name)").eq("is_active", true),
         supabase.from("employee_additions").select("*").eq("is_active", true),
         supabase.from("employee_records").select("*").is("deleted_at", null).eq("jurisdiction", jurisdiction),
+        supabase.from("employee_loans").select("user_id,balance,monthly_repayment").eq("is_active", true).gt("balance", 0),
       ]);
-      if (profiles.error || deductions.error || additions.error || records.error) throw profiles.error || deductions.error || additions.error || records.error;
+      if (profiles.error || deductions.error || additions.error || records.error || loanRows.error) throw profiles.error || deductions.error || additions.error || records.error || loanRows.error;
       if (cancelled) return;
+      setLoans(loanRows.data || []);
       setLiveEmployees([...(profiles.data || []), ...(records.data || [])].filter(p => p.status.toLowerCase() === "active").map(p => ({
         id: p.user_id, firstName: p.first_name, lastName: p.last_name, department: departmentName(p.department),
         monthlySalary: Number(p.monthly_salary || 0), stdHoursPerDay: Number(p.std_hours_per_day || 8),
@@ -97,7 +101,7 @@ export default function PayrollPage() {
       _pay_type: payType, _start: range.start, _end: range.end, _notes: notes || undefined, _jurisdiction: jurisdiction, _departments: selected,
       _rows: payrollData.map(e => ({ user_id: e.id, department: e.department, basic_pay: e.payroll.basicPay,
         overtime_pay: e.payroll.overtimePay, gross_pay: e.payroll.grossMonthly, employee_nic: e.payroll.employeeNIC,
-        employer_nic: e.payroll.employerNIC, paye: e.payroll.paye, total_deductions: e.payroll.totalDeductions, net_pay: e.payroll.netPay })),
+        employer_nic: e.payroll.employerNIC, paye: e.payroll.paye, total_deductions: e.payroll.totalDeductions, net_pay: e.payroll.netPay, loan_deductions: e.loanDeductions })),
     });
     setProcessing(false);
     if (error) { toast.error(error.message); return; }
@@ -109,11 +113,13 @@ export default function PayrollPage() {
     .map((e) => {
       // Recurring deductions are monthly amounts; prorate them to the pay period.
       const creditorDeductions = source === "live" ? (deductionsMap[e.id] || []).map(d => ({ ...d, amount: Math.round(d.amount * factor * 100) / 100 })) : [];
+      const loanDeductions = source === "live" ? Math.round(loans.filter(l => l.user_id === e.id).reduce((total, l) => total + loanDeduction(l.balance, l.monthly_repayment, factor), 0) * 100) / 100 : 0;
+      if (loanDeductions > 0) creditorDeductions.push({ creditorName: "Employee loan repayment", amount: loanDeductions });
       const additions = source === "live" ? additionsMap[e.id] || [] : [];
       const result = calculatePeriodPayroll(e.monthlySalary, factor, config, creditorDeductions, additions);
       const hourlyRate = e.monthlySalary / (e.stdHoursPerDay * 22);
       const compliance = checkMinimumWageCompliance(hourlyRate, config);
-      return { ...e, payroll: result, hourlyRate, compliance };
+      return { ...e, payroll: result, hourlyRate, compliance, loanDeductions };
     });
 
   const totals = payrollData.reduce(
