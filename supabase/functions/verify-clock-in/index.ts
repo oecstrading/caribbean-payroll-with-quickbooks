@@ -38,6 +38,8 @@ Deno.serve(async (req) => {
       });
     }
     const userId = user.id;
+    const checks = await Promise.all(["attendance", "security"].map(module => supabase.rpc("has_workspace_access", { _user_id: userId, _module: module })));
+    if (!checks.some(check => !check.error && check.data)) return new Response(JSON.stringify({ error: "Attendance workspace access required" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const { latitude, longitude, site_id, punch_type } = await req.json();
 

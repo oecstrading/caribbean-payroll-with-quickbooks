@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const anonKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
     // Verify caller
     const callerClient = createClient(supabaseUrl, anonKey, {
@@ -46,6 +46,8 @@ Deno.serve(async (req) => {
       });
     }
 
+    const { data: access, error: accessError } = await callerClient.rpc("has_workspace_access", { _user_id: caller.id, _module: "payroll" });
+    if (accessError || !access) return new Response(JSON.stringify({ error: "Payroll workspace access required" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const { user_id, payslip_html, period } = await req.json();
 
     if (!user_id || !payslip_html) {
