@@ -27,6 +27,7 @@ import { useNavigate } from "react-router-dom";
 import { useRef, useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import AttendanceClock from "@/components/AttendanceClock";
+import StaffTimeClock from "@/components/StaffTimeClock";
 import { useRole } from "@/hooks/useRole";
 import { Button } from "@/components/ui/button";
 import { WORKSPACE_MODULES, ROUTE_MODULES } from "@/lib/workspace-access";
@@ -257,7 +258,7 @@ export default function DashboardPage() {
         </div>
       </section>
       {/* Metrics */}
-      {canAccess("/attendance") && <AttendanceClock />}
+      {canAccess("/attendance") && <><StaffTimeClock /><AttendanceClock /></>}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {metrics.filter(metric => canAccess(metric.path)).map((metric, i) => (
           <motion.div key={metric.label} {...fadeUp} transition={{ delay: 0.05 * (i + 1) }}>

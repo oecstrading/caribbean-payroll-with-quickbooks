@@ -23,6 +23,7 @@ import { calculatePeriodPayroll, defaultRange, periodFactor, periodLabel, payTyp
 import PayrollOfficer from "@/components/PayrollOfficer";
 import { anonymousReviewRows } from "@/lib/payroll-review";
 import { loanDeduction } from "@/lib/employee-loans";
+import { attendanceEarnings, type PayHours } from "@/lib/workforce-time";
 
 const steps = ["Review & Sync", "Audit", "Approve & Run"];
 
@@ -50,6 +51,8 @@ export default function PayrollPage() {
   const [deductionsMap, setDeductionsMap] = useState<Record<string, import("@/lib/payroll-engine").CreditorDeduction[]>>({});
   const [additionsMap, setAdditionsMap] = useState<Record<string, import("@/lib/payroll-engine").PayrollAddition[]>>({});
   const [loans, setLoans] = useState<{ user_id: string; balance: number; monthly_repayment: number }[]>([]);
+  const [attendance, setAttendance] = useState<Record<string, PayHours>>({});
+  const [payBases, setPayBases] = useState<Record<string, { basis: string; rate: number }>>({});
   const { isAdminOrManager } = useRole();
   const config = getConfigByJurisdiction(source === "sample" ? "LC" : jurisdiction);
   useEffect(() => {
@@ -66,6 +69,15 @@ export default function PayrollPage() {
       if (profiles.error || deductions.error || additions.error || records.error || loanRows.error) throw profiles.error || deductions.error || additions.error || records.error || loanRows.error;
       if (cancelled) return;
       setLoans(loanRows.data || []);
+      const directory = [...(profiles.data || []), ...(records.data || [])].filter(p => p.status.toLowerCase() === "active");
+      const hours = await Promise.all(directory.map(async p => {
+        const result = await supabase.rpc("workforce_pay_hours", { _employee: p.user_id, _start: range.start, _end: range.end });
+        if (result.error) throw result.error;
+        return [p.user_id, result.data as unknown as PayHours] as const;
+      }));
+      if (cancelled) return;
+      setAttendance(Object.fromEntries(hours));
+      setPayBases(Object.fromEntries(directory.map(p => { const hr = p.hr_details as Record<string, string>; return [p.user_id, { basis: hr.pay_frequency || "", rate: Number(hr.pay_rate || 0) }]; })));
       setLiveEmployees([...(profiles.data || []), ...(records.data || [])].filter(p => p.status.toLowerCase() === "active").map(p => ({
         id: p.user_id, firstName: p.first_name, lastName: p.last_name, department: departmentName(p.department),
         monthlySalary: Number(p.monthly_salary || 0), stdHoursPerDay: Number(p.std_hours_per_day || 8),
@@ -94,7 +106,7 @@ export default function PayrollPage() {
   useEffect(() => { setApproved(false); setCurrentStep(0); }, [source, period, jurisdiction, selected, excluded]);
   const handleBulkEmail = () => toast.info("Use saved payslips for email delivery.");
   const handleApprovePayroll = async () => {
-    if (!payrollData.length || !selected.length || !isAdminOrManager || periodError) return;
+    if (!payrollData.length || !selected.length || !isAdminOrManager || periodError || attendanceBlocked) return;
     if (source === "sample") { setApproved(true); toast.success("Sample completed; no live payroll saved."); return; }
     setProcessing(true);
     const { error } = await supabase.rpc("approve_payroll_run", {
@@ -116,11 +128,18 @@ export default function PayrollPage() {
       const loanDeductions = source === "live" ? Math.round(loans.filter(l => l.user_id === e.id).reduce((total, l) => total + loanDeduction(l.balance, l.monthly_repayment, factor), 0) * 100) / 100 : 0;
       if (loanDeductions > 0) creditorDeductions.push({ creditorName: "Employee loan repayment", amount: loanDeductions });
       const additions = source === "live" ? additionsMap[e.id] || [] : [];
-      const result = calculatePeriodPayroll(e.monthlySalary, factor, config, creditorDeductions, additions);
-      const hourlyRate = e.monthlySalary / (e.stdHoursPerDay * 22);
+      const h = attendance[e.id]; const basis = payBases[e.id];
+      let salary = e.monthlySalary; let overtime = 0; let attendanceError = "";
+      let hourlyRate = e.monthlySalary / (e.stdHoursPerDay * 22);
+      if (source === "live" && h?.enabled && basis && ["Hourly", "Daily"].includes(basis.basis)) {
+        try { const earnings = attendanceEarnings(basis.rate, basis.basis, e.stdHoursPerDay, h); salary = factor > 0 ? earnings.basic / factor : 0; overtime = earnings.overtime; hourlyRate = earnings.hourly; }
+        catch (err) { salary = 0; attendanceError = err instanceof Error ? err.message : "Review attendance"; }
+      }
+      const result = calculatePeriodPayroll(salary, factor, config, creditorDeductions, additions, overtime);
       const compliance = checkMinimumWageCompliance(hourlyRate, config);
-      return { ...e, payroll: result, hourlyRate, compliance, loanDeductions };
+      return { ...e, payroll: result, hourlyRate, compliance, loanDeductions, attendance: h, attendanceError };
     });
+  const attendanceBlocked = source === "live" && payrollData.some(e => Boolean(e.attendanceError));
 
   const totals = payrollData.reduce(
     (acc, e) => ({
@@ -174,6 +193,8 @@ export default function PayrollPage() {
         {periodError ? <p role="alert" className="text-sm text-destructive">{periodError}</p>
           : <p className="text-sm text-muted-foreground">{range.start} to {range.end}{payType === "custom" ? ` · ${workingDays(range.start, range.end)} working days` : ""} · {Math.round(factor * 10000) / 100}% of monthly salary</p>}
         <p className="text-sm text-muted-foreground">{payrollData.length} employees · {selected.length} departments selected</p>
+        {attendanceBlocked && <p role="alert" className="text-destructive">Attendance review required: {payrollData.filter(e => e.attendanceError).map(e => `${e.firstName} ${e.lastName}`).join(", ")}. Confirm worked hours under Attendance before approval.</p>}
+        {source === "live" && <Button variant="outline" onClick={() => navigate("/attendance")}>Review attendance and missing punches</Button>}
       </section>
 
       {/* Stepper */}
@@ -420,7 +441,7 @@ export default function PayrollPage() {
               </Button>
               <Button
                 onClick={handleApprovePayroll}
-                disabled={processing || approved || !payrollData.length || !isAdminOrManager || (source === "live" && (loading || !!loadError))}
+                disabled={processing || approved || attendanceBlocked || !payrollData.length || !isAdminOrManager || (source === "live" && (loading || !!loadError))}
                 className="flex items-center gap-2 px-4 md:px-8 py-2.5 md:py-3 bg-success text-success-foreground rounded-lg text-xs md:text-sm font-bold hover:bg-success/90 transition-colors disabled:opacity-50"
               >
                 {processing ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle size={18} />}

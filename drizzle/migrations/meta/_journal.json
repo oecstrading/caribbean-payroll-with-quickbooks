@@ -141,6 +141,34 @@
       "when": 1793097153822,
       "tag": "0019_company_setup_metadata_consistency",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1793097896575,
+      "tag": "0020_workforce_clock_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1793097934101,
+      "tag": "0021_workforce_clock_access",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1793097968198,
+      "tag": "0022_workforce_review_and_payroll",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793098675088,
+      "tag": "0023_workforce_payroll_snapshots",
+      "breakpoints": true
     }
   ]
 }

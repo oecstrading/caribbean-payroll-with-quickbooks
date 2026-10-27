@@ -1,0 +1,7 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { BellRing } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+export default function WorkforceAlerts(){const [count,setCount]=useState(0);const navigate=useNavigate();useEffect(()=>{let alive=true;const load=async()=>{const {count,error}=await supabase.from("workforce_alerts").select("id",{count:"exact",head:true}).is("resolved_at",null);if(alive&&!error)setCount(count??0);};void load();const channel=supabase.channel(`workforce-alerts-${crypto.randomUUID()}`).on("postgres_changes",{event:"INSERT",schema:"public",table:"workforce_alerts"},()=>{toast.warning("A staff punch is missing. Review company attendance.");void load();}).subscribe();const focus=()=>void load();window.addEventListener("focus",focus);return()=>{alive=false;void supabase.removeChannel(channel);window.removeEventListener("focus",focus);};},[]);return count?<Button variant="outline" className="text-destructive border-destructive/40" onClick={()=>navigate("/attendance")}><BellRing size={16}/>{count} missing-punch alerts</Button>:null;}

@@ -44,6 +44,7 @@ import { useAuth } from "@/hooks/useAuth";
 import PanicButton from "@/components/PanicButton";
 import VoiceCommandListener from "@/components/VoiceCommandListener";
 import { supabase } from "@/integrations/supabase/client";
+import WorkforceAlerts from "@/components/WorkforceAlerts";
 
 interface NavItem {
   path: string;
@@ -320,6 +321,7 @@ export default function AppLayout() {
             </div>
           </div>
           <div className="flex items-center gap-2 md:gap-4">
+            {canAccess("/attendance") && (role === "admin" || role === "manager") && <WorkforceAlerts />}
             <button className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary text-sm font-medium text-foreground hover:bg-muted transition-colors">
               <Globe size={14} />
               <span className="hidden md:inline">🇱🇨 St. Lucia</span>

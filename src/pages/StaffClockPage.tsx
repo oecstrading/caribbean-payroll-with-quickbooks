@@ -1,0 +1,5 @@
+import { useParams, Link } from "react-router-dom";
+import StaffTimeClock from "@/components/StaffTimeClock";
+import caribbeanHero from "@/assets/caribbean-hero.jpg";
+import { Button } from "@/components/ui/button";
+export default function StaffClockPage(){const {companyId}=useParams();return <main className="min-h-screen bg-background text-foreground"><header className="relative h-40 overflow-hidden"><img src={caribbeanHero} alt="Saint Lucia coastline" className="w-full h-full object-cover"/><div className="absolute inset-0 bg-foreground/60"/><h1 className="absolute inset-0 flex items-center justify-center text-2xl font-display font-bold text-primary-foreground">OECS Staff Time Clock</h1></header><div className="px-4 py-8 space-y-6"><StaffTimeClock companyId={companyId}/><div className="text-center"><Button asChild variant="link"><Link to="/auth">Email, Google or account PIN sign-in</Link></Button></div></div></main>;}

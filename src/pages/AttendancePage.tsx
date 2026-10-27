@@ -6,8 +6,16 @@ import { Badge } from "@/components/ui/badge";
 import { sampleAttendance, type AttendanceRecord } from "@/lib/sample-data";
 import AttendanceCSVImport from "@/components/AttendanceCSVImport";
 import AttendanceClock from "@/components/AttendanceClock";
+import StaffTimeClock from "@/components/StaffTimeClock";
+import WorkforceManagement from "@/components/WorkforceManagement";
+import { useRole } from "@/hooks/useRole";
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function AttendancePage() {
+  const { isAdminOrManager } = useRole();
+  const [companyId, setCompanyId] = useState<string>();
+  useEffect(() => { supabase.rpc("current_org_id").then(({data}) => { if(data)setCompanyId(data); }); }, []);
   const [importedRecords, setImportedRecords] = useState<AttendanceRecord[]>([]);
   const allRecords = [...sampleAttendance, ...importedRecords];
 
@@ -29,6 +37,8 @@ export default function AttendancePage() {
     }
   };
 
+  if (!isAdminOrManager) return <div className="p-4 md:p-6 space-y-6"><StaffTimeClock companyId={companyId} /><AttendanceClock /></div>;
+
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-4 md:space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -45,6 +55,9 @@ export default function AttendancePage() {
       </div>
 
       {/* Date Selector */}
+      <StaffTimeClock companyId={companyId} />
+      <WorkforceManagement />
+      <h2 className="text-lg font-display font-semibold">Fictional sample / imported demonstration timesheets</h2>
       <AttendanceClock />
       <div className="flex gap-2 flex-wrap">
         {dates.map((date) => (

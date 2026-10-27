@@ -28,6 +28,9 @@ Deno.serve(async (req) => {
       if (!access || !org) return new Response(JSON.stringify({ error: "Security workspace required" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       callerOrg = org;
     }
+    // Share the existing scheduled attendance check; do not introduce another polling job.
+    const { error: workforceError } = await adminClient.rpc("reconcile_workforce_attendance", { _org: callerOrg });
+    if (workforceError) throw workforceError;
     const now = new Date();
     const todayStr = now.toISOString().split("T")[0];
     const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];

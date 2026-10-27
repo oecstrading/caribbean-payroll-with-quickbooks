@@ -16,6 +16,7 @@ import ReportsPage from "@/pages/ReportsPage";
 import SettingsPage from "@/pages/SettingsPage";
 import CompaniesPage from "@/pages/CompaniesPage";
 import CompanySetupPage from "@/pages/CompanySetupPage";
+import StaffClockPage from "@/pages/StaffClockPage";
 import PayslipPage from "@/pages/PayslipPage";
 import AuthPage from "@/pages/AuthPage";
 import PortalPage from "@/pages/PortalPage";
@@ -83,6 +84,8 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 const AppRoutes = () => (
   <Routes>
     <Route path="/company-setup" element={<CompanySetupPage />} />
+    <Route path="/time-clock/:companyId" element={<StaffClockPage />} />
+    <Route path="/time-clock" element={<StaffClockPage />} />
     <Route path="/auth" element={<PublicRoute><AuthPage /></PublicRoute>} />
     <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
       <Route path="/" element={<DashboardPage />} />

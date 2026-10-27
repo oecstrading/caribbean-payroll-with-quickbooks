@@ -3090,6 +3090,336 @@ export type Database = {
           },
         ]
       }
+      workforce_alerts: {
+        Row: {
+          created_at: string
+          employee_id: string
+          id: string
+          missing_type: string
+          org_id: string
+          resolved_at: string | null
+          shift_id: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          id?: string
+          missing_type: string
+          org_id: string
+          resolved_at?: string | null
+          shift_id: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          id?: string
+          missing_type?: string
+          org_id?: string
+          resolved_at?: string | null
+          shift_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workforce_alerts_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workforce_alerts_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "workforce_shifts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workforce_clock_credentials: {
+        Row: {
+          employee_code: string
+          employee_id: string
+          enabled: boolean
+          failed_attempts: number
+          locked_until: string | null
+          org_id: string
+          pin_hash: string
+        }
+        Insert: {
+          employee_code: string
+          employee_id: string
+          enabled?: boolean
+          failed_attempts?: number
+          locked_until?: string | null
+          org_id: string
+          pin_hash: string
+        }
+        Update: {
+          employee_code?: string
+          employee_id?: string
+          enabled?: boolean
+          failed_attempts?: number
+          locked_until?: string | null
+          org_id?: string
+          pin_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workforce_clock_credentials_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workforce_clock_settings: {
+        Row: {
+          attendance_payroll: boolean
+          org_id: string
+          overtime_basis: string
+          overtime_multiplier: number
+          overtime_threshold: number
+          timezone: string
+        }
+        Insert: {
+          attendance_payroll?: boolean
+          org_id: string
+          overtime_basis?: string
+          overtime_multiplier?: number
+          overtime_threshold?: number
+          timezone?: string
+        }
+        Update: {
+          attendance_payroll?: boolean
+          org_id?: string
+          overtime_basis?: string
+          overtime_multiplier?: number
+          overtime_threshold?: number
+          timezone?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workforce_clock_settings_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workforce_payroll_snapshots: {
+        Row: {
+          basis: string
+          created_at: string
+          employee_id: string
+          hours: Json
+          id: string
+          org_id: string
+          payroll_run_id: string
+          rate: number
+          shift_ids: string[]
+        }
+        Insert: {
+          basis: string
+          created_at?: string
+          employee_id: string
+          hours: Json
+          id?: string
+          org_id: string
+          payroll_run_id: string
+          rate: number
+          shift_ids: string[]
+        }
+        Update: {
+          basis?: string
+          created_at?: string
+          employee_id?: string
+          hours?: Json
+          id?: string
+          org_id?: string
+          payroll_run_id?: string
+          rate?: number
+          shift_ids?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workforce_payroll_snapshots_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workforce_payroll_snapshots_payroll_run_id_fkey"
+            columns: ["payroll_run_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workforce_punches: {
+        Row: {
+          direction: string
+          employee_id: string
+          id: string
+          latitude: number | null
+          longitude: number | null
+          mode: string
+          org_id: string
+          punched_at: string
+          shift_id: string
+        }
+        Insert: {
+          direction: string
+          employee_id: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          mode: string
+          org_id: string
+          punched_at?: string
+          shift_id: string
+        }
+        Update: {
+          direction?: string
+          employee_id?: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          mode?: string
+          org_id?: string
+          punched_at?: string
+          shift_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workforce_punches_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workforce_punches_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "workforce_shifts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workforce_schedules: {
+        Row: {
+          break_minutes: number
+          days_of_week: number[]
+          employee_id: string
+          enabled: boolean
+          id: string
+          org_id: string
+          shift_end: string
+          shift_start: string
+          site_id: string | null
+        }
+        Insert: {
+          break_minutes?: number
+          days_of_week?: number[]
+          employee_id: string
+          enabled?: boolean
+          id?: string
+          org_id: string
+          shift_end: string
+          shift_start: string
+          site_id?: string | null
+        }
+        Update: {
+          break_minutes?: number
+          days_of_week?: number[]
+          employee_id?: string
+          enabled?: boolean
+          id?: string
+          org_id?: string
+          shift_end?: string
+          shift_start?: string
+          site_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workforce_schedules_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workforce_schedules_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "client_sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workforce_shifts: {
+        Row: {
+          approved_hours: number | null
+          break_minutes: number
+          clock_in: string | null
+          clock_out: string | null
+          employee_id: string
+          id: string
+          org_id: string
+          review_notes: string | null
+          review_status: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          scheduled_end: string | null
+          scheduled_start: string | null
+          shift_date: string
+        }
+        Insert: {
+          approved_hours?: number | null
+          break_minutes?: number
+          clock_in?: string | null
+          clock_out?: string | null
+          employee_id: string
+          id?: string
+          org_id: string
+          review_notes?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          scheduled_end?: string | null
+          scheduled_start?: string | null
+          shift_date: string
+        }
+        Update: {
+          approved_hours?: number | null
+          break_minutes?: number
+          clock_in?: string | null
+          clock_out?: string | null
+          employee_id?: string
+          id?: string
+          org_id?: string
+          review_notes?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          scheduled_end?: string | null
+          scheduled_start?: string | null
+          shift_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workforce_shifts_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       geofence_violations: {
@@ -3215,6 +3545,20 @@ export type Database = {
         Args: { _details: Json; _token: string; _user: string }
         Returns: string
       }
+      configure_employee_clock: {
+        Args: {
+          _break: number
+          _code: string
+          _days: number[]
+          _employee: string
+          _enabled?: boolean
+          _end: string
+          _pin: string
+          _site?: string
+          _start: string
+        }
+        Returns: undefined
+      }
       create_employee_loan: {
         Args: {
           _balance: number
@@ -3272,6 +3616,10 @@ export type Database = {
           onboarding_status: string
         }[]
       }
+      reconcile_workforce_attendance: {
+        Args: { _org?: string }
+        Returns: number
+      }
       record_simulated_punch: {
         Args: { _type: string }
         Returns: {
@@ -3289,6 +3637,17 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      record_workforce_punch: {
+        Args: {
+          _direction: string
+          _employee: string
+          _lat?: number
+          _lon?: number
+          _mode: string
+          _org: string
+        }
+        Returns: Json
       }
       reset_attendance_simulation: {
         Args: { _enabled: boolean; _start: string }
@@ -3325,7 +3684,21 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      review_workforce_shift: {
+        Args: { _hours: number; _notes: string; _shift: string }
+        Returns: undefined
+      }
       revoke_company_setup: { Args: { _id: string }; Returns: undefined }
+      save_workforce_settings: {
+        Args: {
+          _basis: string
+          _multiplier: number
+          _payroll: boolean
+          _threshold: number
+          _timezone: string
+        }
+        Returns: undefined
+      }
       set_employee_loan_active: {
         Args: { _active: boolean; _loan: string }
         Returns: undefined
@@ -3343,9 +3716,27 @@ export type Database = {
         Returns: undefined
       }
       validate_company_setup: { Args: { _details: Json }; Returns: undefined }
+      validate_workforce_pay: {
+        Args: {
+          _basic: number
+          _employee: string
+          _end: string
+          _ot: number
+          _start: string
+        }
+        Returns: undefined
+      }
       verify_guard_location: {
         Args: { _lat: number; _lon: number; _site_id: string }
         Returns: Json
+      }
+      workforce_pay_hours: {
+        Args: { _employee: string; _end: string; _start: string }
+        Returns: Json
+      }
+      workforce_pin_employee: {
+        Args: { _code: string; _org: string; _pin: string }
+        Returns: string
       }
     }
     Enums: {
