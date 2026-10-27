@@ -4,11 +4,12 @@ import { Mic, MicOff, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { supabase } from "@/integrations/supabase/client";
+import { useRole } from "@/hooks/useRole";
 import { toast } from "sonner";
 
 const ROUTE_MAP: Record<string, string> = {
-  dashboard: "/dashboard",
-  home: "/dashboard",
+  dashboard: "/",
+  home: "/",
   employees: "/employees",
   staff: "/employees",
   payroll: "/payroll",
@@ -27,7 +28,7 @@ const ROUTE_MAP: Record<string, string> = {
   invoices: "/invoicing",
   applicants: "/applicants",
   recruitment: "/applicants",
-  leave: "/leave",
+  leave: "/leave-management",
   equipment: "/equipment",
   sites: "/sites",
   "site management": "/sites",
@@ -38,13 +39,18 @@ const ROUTE_MAP: Record<string, string> = {
   projects: "/projects",
   compliance: "/compliance",
   performance: "/guard-performance",
-  "late report": "/late-clock-in-report",
+  "late report": "/late-clockin-report",
   violations: "/violations",
   deductions: "/deductions",
 };
 
 export default function VoiceCommandListener() {
-  const navigate = useNavigate();
+  const rawNavigate = useNavigate();
+  const { canAccess } = useRole();
+  const navigate = useCallback((path: string) => {
+    if (canAccess(path)) rawNavigate(path);
+    else toast.error("This page is not part of your workspace.");
+  }, [rawNavigate, canAccess]);
   const [active, setActive] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [displayText, setDisplayText] = useState("");

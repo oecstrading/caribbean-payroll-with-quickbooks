@@ -2189,6 +2189,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_workspace_access: {
+        Row: {
+          modules: string[]
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+        }
+        Insert: {
+          modules?: string[]
+          updated_at?: string
+          updated_by?: string | null
+          user_id: string
+        }
+        Update: {
+          modules?: string[]
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       geofence_violations: {
@@ -2306,6 +2327,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_workspace_access: {
+        Args: { _module: string; _user_id: string }
+        Returns: boolean
+      }
       is_admin_or_manager: { Args: { _user_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       payroll_period_factor: {
@@ -2345,6 +2370,14 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      set_user_workspace_access: {
+        Args: {
+          _modules: string[]
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: undefined
       }
       verify_guard_location: {
         Args: { _lat: number; _lon: number; _site_id: string }

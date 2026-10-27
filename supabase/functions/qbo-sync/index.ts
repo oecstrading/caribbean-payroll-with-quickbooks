@@ -42,6 +42,10 @@ Deno.serve(async (req) => {
       });
     }
 
+    const checks = await Promise.all(["quickbooks", "payroll"].map(module => userClient.rpc("has_workspace_access", { _user_id: userData.user.id, _module: module })));
+    if (checks.some(check => check.error || !check.data)) {
+      return new Response(JSON.stringify({ error: "Payroll and QuickBooks workspace access required" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
     const body: SyncRequest = await req.json();
     if (!body.payroll_run_id) {
       return new Response(JSON.stringify({ error: "payroll_run_id required" }), {

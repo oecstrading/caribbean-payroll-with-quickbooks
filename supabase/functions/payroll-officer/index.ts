@@ -28,6 +28,8 @@ Deno.serve(async req => {
     if (authError || !auth.user) return json({ error: "Sign in to review payroll." }, 401);
     const { data: roles, error: roleError } = await client.from("user_roles").select("role").eq("user_id", auth.user.id);
     if (roleError || !mayReviewPayroll((roles ?? []).map(r => r.role))) return json({ error: "Only payroll managers and administrators can request a review." }, 403);
+    const { data: access, error: accessError } = await client.rpc("has_workspace_access", { _user_id: auth.user.id, _module: "payroll" });
+    if (accessError || !access) return json({ error: "Payroll workspace access required." }, 403);
     const raw = await req.text();
     if (raw.length > 450_000) return json({ error: "Review up to 1,000 employees at a time." }, 400);
     let body: unknown;

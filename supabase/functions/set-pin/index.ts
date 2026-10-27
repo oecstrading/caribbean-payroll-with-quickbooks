@@ -46,6 +46,8 @@ Deno.serve(async (req) => {
       });
     }
 
+    const { data: access, error: accessError } = await callerClient.rpc("has_workspace_access", { _user_id: caller.id, _module: "hr" });
+    if (accessError || !access) return new Response(JSON.stringify({ error: "Employee management access required" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const { user_id, pin } = await req.json();
 
     if (!user_id || !pin) {

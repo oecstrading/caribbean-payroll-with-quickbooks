@@ -1,4 +1,5 @@
 # Application rules
+- Workspace module defaults and route eligibility live in workspace-access; server-stored per-user module overrides may narrow role access, never elevate employees. Navigation, dashboard cards and direct page guards share the same access check; restrictive database policies and authenticated RPC guards enforce module access independently. Refresh roles from live protected tables, not stale JWT claims. Administrator roles retain full access.
 - Account-free employees use employee_records with a durable employment key, never fabricated auth users; payroll reads both directories atomically and saves account-free payslips separately to preserve auth-bound foreign keys.
 - Employee HR files use private storage and employee_documents metadata; HR manages files, staff read only explicitly shared own files, and downloads use short-lived signed URLs to keep confidential records private.
 - Department payroll approval is an atomic authenticated RPC over live profiles; retain employee-name and department snapshots on payslips, reject duplicate employee/month approval, and consolidate saved runs by period without current-profile joins.

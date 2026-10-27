@@ -27,6 +27,9 @@ import { useNavigate } from "react-router-dom";
 import { useRef, useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import AttendanceClock from "@/components/AttendanceClock";
+import { useRole } from "@/hooks/useRole";
+import { Button } from "@/components/ui/button";
+import { WORKSPACE_MODULES, ROUTE_MODULES } from "@/lib/workspace-access";
 import caribbeanHero from "@/assets/caribbean-hero.jpg";
 
 const fadeUp = {
@@ -73,6 +76,8 @@ function usePullToRefresh(onRefresh: () => Promise<void>) {
 
 export default function DashboardPage() {
   const navigate = useNavigate();
+  const { canAccess, isAdminOrManager } = useRole();
+  const homeTarget = canAccess("/payroll") ? "/payroll" : "/portal";
   const [refreshKey, setRefreshKey] = useState(0);
   const [fieldOps, setFieldOps] = useState({ activeProjects: 0, pendingPayments: 0, pendingAmount: 0, checkedOut: 0, totalEquipment: 0, todayReports: 0, weeklyReports: [] as number[] });
   const [rosterData, setRosterData] = useState<{ name: string; siteName: string; shiftStart: string | null; shiftEnd: string | null; clockedIn: boolean; lateMinutes: number | null }[]>([]);
@@ -172,8 +177,8 @@ export default function DashboardPage() {
         weeklyReports: dayCounts,
       });
     };
-    fetchFieldOps();
-  }, [refreshKey]);
+    if (isAdminOrManager && ["/projects", "/contractors", "/equipment", "/daily-reports", "/roster"].some(canAccess)) fetchFieldOps();
+  }, [refreshKey, canAccess, isAdminOrManager]);
 
   const handleRefresh = useCallback(async () => {
     await new Promise((r) => setTimeout(r, 800));
@@ -228,7 +233,7 @@ export default function DashboardPage() {
         </span>
       </div>
       {/* Page Header */}
-      <motion.div {...fadeUp} transition={{ delay: 0 }} onClick={() => navigate("/payroll")} role="link" className="relative overflow-hidden rounded-2xl shadow-lg cursor-pointer hover:shadow-xl transition-shadow">
+      <motion.div {...fadeUp} transition={{ delay: 0 }} onClick={() => navigate(homeTarget)} role="link" className="relative overflow-hidden rounded-2xl shadow-lg cursor-pointer hover:shadow-xl transition-shadow">
         <img src={caribbeanHero} alt="Saint Lucia Pitons at sunset" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0" style={{ background: "linear-gradient(120deg, hsl(195 90% 18% / 0.92) 0%, hsl(330 80% 35% / 0.82) 55%, hsl(18 90% 45% / 0.75) 100%)" }} />
         <div className="relative px-6 py-7 md:px-8 md:py-9" style={{ color: "hsl(0 0% 100%)", textShadow: "0 1px 3px hsl(0 0% 0% / 0.45)" }}>
@@ -240,10 +245,21 @@ export default function DashboardPage() {
         </div>
       </motion.div>
 
+      <section className="space-y-3">
+        <h2 className="text-lg font-display font-semibold text-foreground">My workspace</h2>
+        <div className="flex flex-wrap gap-3">
+          <Button variant="secondary" onClick={() => navigate("/portal")}><Users />My Portal</Button>
+          <Button variant="secondary" onClick={() => navigate("/payslips")}><FileDown />My Payslips</Button>
+          {!isAdminOrManager && WORKSPACE_MODULES.filter(module => Object.entries(ROUTE_MODULES).some(([path, id]) => id === module.id && canAccess(path))).map(module => {
+            const path = Object.entries(ROUTE_MODULES).find(([path, id]) => id === module.id && canAccess(path))?.[0];
+            return <Button key={module.id} variant="outline" onClick={() => { if (path) navigate(path); }}>{module.label}<ArrowRight /></Button>;
+          })}
+        </div>
+      </section>
       {/* Metrics */}
-      <AttendanceClock />
+      {canAccess("/attendance") && <AttendanceClock />}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {metrics.map((metric, i) => (
+        {metrics.filter(metric => canAccess(metric.path)).map((metric, i) => (
           <motion.div key={metric.label} {...fadeUp} transition={{ delay: 0.05 * (i + 1) }}>
             <Card
               className={`carib-tile ${(metric as any).tile} border-0 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all cursor-pointer group`}
@@ -267,13 +283,13 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Quick Actions */}
-        <motion.div {...fadeUp} transition={{ delay: 0.25 }}>
+        {quickActions.some(action => canAccess(action.path)) && <motion.div {...fadeUp} transition={{ delay: 0.25 }}>
           <Card className="carib-band shadow-card border-border/60 hover:shadow-lg transition-shadow">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-display"><button type="button" onClick={() => navigate("/payroll")} className="hover:underline">Quick Actions →</button></CardTitle>
+              <CardTitle className="text-base font-display"><button type="button" onClick={() => navigate(quickActions.find(action => canAccess(action.path))?.path ?? "/portal")} className="hover:underline">Quick Actions →</button></CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              {quickActions.map((action) => (
+              {quickActions.filter(action => canAccess(action.path)).map((action) => (
                 <button
                   key={action.label}
                   onClick={() => navigate(action.path)}
@@ -290,10 +306,10 @@ export default function DashboardPage() {
               ))}
             </CardContent>
           </Card>
-        </motion.div>
+        </motion.div>}
 
         {/* Compliance Alerts */}
-        <motion.div {...fadeUp} transition={{ delay: 0.3 }}>
+        {canAccess("/compliance") && <motion.div {...fadeUp} transition={{ delay: 0.3 }}>
           <Card className="carib-band shadow-card border-border/60 hover:shadow-lg transition-shadow">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-display flex items-center gap-2">
@@ -302,7 +318,7 @@ export default function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {lateAlerts.length > 0 && (
+              {canAccess("/late-clockin-report") && lateAlerts.length > 0 && (
                 <div
                   className="flex items-start gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20 cursor-pointer hover:bg-destructive/15 transition-colors"
                   onClick={() => navigate("/late-clockin-report")}
@@ -316,7 +332,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
               )}
-              <div
+              {canAccess("/attendance") && (<div
                 className="flex items-start gap-3 p-3 rounded-lg bg-warning/10 border border-warning/20 cursor-pointer hover:bg-warning/15 transition-colors"
                 onClick={() => navigate("/attendance")}
               >
@@ -325,8 +341,8 @@ export default function DashboardPage() {
                   <p className="text-sm font-medium text-foreground">{lateToday} late arrivals this week</p>
                   <p className="text-xs text-muted-foreground mt-0.5">Review attendance records →</p>
                 </div>
-              </div>
-              <div
+              </div>)}
+              {canAccess("/reports") && (<div
                 className="flex items-start gap-3 p-3 rounded-lg bg-primary/5 border border-primary/10 cursor-pointer hover:bg-primary/10 transition-colors"
                 onClick={() => navigate("/reports")}
               >
@@ -335,8 +351,8 @@ export default function DashboardPage() {
                   <p className="text-sm font-medium text-foreground">NIC remittance due Mar 15</p>
                   <p className="text-xs text-muted-foreground mt-0.5">Generate C3 report →</p>
                 </div>
-              </div>
-              <div
+              </div>)}
+              {canAccess("/employees") && (<div
                 className="flex items-start gap-3 p-3 rounded-lg bg-success/5 border border-success/10 cursor-pointer hover:bg-success/10 transition-colors"
                 onClick={() => navigate("/employees")}
               >
@@ -345,13 +361,13 @@ export default function DashboardPage() {
                   <p className="text-sm font-medium text-foreground">All salaries above minimum wage</p>
                   <p className="text-xs text-muted-foreground mt-0.5">$6.52 XCD/hr threshold met — View employees →</p>
                 </div>
-              </div>
+              </div>)}
             </CardContent>
           </Card>
-        </motion.div>
+        </motion.div>}
 
         {/* Recent Payroll Summary */}
-        <motion.div {...fadeUp} transition={{ delay: 0.35 }}>
+        {canAccess("/payroll") && <motion.div {...fadeUp} transition={{ delay: 0.35 }}>
           <Card className="carib-band shadow-card border-border/60 hover:shadow-lg transition-shadow">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-display"><button type="button" onClick={() => navigate("/payroll")} className="hover:underline">February Payroll →</button></CardTitle>
@@ -363,7 +379,7 @@ export default function DashboardPage() {
                   { label: "Total NIC (Employee)", value: formatCurrency(activeEmployees.reduce((s, e) => s + calculatePayroll(e.monthlySalary).employeeNIC, 0)), color: "text-destructive" },
                   { label: "Total PAYE", value: formatCurrency(activeEmployees.reduce((s, e) => s + calculatePayroll(e.monthlySalary).paye, 0)), color: "text-destructive" },
                   { label: "Net Pay", value: formatCurrency(totalPayroll), color: "text-success" },
-                ].map((row) => (
+                ].filter(row => canAccess(row.label === "Gross Pay" || row.label === "Net Pay" ? "/payroll" : "/reports")).map((row) => (
                   <button type="button" key={row.label} onClick={() => navigate(row.label === "Gross Pay" || row.label === "Net Pay" ? "/payroll" : "/reports")} className="w-full flex items-center justify-between py-1.5 px-1 rounded-md border-b border-border/50 last:border-0 hover:bg-muted transition-colors text-left">
                     <span className="text-sm text-muted-foreground">{row.label}</span>
                     <span className={`text-sm font-semibold ${row.color}`}>{row.value}</span>
@@ -378,11 +394,11 @@ export default function DashboardPage() {
               </button>
             </CardContent>
           </Card>
-        </motion.div>
+        </motion.div>}
       </div>
 
       {/* Late Clock-In Alerts */}
-      {lateAlerts.length > 0 && (
+      {canAccess("/late-clockin-report") && lateAlerts.length > 0 && (
         <motion.div {...fadeUp} transition={{ delay: 0.38 }}>
           <Card className="shadow-card border-destructive/30 bg-destructive/5">
             <CardHeader className="pb-3">
@@ -432,17 +448,17 @@ export default function DashboardPage() {
       )}
 
       {/* Field Operations Widget */}
-      <motion.div {...fadeUp} transition={{ delay: 0.4 }}>
+      {["/projects", "/contractors", "/equipment", "/daily-reports"].some(canAccess) && <motion.div {...fadeUp} transition={{ delay: 0.4 }}>
         <Card className="carib-band shadow-card border-border/60 hover:shadow-lg transition-shadow">
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-display flex items-center gap-2">
               <Briefcase size={16} className="text-primary" />
-              <button type="button" onClick={() => navigate("/projects")} className="hover:underline">Field Operations →</button>
+              <button type="button" onClick={() => navigate(["/projects", "/contractors", "/equipment", "/daily-reports"].find(canAccess) ?? "/portal")} className="hover:underline">Field Operations →</button>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div
+              {canAccess("/projects") && (<div
                 className="flex items-center gap-3 p-4 rounded-lg bg-primary/5 border border-primary/10 cursor-pointer hover:bg-primary/10 transition-colors"
                 onClick={() => navigate("/projects")}
               >
@@ -453,9 +469,9 @@ export default function DashboardPage() {
                   <p className="text-2xl font-display font-bold text-foreground">{fieldOps.activeProjects}</p>
                   <p className="text-xs text-muted-foreground">Active Projects</p>
                 </div>
-              </div>
+              </div>)}
 
-              <div
+              {canAccess("/contractors") && (<div
                 className="flex items-center gap-3 p-4 rounded-lg bg-warning/5 border border-warning/10 cursor-pointer hover:bg-warning/10 transition-colors"
                 onClick={() => navigate("/contractors")}
               >
@@ -471,9 +487,9 @@ export default function DashboardPage() {
                     </Badge>
                   )}
                 </div>
-              </div>
+              </div>)}
 
-              <div
+              {canAccess("/equipment") && (<div
                 className="flex items-center gap-3 p-4 rounded-lg bg-accent/10 border border-accent/10 cursor-pointer hover:bg-accent/20 transition-colors"
                 onClick={() => navigate("/equipment")}
               >
@@ -487,9 +503,9 @@ export default function DashboardPage() {
                     of {fieldOps.totalEquipment} total
                   </Badge>
                 </div>
-              </div>
+              </div>)}
 
-              <div
+              {canAccess("/daily-reports") && (<div
                 className="flex items-center gap-3 p-4 rounded-lg bg-success/5 border border-success/10 cursor-pointer hover:bg-success/10 transition-colors"
                 onClick={() => navigate("/daily-reports")}
               >
@@ -521,14 +537,14 @@ export default function DashboardPage() {
                   <p className="text-xs text-muted-foreground">Reports Today</p>
                   <p className="text-[10px] text-muted-foreground">{fieldOps.weeklyReports.reduce((s, v) => s + v, 0)} this week</p>
                 </div>
-              </div>
+              </div>)}
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </motion.div>}
 
       {/* Today's Roster Widget */}
-      <motion.div {...fadeUp} transition={{ delay: 0.45 }}>
+      {canAccess("/roster") && <motion.div {...fadeUp} transition={{ delay: 0.45 }}>
         <Card className="carib-band shadow-card border-border/60 hover:shadow-lg transition-shadow">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
@@ -553,13 +569,13 @@ export default function DashboardPage() {
                   <span>{rosterData.length} scheduled</span>
                   <span className="flex items-center gap-1"><CheckCircle size={12} className="text-success" /> {rosterData.filter(r => r.clockedIn).length} clocked in</span>
                   <span className="flex items-center gap-1"><XCircle size={12} className="text-destructive" /> {rosterData.filter(r => !r.clockedIn).length} not yet</span>
-                  {lateAlerts.length > 0 && (
+                  {canAccess("/late-clockin-report") && lateAlerts.length > 0 && (
                     <span className="flex items-center gap-1"><TimerOff size={12} className="text-destructive" /> {lateAlerts.length} late</span>
                   )}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                   {rosterData.slice(0, 9).map((guard, i) => (
-                    <button type="button" onClick={() => navigate(guard.lateMinutes && guard.lateMinutes > 0 ? "/late-clockin-report" : "/attendance")} key={i} className={`w-full text-left flex items-center justify-between p-3 rounded-lg border transition-colors hover:shadow-md hover:-translate-y-0.5 ${
+                    <button type="button" onClick={() => navigate(guard.lateMinutes && guard.lateMinutes > 0 && canAccess("/late-clockin-report") ? "/late-clockin-report" : canAccess("/attendance") ? "/attendance" : "/roster")} key={i} className={`w-full text-left flex items-center justify-between p-3 rounded-lg border transition-colors hover:shadow-md hover:-translate-y-0.5 ${
                       guard.lateMinutes && guard.lateMinutes > 0
                         ? "bg-destructive/10 border-destructive/30"
                         : guard.clockedIn
@@ -596,7 +612,7 @@ export default function DashboardPage() {
             )}
           </CardContent>
         </Card>
-      </motion.div>
+      </motion.div>}
     </div>
   );
 }
