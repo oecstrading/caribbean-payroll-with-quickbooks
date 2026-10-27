@@ -29,6 +29,7 @@ describe.sequential("live company isolation and atomic payroll approval", () => 
   beforeAll(async () => {
     const membership = await client.rpc("current_org_id"); expect(membership.error).toBeNull(); expect(membership.data).toBe(org);
     const employee = await client.from("employee_records").select("user_id").eq("user_id", own).single(); expect(employee.error, "Apply scripts/security-tests/setup.sql first").toBeNull();
+    const employment = await client.from("employee_records").update({ department: "Automated security verification", monthly_salary: 2600 }).eq("user_id", own).select("user_id"); expect(employment.error).toBeNull(); expect(employment.data).toHaveLength(1);
     const result = await client.rpc("create_employee_loan", { _employee: own, _creditor: creditor, _original: 800, _balance: 35, _monthly: 100, _notes: "Automated security verification" });
     expect(result.error).toBeNull(); expect(typeof result.data).toBe("string"); loanId = result.data;
   });
