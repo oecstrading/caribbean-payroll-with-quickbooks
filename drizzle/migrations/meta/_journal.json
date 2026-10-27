@@ -134,6 +134,13 @@
       "when": 1793096955694,
       "tag": "0018_secure_company_onboarding",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793097153822,
+      "tag": "0019_company_setup_metadata_consistency",
+      "breakpoints": true
     }
   ]
 }
