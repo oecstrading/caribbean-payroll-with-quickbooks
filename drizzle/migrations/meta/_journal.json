@@ -211,6 +211,13 @@
       "when": 1793101193394,
       "tag": "0029_resumable_employee_removal_visibility",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1793102703640,
+      "tag": "0030_super_admin_delegation",
+      "breakpoints": true
     }
   ]
 }

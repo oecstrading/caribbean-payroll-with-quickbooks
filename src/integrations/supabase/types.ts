@@ -556,6 +556,32 @@ export type Database = {
           },
         ]
       }
+      company_super_administrators: {
+        Row: {
+          created_at: string
+          org_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          org_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          org_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_super_administrators_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contractor_payments: {
         Row: {
           amount: number
@@ -3558,6 +3584,7 @@ export type Database = {
       }
     }
     Functions: {
+      administrator_authority: { Args: { _user: string }; Returns: Json }
       apply_payroll_loans: {
         Args: {
           _employee: string
@@ -3654,6 +3681,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_manager: { Args: { _user_id: string }; Returns: boolean }
+      is_company_super_admin: { Args: { _user: string }; Returns: boolean }
       is_platform_admin: { Args: never; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       issue_company_setup: {
@@ -3775,6 +3803,10 @@ export type Database = {
           _threshold: number
           _timezone: string
         }
+        Returns: undefined
+      }
+      set_administrator_authority: {
+        Args: { _company: boolean; _platform: boolean; _user: string }
         Returns: undefined
       }
       set_employee_loan_active: {
