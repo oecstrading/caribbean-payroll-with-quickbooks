@@ -1,94 +1,84 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2";
+import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import bcrypt from "npm:bcryptjs@2.4.3";
+import { accountSchema, mayManageAccount } from "../_shared/user-management.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
-
+Deno.serve(async req => {
+  const reply = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  if (req.method === "OPTIONS") return reply({});
   try {
-    // Verify the calling user is an admin
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-
-    // Verify caller is admin using their JWT
-    const callerClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
+    const url = Deno.env.get("SUPABASE_URL"), service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"), anon = Deno.env.get("SUPABASE_ANON_KEY");
+    if (!url || !service || !anon) throw new Error("Account service unavailable");
+    const callerClient = createClient(url, anon, { global: { headers: { Authorization: req.headers.get("Authorization") || "" } } });
     const { data: { user: caller } } = await callerClient.auth.getUser();
-    if (!caller) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (!caller) return reply({ error: "Sign in required" }, 401);
+    const admin = createClient(url, service, { auth: { persistSession: false, autoRefreshToken: false } });
+    const [{ data: role }, { data: org }] = await Promise.all([admin.from("user_roles").select("role").eq("user_id", caller.id).single(), callerClient.rpc("current_org_id")]);
+    if (role?.role !== "admin" || !org) return reply({ error: "Company administrator required" }, 403);
+    const parsed = accountSchema.safeParse(await req.json());
+    if (!parsed.success) return reply({ error: parsed.error.issues[0]?.message || "Invalid account details" }, 400);
+    const v = parsed.data;
+    const { data: authority } = await callerClient.rpc("administrator_authority", { _user: caller.id });
+    const companySuper = authority?.company_super_admin === true;
+    const platformSuper = authority?.platform_super_admin === true;
+    let id = v.user_id;
+    let created = false;
+    let invitationSent = false;
+    // Use the stable published origin, not an arbitrary request-controlled redirect.
+    const redirectTo = "https://caribbean-payroll-with-quickbooks.lovable.app/accept-invitation";
+    if (v.action !== "create") {
+      const { data: target } = await admin.from("profiles").select("org_id,email,login_username,deleted_at").eq("user_id", id).single();
+      const [{ data: targetRole }, { data: targetAuthority }] = await Promise.all([admin.from("user_roles").select("role").eq("user_id", id).single(), callerClient.rpc("administrator_authority", { _user: id })]);
+      if (!target || target.deleted_at || !mayManageAccount(role.role, target.org_id === org, targetRole?.role === "admin" && id !== caller.id, companySuper, targetAuthority?.platform_super_admin === true && id !== caller.id, platformSuper)) return reply({ error: "You cannot manage this account" }, 403);
+      if (v.action === "resend") {
+        if (!target.email || target.email.endsWith("@pin.invalid")) return reply({ error: "Add a real email address first" }, 400);
+        const { data: authTarget } = await admin.auth.admin.getUserById(id);
+        const publicAuth = createClient(url, anon, { auth: { persistSession: false } });
+        const result = authTarget.user?.email_confirmed_at
+          ? await publicAuth.auth.resetPasswordForEmail(target.email, { redirectTo })
+          : await publicAuth.auth.resend({ type: "signup", email: target.email, options: { emailRedirectTo: redirectTo } });
+        if (result.error) throw result.error;
+        return reply({ success: true, invitation_sent: true });
+      }
+      if (!v.email && !target.email?.endsWith("@pin.invalid")) return reply({ error: "An existing email login cannot be removed here" }, 400);
+      if (v.email && v.email !== target.email) {
+        if (id === caller.id) return reply({ error: "Use account settings to change your own sign-in email" }, 400);
+        const { error } = await admin.auth.admin.updateUserById(id, { email: v.email, email_confirm: false });
+        if (error) throw error;
+      }
+    } else {
+      if (v.role === "admin" && !companySuper) return reply({ error: "Company super administrator required to add administrators" }, 403);
+      if (v.username) {
+        const { data: duplicate } = await admin.from("profiles").select("user_id").eq("login_username", v.username).maybeSingle();
+        if (duplicate) return reply({ error: "Username already in use" }, 400);
+      }
+      const result = v.email
+        ? await admin.auth.admin.inviteUserByEmail(v.email, { redirectTo, data: { first_name: v.first_name, last_name: v.last_name } })
+        : await admin.auth.admin.createUser({ email: `${crypto.randomUUID()}@pin.invalid`, password: crypto.randomUUID() + "aA1!", email_confirm: true, user_metadata: { first_name: v.first_name, last_name: v.last_name } });
+      if (result.error || !result.data.user) throw result.error || new Error("Account creation failed");
+      id = result.data.user.id; created = true; invitationSent = Boolean(v.email);
+      const { error } = await admin.rpc("create_invited_profile", { _user_id: id, _org_id: org, _email: v.email, _first: v.first_name, _last: v.last_name, _role: v.role });
+      if (error) { await admin.auth.admin.deleteUser(id); throw error; }
     }
-
-    // Check admin role
-    const adminClient = createClient(supabaseUrl, serviceRoleKey);
-    const { data: roleData } = await adminClient
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", caller.id)
-      .single();
-
-    if (!roleData || roleData.role !== "admin") {
-      return new Response(JSON.stringify({ error: "Admin access required" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (!id) throw new Error("Select an account");
+    const update: Record<string, unknown> = { first_name: v.first_name, last_name: v.last_name, phone: v.phone, department: v.department, job_title: v.job_title, is_employee: v.is_employee, login_username: v.username || null };
+    if (v.email) update.email = v.email;
+    const { error: profileError } = await admin.from("profiles").update(update).eq("user_id", id).eq("org_id", org);
+    if (profileError) { if (created) await admin.auth.admin.deleteUser(id); throw profileError; }
+    if (v.pin) {
+      const { error } = await admin.from("user_pins").upsert({ user_id: id, org_id: org, pin_hash: await bcrypt.hash(v.pin, 12), is_enabled: true, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+      if (error) throw error;
+      await admin.from("user_pin_attempts").delete().eq("user_id", id);
     }
-
-    const { data: orgId, error: orgError } = await callerClient.rpc("current_org_id");
-    if (orgError || !orgId) return new Response(JSON.stringify({ error: "Company membership required" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    const { email, role = "employee", first_name, last_name } = await req.json();
-    if (typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 255 || !["admin", "manager", "employee"].includes(role)) {
-      return new Response(JSON.stringify({ error: "Email is required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (!created && v.email) {
+      const { data: authTarget } = await admin.auth.admin.getUserById(id);
+      if (!authTarget.user?.email_confirmed_at) {
+        const publicAuth = createClient(url, anon, { auth: { persistSession: false } });
+        const { error } = await publicAuth.auth.resend({ type: "signup", email: v.email, options: { emailRedirectTo: redirectTo } });
+        if (error) return reply({ success: true, user_id: id, invitation_sent: false, warning: "Account saved, but verification email could not be sent. Use Send invitation to retry." });
+        invitationSent = true;
+      }
     }
-
-    // Create user via admin API (doesn't affect caller's session)
-    const tempPassword = crypto.randomUUID().slice(0, 16) + "A1!";
-    const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
-      email: email.trim(),
-      password: tempPassword,
-      email_confirm: true,
-      user_metadata: { first_name: first_name || "", last_name: last_name || "" },
-    });
-
-    if (createError) {
-      return new Response(JSON.stringify({ error: createError.message }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    if (!newUser.user) throw new Error("Account creation did not finish");
-    const { error: assignmentError } = await adminClient.rpc("create_invited_profile", { _user_id: newUser.user.id, _org_id: orgId, _email: email.trim(), _first: first_name || "", _last: last_name || "", _role: role });
-    if (assignmentError) throw new Error("Account created but company assignment failed; contact your administrator before retrying.");
-
-    return new Response(
-      JSON.stringify({ success: true, user_id: newUser.user.id }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
+    return reply({ success: true, user_id: id, invitation_sent: invitationSent });
+  } catch (error) { return reply({ error: error instanceof Error ? error.message : "Account operation failed" }, 400); }
 });
