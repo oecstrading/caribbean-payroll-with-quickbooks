@@ -1,4 +1,5 @@
 # Payroll account and Smiley’s samples
+- [ ] Add administrator-managed role/access settings, filtered workspaces and protected pages; verify saved access and denied navigation.
 - [x] Add contextual AI Payroll Officer review with manager approval retained; signed-in live review returned zero-pay/missing-ID flags and reconciliation; no payroll approved. Four privacy/access tests pass.
 - [x] Refresh v5 guide and v4 brochure with flexible periods, rates/hours, HR files, AI review and manager walkthrough using official platform examples; all ten PDF pages visually inspected with no clipping or overlap. Both Training Hubs use latest static PDFs; previous uploads retained.
 - [x] Enable consistent platform dropdowns and native date/time picker buttons; add searchable employee-folder selectors with custom entries and isolated directory suggestions. Verified signed-in custom selection, original-value save/reload, disabled read-only selectors, status filters and payroll island selection; 27 HR/payroll/access regression tests pass with no runtime errors.
