@@ -197,6 +197,13 @@
       "when": 1793100713656,
       "tag": "0027_permanent_employee_removal_preserving_financial_history",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1793100915030,
+      "tag": "0028_prevent_removed_employee_loan_reactivation",
+      "breakpoints": true
     }
   ]
 }
