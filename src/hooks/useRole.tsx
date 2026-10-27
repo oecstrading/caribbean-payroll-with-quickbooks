@@ -15,6 +15,7 @@ interface RoleContextType {
   isAdminOrManager: boolean;
   isGuard: boolean;
   modules: string[];
+  demoMode: boolean;
   canAccess: (path: string) => boolean;
   refreshAccess: () => Promise<void>;
 }
@@ -28,6 +29,7 @@ const RoleContext = createContext<RoleContextType>({
   isAdminOrManager: false,
   isGuard: false,
   modules: [],
+  demoMode: false,
   canAccess: () => false,
   refreshAccess: async () => {},
 });
@@ -38,18 +40,24 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
   const [jurisdiction, setJurisdiction] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [modules, setModules] = useState<string[]>([]);
+  const [companyModules, setCompanyModules] = useState<string[]>([]);
+  const [demoMode, setDemoMode] = useState(false);
   const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
   const refreshAccess = useCallback(async () => {
     if (!user) { setRole(null); setModules([]); setJurisdiction(null); setLoadedUserId(null); setLoading(false); return; }
     try {
-      const [roleRes, profileRes, accessRes] = await Promise.all([
+      const [roleRes, profileRes, accessRes, companyRes] = await Promise.all([
         supabase.from("user_roles").select("role").eq("user_id", user.id),
         supabase.from("profiles").select("jurisdiction").eq("user_id", user.id).maybeSingle(),
         supabase.from("user_workspace_access").select("modules").eq("user_id", user.id).maybeSingle(),
+        supabase.rpc("company_configuration"),
       ]);
       const roles = roleRes.data?.map(r => r.role) ?? [];
+      const configuration = companyRes.data as { modules?: string[]; demo_mode?: boolean } | null;
+      const enabled = !companyRes.error ? configuration?.modules ?? [] : [];
+      setCompanyModules(enabled); setDemoMode(configuration?.demo_mode === true);
       const nextRole = roleRes.error || accessRes.error ? null : roles.includes("admin") ? "admin" : roles.includes("manager") ? "manager" : roles.includes("employee") ? "employee" : null;
-      setRole(nextRole); setModules(nextRole ? accessRes.data?.modules ?? roleModules(nextRole) : []);
+      setRole(nextRole); setModules(nextRole ? (nextRole === "admin" ? roleModules(nextRole) : accessRes.data?.modules ?? roleModules(nextRole)).filter(m => enabled.includes(m)) : []);
       setJurisdiction(profileRes.data?.jurisdiction ?? null);
     } catch { setRole(null); setModules([]); }
     setLoadedUserId(user.id); setLoading(false);
@@ -62,7 +70,7 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
     return () => { window.removeEventListener("focus", refresh); window.clearInterval(interval); };
   }, [refreshAccess]);
   const ready = !loading && loadedUserId === (user?.id ?? null);
-  const canAccess = useCallback((path: string) => ready && canOpenPath(role, modules, path), [ready, role, modules]);
+  const canAccess = useCallback((path: string) => ready && canOpenPath(role, modules, path, companyModules), [ready, role, modules, companyModules]);
 
   const isAdmin = role === "admin";
   const isManager = role === "manager";
@@ -70,7 +78,7 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
   const isGuard = role === "employee";
 
   return (
-    <RoleContext.Provider value={{ role: ready ? role : null, jurisdiction, loading: !ready, isAdmin: ready && isAdmin, isManager: ready && isManager, isAdminOrManager: ready && isAdminOrManager, isGuard: ready && isGuard, modules: ready ? modules : [], canAccess, refreshAccess }}>
+    <RoleContext.Provider value={{ role: ready ? role : null, jurisdiction, loading: !ready, isAdmin: ready && isAdmin, isManager: ready && isManager, isAdminOrManager: ready && isAdminOrManager, isGuard: ready && isGuard, modules: ready ? modules : [], demoMode: ready && demoMode, canAccess, refreshAccess }}>
       {children}
     </RoleContext.Provider>
   );
