@@ -32,7 +32,7 @@ export const employeeFolderSchema = z.object({
   }
 });
 export type EmployeeForm = z.infer<typeof employeeFolderSchema>;
-export type FolderProfile = Database["public"]["Tables"]["profiles"]["Row"];
+export type FolderProfile = Omit<Database["public"]["Tables"]["profiles"]["Row"], "is_employee" | "login_username">;
 export interface EmployeeFolder { id: string; source: "live" | "sample"; accountLinked?: boolean; deletedAt: string | null; values: EmployeeForm }
 export function employeePermissions(role: string | null) {
   return { edit: role === "admin" || role === "manager", create: role === "admin", delete: role === "admin" };

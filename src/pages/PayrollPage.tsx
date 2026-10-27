@@ -60,7 +60,7 @@ export default function PayrollPage() {
     setLoading(true); setLoadError("");
     const load = async () => {
       const [profiles, deductions, additions, records, loanRows] = await Promise.all([
-        supabase.from("profiles").select("*").is("deleted_at", null).eq("jurisdiction", jurisdiction),
+        supabase.from("profiles").select("*").eq("is_employee", true).is("deleted_at", null).eq("jurisdiction", jurisdiction),
         supabase.from("employee_deductions").select("*, creditors(name)").eq("is_active", true),
         supabase.from("employee_additions").select("*").eq("is_active", true),
         supabase.from("employee_records").select("*").is("deleted_at", null).eq("jurisdiction", jurisdiction),
