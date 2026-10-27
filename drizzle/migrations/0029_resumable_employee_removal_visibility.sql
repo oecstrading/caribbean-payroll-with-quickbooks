@@ -1,0 +1,3 @@
+GRANT SELECT ON public.employee_removal_jobs TO authenticated;
+CREATE POLICY removal_jobs_admin_read ON public.employee_removal_jobs FOR SELECT TO authenticated USING(org_id=public.current_org_id() AND public.has_role(auth.uid(),'admin') AND public.has_workspace_access(auth.uid(),'hr'));
+COMMENT ON TABLE public.employee_removal_jobs IS 'Resumable employee removal operations; company admins may read status only, never alter authority or storage paths.';

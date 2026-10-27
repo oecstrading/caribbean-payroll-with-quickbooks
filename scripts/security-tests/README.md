@@ -1,5 +1,9 @@
 # Pre-deployment security regression tests
 
+## Permanent employee removal checks
+
+After minting the requesting administrator session, apply `employee-removal-setup.sql` with the approved data tool, then run `bunx vitest run --config vitest.security.config.ts tests/security/employee-removal.live.test.ts`. Always apply `employee-removal-cleanup.sql` afterwards. These disposable account-free fixtures assert explicit confirmation, service-only authorization, self-deletion denial, directory removal, retained payslip totals/repayments, paused loans and permanent restoration denial. Never run against real employee identifiers or use privileged credentials for test assertions.
+
 ## Company onboarding checks
 
 After minting the requesting platform administrator's session, run:
