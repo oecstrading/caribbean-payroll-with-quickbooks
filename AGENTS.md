@@ -1,4 +1,5 @@
 # Application rules
+- Live security tests use an RLS-bound requesting-user session and fixed account-free fixtures, never privileged credentials; run setup/cleanup through approved data tools and keep live writes opt-in outside normal CI tests.
 - Organization membership is server-controlled; tenant RLS, relational validation and company-scoped privileged functions must agree so cross-company identifiers never authorize access. Signup identities without assigned membership cannot access company records.
 - Clear client query caches when the authenticated identity changes so a prior company's fetched data cannot appear in another workspace.
 - Operational photos/audio and applicant files use private storage and short-lived signed reads, resolving legacy public references to preserved object paths; branding and explicitly public training resources remain public by design.
