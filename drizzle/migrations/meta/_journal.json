@@ -92,6 +92,13 @@
       "when": 1793093695018,
       "tag": "0012_workspace_storage_and_admin_guards",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1793095412406,
+      "tag": "0013_company_isolation",
+      "breakpoints": true
     }
   ]
 }
