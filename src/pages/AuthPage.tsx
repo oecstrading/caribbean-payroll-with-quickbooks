@@ -188,7 +188,7 @@ export default function AuthPage() {
       </div>
 
       {/* Right auth panel */}
-      <div className="flex-1 flex items-center justify-center p-8">
+      <div className="flex-1 flex items-center justify-center bg-background p-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
