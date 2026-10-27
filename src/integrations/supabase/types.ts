@@ -1090,6 +1090,60 @@ export type Database = {
           },
         ]
       }
+      employee_loans: {
+        Row: {
+          balance: number
+          created_at: string
+          creditor_id: string
+          id: string
+          is_active: boolean
+          monthly_repayment: number
+          notes: string
+          org_id: string
+          original_amount: number
+          user_id: string
+        }
+        Insert: {
+          balance: number
+          created_at?: string
+          creditor_id: string
+          id?: string
+          is_active?: boolean
+          monthly_repayment: number
+          notes?: string
+          org_id?: string
+          original_amount: number
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          creditor_id?: string
+          id?: string
+          is_active?: boolean
+          monthly_repayment?: number
+          notes?: string
+          org_id?: string
+          original_amount?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_loans_creditor_id_fkey"
+            columns: ["creditor_id"]
+            isOneToOne: false
+            referencedRelation: "creditors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_loans_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_payslips: {
         Row: {
           basic_pay: number
@@ -1822,6 +1876,58 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loan_repayments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          loan_id: string
+          org_id: string
+          payroll_run_id: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          loan_id: string
+          org_id: string
+          payroll_run_id: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          loan_id?: string
+          org_id?: string
+          payroll_run_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loan_repayments_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "employee_loans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loan_repayments_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loan_repayments_payroll_run_id_fkey"
+            columns: ["payroll_run_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_runs"
             referencedColumns: ["id"]
           },
         ]
@@ -2998,6 +3104,15 @@ export type Database = {
       }
     }
     Functions: {
+      apply_payroll_loans: {
+        Args: {
+          _employee: string
+          _factor: number
+          _run: string
+          _submitted: number
+        }
+        Returns: undefined
+      }
       approve_department_payroll: {
         Args: {
           _departments: string[]
@@ -3024,6 +3139,17 @@ export type Database = {
         Returns: boolean
       }
       client_portal_data: { Args: { _code: string }; Returns: Json }
+      create_employee_loan: {
+        Args: {
+          _balance: number
+          _creditor: string
+          _employee: string
+          _monthly: number
+          _notes?: string
+          _original: number
+        }
+        Returns: string
+      }
       create_invited_profile: {
         Args: {
           _email: string
@@ -3107,6 +3233,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      set_employee_loan_active: {
+        Args: { _active: boolean; _loan: string }
+        Returns: undefined
       }
       set_user_workspace_access: {
         Args: {
