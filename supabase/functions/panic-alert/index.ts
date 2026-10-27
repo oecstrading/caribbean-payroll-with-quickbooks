@@ -11,19 +11,23 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!serviceKey || req.headers.get("Authorization") !== `Bearer ${serviceKey}`) return new Response(JSON.stringify({ error: "Trusted alert service required" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const payload = await req.json();
-    const record = payload.record || payload;
+    const eventId = (payload.record || payload)?.id;
 
     const adminClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    const { data: record } = await adminClient.from("emergency_alerts").select("*").eq("id", eventId).maybeSingle();
+    if (!record?.org_id) return new Response(JSON.stringify({ error: "Alert not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     // Fetch guard profile
     const { data: profile } = await adminClient
       .from("profiles")
       .select("first_name, last_name, email, phone, jurisdiction")
-      .eq("user_id", record.user_id)
+      .eq("org_id", record.org_id).eq("user_id", record.user_id)
       .maybeSingle();
 
     const guardName = profile
@@ -36,7 +40,7 @@ Deno.serve(async (req) => {
       const { data: site } = await adminClient
         .from("client_sites")
         .select("name")
-        .eq("id", record.site_id)
+        .eq("org_id", record.org_id).eq("id", record.site_id)
         .maybeSingle();
       if (site) siteName = site.name;
     }
@@ -45,7 +49,7 @@ Deno.serve(async (req) => {
     const { data: adminRoles } = await adminClient
       .from("user_roles")
       .select("user_id")
-      .in("role", ["admin", "manager"]);
+      .eq("org_id", record.org_id).in("role", ["admin", "manager"]);
 
     const managerIds = (adminRoles || []).map((r) => r.user_id);
 
