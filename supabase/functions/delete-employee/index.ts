@@ -49,7 +49,7 @@ Deno.serve(async req => {
     }
     if (job.account_linked) {
       const { error } = await admin.auth.admin.deleteUser(body.employee_id);
-      if (error && error.code !== "user_not_found") return reply({ error: "Employee access is disabled and financial records are safe, but account removal could not finish. Click Delete permanently again to retry." }, 503);
+      if (error && error.code !== "user_not_found") { console.error("Account removal failed", error.code, error.message); return reply({ error: "Employee access is disabled and financial records are safe, but account removal could not finish. Click Delete permanently again to retry." }, 503); }
     }
     const { error: finishError } = await admin.rpc("finish_employee_removal", { _actor: user.id, _job: job.id });
     if (finishError) return reply({ error: "Removal needs a final cleanup. Click Delete permanently again to finish." }, 503);
