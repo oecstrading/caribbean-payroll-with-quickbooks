@@ -1,4 +1,4 @@
 export const TRAINING_RESOURCES = [
-  { id: "builtin-guide-v5", title: "User Guide — Payroll Manager Workflow", description: "Step-by-step HR setup, pay rates and weekly hours, flexible periods, AI Payroll Officer review, approval and reports.", category: "manual", badge: "Latest v5", url: "/training/OECS_User_Manual_v5.pdf" },
+  { id: "builtin-guide-v6", title: "User Guide — Client Demo & Payroll Workflow", description: "Employee PIN and clock setup, AI Paymaster, human approval, report exports and simulated QuickBooks/accountant delivery.", category: "manual", badge: "Latest v6", url: "/training/OECS_User_Manual_v6.pdf" },
   { id: "builtin-flyer-v4", title: "Brochure / Flyer — HR to Payroll", description: "Caribbean payroll and HR, departmental reporting, AI-assisted review and QuickBooks mapping with clear go-live safeguards.", category: "marketing", badge: "Latest v4", url: "/training/OECS_Brochure_v4.pdf" },
 ];
