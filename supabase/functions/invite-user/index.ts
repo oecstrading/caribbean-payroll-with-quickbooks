@@ -24,6 +24,13 @@ Deno.serve(async req => {
     let id = v.user_id;
     let created = false;
     let invitationSent = false;
+    let employment: Record<string, unknown> | null = null;
+    if (v.employee_id) {
+      if (!await callerClient.rpc("has_workspace_access", { _user_id: caller.id, _module: "hr" }).then(r => r.data === true)) return reply({ error: "HR access required" }, 403);
+      const { data: employee, error } = await admin.from("employee_records").select("*").eq("user_id", v.employee_id).eq("org_id", org).is("deleted_at", null).is("permanently_deleted_at", null).is("login_user_id", null).maybeSingle();
+      if (error || !employee) return reply({ error: "Employee already linked or unavailable" }, 400);
+      employment = employee;
+    }
     // Use the stable published origin, not an arbitrary request-controlled redirect.
     const redirectTo = "https://caribbean-payroll-with-quickbooks.lovable.app/accept-invitation";
     if (v.action !== "create") {
@@ -63,10 +70,15 @@ Deno.serve(async req => {
       if (error) { await admin.auth.admin.deleteUser(id); throw error; }
     }
     if (!id) throw new Error("Select an account");
-    const update: Record<string, unknown> = { first_name: v.first_name, last_name: v.last_name, phone: v.phone, department: v.department, job_title: v.job_title, is_employee: v.is_employee, login_username: v.username || null };
+    const update: Record<string, unknown> = { first_name: v.first_name, last_name: v.last_name, phone: v.phone, department: v.department, job_title: v.job_title, is_employee: employment ? false : v.is_employee, login_username: v.username || null };
+    if (employment) update.hr_details = employment.hr_details;
     if (v.email) update.email = v.email;
     const { error: profileError } = await admin.from("profiles").update(update).eq("user_id", id).eq("org_id", org);
     if (profileError) { if (created) await admin.auth.admin.deleteUser(id); throw profileError; }
+    if (employment && v.employee_id) {
+      const { error } = await admin.rpc("link_employee_login", { _actor: caller.id, _employee: v.employee_id, _user: id });
+      if (error) { if (created) await admin.auth.admin.deleteUser(id); throw error; }
+    }
     if (v.pin) {
       const { error } = await admin.from("user_pins").upsert({ user_id: id, org_id: org, pin_hash: await bcrypt.hash(v.pin, 12), is_enabled: true, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
       if (error) throw error;
