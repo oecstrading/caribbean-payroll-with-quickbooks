@@ -246,6 +246,7 @@ export default function TrainingHubPage() {
       {/* Search and filter */}
       <section className="border-y border-border py-4 space-y-3" aria-label="Latest platform resources">
         <h2 className="font-semibold text-foreground">Latest platform resources</h2>
+        <Button variant="outline" asChild><a href="/payroll-demo">Open client payroll demo →</a></Button>
         {TRAINING_RESOURCES.filter(doc => (filterCategory === "all" || filterCategory === doc.category) && `${doc.title} ${doc.description}`.toLowerCase().includes(searchQuery.toLowerCase())).map(doc => <div key={doc.id} className="flex items-center justify-between gap-3 py-2">
           <div className="min-w-0"><p className="font-medium text-foreground">{doc.title} <Badge variant="secondary">{doc.badge}</Badge></p><p className="text-sm text-muted-foreground">{doc.description}</p></div>
           <Button variant="outline" size="icon" onClick={() => downloadFile(doc.url)} aria-label={`Download ${doc.title}`}><Download /></Button>
