@@ -19,6 +19,14 @@ Deno.serve(async req => {
     const body: unknown = await req.json();
     if (!validRemovalBody(body)) return reply({ error: "Choose an employee and type DELETE to confirm" }, 400);
     const admin = createClient(url, service);
+    const linked = await admin.from("employee_records").select("login_user_id").eq("user_id", body.employee_id).maybeSingle();
+    if (linked.error) return reply({ error: "Unable to verify linked employee login" }, 503);
+    if (linked.data?.login_user_id) {
+      // Reuse the same authenticated removal safeguards for the independently linked login.
+      const response = await fetch(`${url}/functions/v1/delete-employee`, { method: "POST", headers: { Authorization: authorization, apikey: anon, "Content-Type": "application/json" }, body: JSON.stringify({ employee_id: linked.data.login_user_id, confirmation: body.confirmation }) });
+      const result = await response.json();
+      if (!response.ok || !result.success) return reply({ error: result.error || "Linked login removal needs a retry" }, response.status);
+    }
     const [actor, roles, hr, profile, record, targetRoles, platform, superAdmin, actorPlatform] = await Promise.all([
       admin.from("profiles").select("org_id,deleted_at").eq("user_id", user.id).maybeSingle(),
       admin.from("user_roles").select("role").eq("user_id", user.id),
