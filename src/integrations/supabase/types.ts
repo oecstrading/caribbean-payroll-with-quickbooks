@@ -1317,6 +1317,7 @@ export type Database = {
           job_title: string | null
           jurisdiction: string
           last_name: string
+          login_user_id: string | null
           monthly_salary: number | null
           nic_number: string | null
           org_id: string | null
@@ -1345,6 +1346,7 @@ export type Database = {
           job_title?: string | null
           jurisdiction?: string
           last_name?: string
+          login_user_id?: string | null
           monthly_salary?: number | null
           nic_number?: string | null
           org_id?: string | null
@@ -1373,6 +1375,7 @@ export type Database = {
           job_title?: string | null
           jurisdiction?: string
           last_name?: string
+          login_user_id?: string | null
           monthly_salary?: number | null
           nic_number?: string | null
           org_id?: string | null
@@ -1391,6 +1394,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "employee_records_login_user_id_fkey"
+            columns: ["login_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "employee_records_org_id_fkey"
             columns: ["org_id"]
@@ -3866,6 +3876,10 @@ export type Database = {
         Args: { _create_now?: boolean; _details: Json }
         Returns: Json
       }
+      link_employee_login: {
+        Args: { _actor: string; _employee: string; _user: string }
+        Returns: undefined
+      }
       payroll_period_factor: {
         Args: { _end: string; _pay_type: string; _start: string }
         Returns: number
@@ -4003,6 +4017,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      staff_employment_key: { Args: never; Returns: string }
       update_platform_company: {
         Args: { _actor: string; _details: Json; _org: string }
         Returns: undefined
