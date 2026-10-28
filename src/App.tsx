@@ -47,6 +47,7 @@ import ApplicantTrackingPage from "@/pages/ApplicantTrackingPage";
 import InvoicingPage from "@/pages/InvoicingPage";
 import TrainingHubPage from "@/pages/TrainingHubPage";
 import PublicTrainingPage from "@/pages/PublicTrainingPage";
+import PayrollDemoPage from "@/pages/PayrollDemoPage";
 import QuickBooksPage from "@/pages/QuickBooksPage";
 import PayrollSettingsPage from "@/pages/PayrollSettingsPage";
 import NotFound from "./pages/NotFound.tsx";
@@ -131,6 +132,7 @@ const AppRoutes = () => (
     </Route>
     <Route path="/client-portal" element={<ClientPortalPage />} />
     <Route path="/training-public" element={<PublicTrainingPage />} />
+    <Route path="/payroll-demo" element={<PayrollDemoPage />} />
     <Route path="/user-guide" element={<PublicTrainingPage />} />
     <Route path="/payroll-user-guide" element={<PublicTrainingPage />} />
     <Route path="/guide" element={<PublicTrainingPage />} />

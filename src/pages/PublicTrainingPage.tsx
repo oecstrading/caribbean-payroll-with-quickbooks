@@ -103,9 +103,7 @@ export default function PublicTrainingPage() {
         <section className="text-center py-8 border-t">
           <p className="text-sm text-muted-foreground">
             Want to see the platform in action?{" "}
-            <a href="/auth" className="text-primary font-medium hover:underline">
-              Sign in or request a demo →
-            </a>
+            <Button asChild><a href="/payroll-demo">Open client payroll demo →</a></Button>
           </p>
         </section>
       </main>
