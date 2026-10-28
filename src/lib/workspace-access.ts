@@ -35,7 +35,8 @@ export function canOpenPath(role: WorkspaceRole | null, modules: readonly string
   const module = ROUTE_MODULES[path];
   if (!role || !module) return false;
   if (path === "/attendance" && clockEnabled && companyModules.includes("attendance")) return true;
-  if (!["home", "portal", "users"].includes(module) && !companyModules.includes(module)) return false;
+  // Training Hub is available to every company by default; other modules respect the company's enabled set.
+  if (!["home", "portal", "users", "training"].includes(module) && !companyModules.includes(module)) return false;
   if (role === "admin") return true;
   if (module === "users") return false;
   if (role === "employee" && !EMPLOYEE_ROUTES.has(path)) return false;
