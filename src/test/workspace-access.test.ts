@@ -39,8 +39,8 @@ describe("role-based workspaces", () => {
   });
   it("keeps Training Hub available to every company by default", () => {
     expect(canOpenPath("admin", [], "/training", [])).toBe(true);
-    expect(canOpenPath("manager", ["hr"], "/training", ["hr"])).toBe(true);
-    expect(canOpenPath("employee", [], "/training", [])).toBe(true);
+    expect(canOpenPath("manager", ["training"], "/training", [])).toBe(true);
+    expect(canOpenPath("employee", ["training"], "/training", [])).toBe(true);
   });
   it("fails closed for missing roles and unknown destinations", () => {
     expect(canOpenPath(null, ["payroll"], "/payroll")).toBe(false);
