@@ -1,4 +1,5 @@
 # Payroll account and Smiley’s samples
+- [ ] Consolidate employee login, invitations and clock setup in employee folders, preserving independent employment and platform access.
 - [x] Expand user management with employment designation, email invitations, username/PIN accounts, existing-user email login and protected personal-information entry; 39 tests passed and public username/invitation pages rendered. Existing employment designations preserved; no real accounts changed.
 - [x] Verify administrator create/edit, username/PIN sign-in and staff-information save/reload end-to-end. Live disposable employee-user created, PIN session opened, emergency contact saved/reloaded, administrator phone edit saved and temporary account removed through confirmed UI; 20 access tests passed. Existing users unchanged.
 - [ ] Verify email invitation delivery/acceptance and adding email login end-to-end. Blocked: needs an approved real recipient with mailbox access to confirm delivery and open the link; no unsolicited test invitation sent.
