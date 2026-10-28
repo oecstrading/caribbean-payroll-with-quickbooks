@@ -22,7 +22,9 @@ Deno.serve(async req => {
    const {data:{user},error}=await caller.auth.getUser(); if(error||!user) return reply({error:"Sign in or enter your employee code and PIN"},401);
    const [access,clockAccess]=await Promise.all([caller.rpc("has_workspace_access",{_user_id:user.id,_module:"attendance"}),caller.rpc("has_employee_clock_access",{_employee:user.id})]); if(!access.data&&!clockAccess.data) return reply({error:"Attendance access required"},403);
    const company=await caller.rpc("current_org_id"); if(!company.data) return reply({error:"Company membership required"},403);
-   employee=user.id; org=company.data;
+   const employment=await caller.rpc("staff_employment_key");
+   if(employment.error||!employment.data) return reply({error:"Unable to verify staff clock identity"},503);
+   employee=employment.data; org=company.data;
   }
   const active=await admin.from("payroll_employee_directory").select("user_id").eq("user_id",employee).eq("org_id",org).is("deleted_at",null).ilike("status","active").maybeSingle();
   if(!active.data) return reply({error:"Active employee required"},403);

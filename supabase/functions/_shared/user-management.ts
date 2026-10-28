@@ -3,6 +3,7 @@ export const usernameSchema = z.string().trim().toLowerCase().regex(/^[a-z0-9][a
 export const accountSchema = z.object({
   action: z.enum(["create", "update", "resend"]).default("create"),
   user_id: z.string().uuid().optional(),
+  employee_id: z.string().uuid().optional(),
   email: z.union([z.literal(""), z.string().trim().toLowerCase().email().max(255)]).default(""),
   username: z.union([z.literal(""), usernameSchema]).default(""),
   pin: z.union([z.literal(""), z.string().regex(/^\d{4,6}$/)]).default(""),
@@ -13,6 +14,7 @@ export const accountSchema = z.object({
 }).superRefine((v, ctx) => {
   if (v.action === "create" && !v.email && (!v.username || !v.pin)) ctx.addIssue({ code: "custom", message: "Email or username and PIN are required" });
   if (v.action !== "create" && !v.user_id) ctx.addIssue({ code: "custom", message: "Select a user" });
+  if (v.employee_id && v.action !== "create") ctx.addIssue({ code: "custom", message: "Employee linking requires a new login" });
 });
 export function mayManageAccount(callerRole: string, sameCompany: boolean, targetAdmin: boolean, companySuper: boolean, targetPlatform: boolean, platformSuper: boolean) {
   return callerRole === "admin" && sameCompany && (!targetAdmin || companySuper) && (!targetPlatform || platformSuper);

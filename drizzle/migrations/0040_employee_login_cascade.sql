@@ -1,0 +1,4 @@
+CREATE OR REPLACE FUNCTION public.protect_employee_login_link() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ BEGIN
+IF TG_OP='UPDATE' AND NEW.login_user_id IS NULL AND OLD.login_user_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.profiles WHERE user_id=OLD.login_user_id) THEN RETURN NEW; END IF;
+IF (TG_OP='INSERT' AND NEW.login_user_id IS NOT NULL OR TG_OP='UPDATE' AND NEW.login_user_id IS DISTINCT FROM OLD.login_user_id) AND auth.role() IS DISTINCT FROM 'service_role' AND session_user NOT IN ('postgres','supabase_admin') THEN RAISE EXCEPTION 'Trusted account service required'; END IF;
+RETURN NEW; END $$;

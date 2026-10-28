@@ -1,6 +1,6 @@
 import { NativeSelect } from "@/components/ui/native-select";
 import { useEffect, useState } from "react";
-import { Save, Pencil, FileText, Trash2, RotateCcw, User, Briefcase, Wallet, Heart, StickyNote } from "lucide-react";
+import { Save, Pencil, FileText, Trash2, RotateCcw, User, Briefcase, Wallet, Heart, StickyNote, KeyRound } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,9 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import EmployeeDocuments from "@/components/EmployeeDocuments";
 import { ValuePicker } from "@/components/ui/value-picker";
+import EmployeeLoginSetup from "@/components/EmployeeLoginSetup";
+import EmployeeClockSetup from "@/components/EmployeeClockSetup";
+import { employeeLoginSchema, emptyEmployeeLogin, type EmployeeLogin } from "@/lib/employee-login";
 
 type Field = { key: keyof EmployeeForm; label: string; type?: string; options?: string[]; wide?: boolean };
 const sections: { id: string; label: string; icon: typeof User; fields: Field[] }[] = [
@@ -45,9 +48,10 @@ const sections: { id: string; label: string; icon: typeof User; fields: Field[] 
   { id: "notes", label: "Notes", icon: StickyNote, fields: [{ key: "notes", label: "Confidential HR notes", type: "textarea", wide: true }] },
 ];
 
-export default function EmployeeFolderDialog({ folder, creating, onClose, onSave, onDelete, onPermanentDelete, permissions, ownId, directory = [] }: {
+export default function EmployeeFolderDialog({ folder, creating, onClose, onSave, onDelete, onPermanentDelete, onLoginSaved, permissions, ownId, directory = [] }: {
   folder: EmployeeFolder | null; creating: boolean; onClose: () => void;
-  onSave: (values: EmployeeForm) => Promise<void>; onDelete: (restore: boolean) => Promise<void>;
+  onSave: (values: EmployeeForm, login: EmployeeLogin) => Promise<void>; onDelete: (restore: boolean) => Promise<void>;
+  onLoginSaved: () => Promise<void>;
   onPermanentDelete: (confirmation: string) => Promise<void>;
   permissions: { edit: boolean; create: boolean; delete: boolean }; ownId?: string;
   directory?: EmployeeFolder[];
@@ -60,9 +64,10 @@ export default function EmployeeFolderDialog({ folder, creating, onClose, onSave
   const [confirmation, setConfirmation] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [tab, setTab] = useState("personal");
+  const [login, setLogin] = useState<EmployeeLogin>(emptyEmployeeLogin);
   const navigate = useNavigate();
   useEffect(() => { setValues(folder?.values || { ...emptyEmployee }); setEditing(creating); setErrors({}); }, [folder, creating]);
-  useEffect(() => { setTab("personal"); }, [folder?.id, creating]);
+  useEffect(() => { setTab("personal"); setLogin({ ...emptyEmployeeLogin, email: folder?.values.email || "" }); }, [folder?.id, creating]);
   const save = async () => {
     const parsed = employeeFolderSchema.safeParse(values);
     if (!parsed.success) {
@@ -73,8 +78,12 @@ export default function EmployeeFolderDialog({ folder, creating, onClose, onSave
       if (section) setTab(section.id);
       return;
     }
+    if (creating) {
+      const result = employeeLoginSchema.safeParse(login);
+      if (!result.success) { setTab("login"); toast.error(result.error.issues[0]?.message || "Check login details"); return; }
+    }
     setBusy(true);
-    try { await onSave(parsed.data); setEditing(false); } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to save employee"); } finally { setBusy(false); }
+    try { await onSave(parsed.data, login); setLogin(current => ({ ...current, pin: "" })); setEditing(false); } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to save employee"); } finally { setBusy(false); }
   };
   const remove = async (restore: boolean) => {
     setBusy(true);
@@ -108,11 +117,11 @@ export default function EmployeeFolderDialog({ folder, creating, onClose, onSave
             <span className="w-11 h-11 shrink-0 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm">{creating ? <User size={20} /> : `${values.first_name[0] || ""}${values.last_name[0] || ""}`}</span>
             <span className="min-w-0 break-words">{creating ? "Add employee" : `${folder?.values.first_name} ${folder?.values.last_name}`}</span>
           </DialogTitle>
-          <DialogDescription>{creating ? "New employee folder · Email is optional; without email, no sign-in account is created" : folder?.source === "sample" ? "Fictional sample • Changes last for this visit only" : folder?.deletedAt ? "Deleted folder • Historical records retained; sign-in access unchanged" : `${values.job_title || "Employee folder"} · ${values.department || "Unassigned department"}`}</DialogDescription>
+          <DialogDescription>{creating ? "New employee folder" : folder?.source === "sample" ? "Fictional sample • Changes last for this visit only" : folder?.deletedAt ? "Deleted folder • Historical records retained; sign-in access unchanged" : `${values.job_title || "Employee folder"} · ${values.department || "Unassigned department"}`}</DialogDescription>
         </DialogHeader>
         <Tabs value={tab} onValueChange={setTab} className="flex-1 overflow-y-auto">
           <div className="px-4 sm:px-6 pt-4 overflow-x-auto">
-            <TabsList className="w-full min-w-[590px] grid grid-cols-6 h-11">{sections.map((section) => <TabsTrigger key={section.id} value={section.id} className="gap-1.5"><section.icon size={14} /><span>{section.label}</span></TabsTrigger>)}<TabsTrigger value="documents" className="gap-1.5"><FileText size={14} />Documents</TabsTrigger></TabsList>
+            <TabsList className="w-full min-w-[780px] grid grid-cols-7 h-11">{sections.map((section) => <TabsTrigger key={section.id} value={section.id} className="gap-1.5"><section.icon size={14} /><span>{section.label}</span></TabsTrigger>)}<TabsTrigger value="login" className="gap-1.5"><KeyRound size={14} />Login & clock</TabsTrigger><TabsTrigger value="documents" className="gap-1.5"><FileText size={14} />Documents</TabsTrigger></TabsList>
           </div>
           {sections.map((section) => <TabsContent key={section.id} value={section.id} className="px-6 pb-6 pt-3 mt-0">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">{section.fields.map((field) => {
@@ -130,7 +139,7 @@ export default function EmployeeFolderDialog({ folder, creating, onClose, onSave
                 {field.key === "pay_rate" && values.pay_frequency === "Daily" && <p className="text-xs text-muted-foreground">Monthly pay = daily rate × days per week (weekly ÷ daily hours) × 52 ÷ 12.</p>}
                 {field.key === "weekly_hours" && <p className="text-xs text-muted-foreground">{values.weekly_hours ? "" : "Not set: uses daily hours × 5. "}≈ {monthlyHours(Number(values.weekly_hours) || 0, Number(values.std_hours_per_day) || 0)} hours per month</p>}
                 {field.key === "pay_rate" && !values.pay_frequency && editing && <p className="text-xs text-muted-foreground">Choose how the employee is paid first.</p>}
-                {field.key === "email" && !creating && editing && <p className="text-xs text-muted-foreground">Account email is managed separately from HR details.</p>}
+                {field.key === "email" && !creating && editing && <p className="text-xs text-muted-foreground">Sign-in email is managed in Login & clock.</p>}
               </div>;
             })}</div>
             {section.id === "payroll" && values.jurisdiction === "LC" && <div className="mt-6 border-t border-border pt-4">
@@ -139,6 +148,10 @@ export default function EmployeeFolderDialog({ folder, creating, onClose, onSave
             </div>}
           </TabsContent>)}
           <TabsContent value="documents" className="px-6 pb-6 pt-4 mt-0">{folder?.source === "live" ? <EmployeeDocuments employeeKey={folder.id} canManage={permissions.edit && !folder.deletedAt} accountLinked={folder.accountLinked !== false} /> : <p className="text-sm text-muted-foreground">{creating ? "Save the employee folder before adding documents." : "Documents are available for live employee folders only."}</p>}</TabsContent>
+          <TabsContent value="login" className="px-6 pb-6 pt-4 mt-0 space-y-5">{creating || folder?.source === "live" && !folder.deletedAt ? <>
+            <EmployeeLoginSetup folder={folder} creating={creating} details={values} login={login} onChange={setLogin} canManage={permissions.create} onSaved={onLoginSaved} />
+            {folder ? <EmployeeClockSetup key={folder.id} employeeId={folder.id} canManage={permissions.create} /> : <p className="text-sm text-muted-foreground">Save the employee to assign their staff clock PIN and schedule.</p>}
+          </> : <p className="text-sm text-muted-foreground">Login setup is available for active live employee folders.</p>}</TabsContent>
         </Tabs>
         <div className="border-t border-border p-4 sm:px-6 flex flex-wrap gap-2 justify-between bg-background">
           <div className="flex gap-2 flex-wrap">
