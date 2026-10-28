@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useRole } from "@/hooks/useRole";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import type { EmployeeLogin } from "@/lib/employee-login";
 
 export default function EmployeesPage() {
   const { role, demoMode } = useRole();
@@ -36,7 +37,7 @@ export default function EmployeesPage() {
     setLoading(true); setError("");
     const [profiles, records] = await Promise.all([supabase.from("profiles").select("*").eq("is_employee", true).order("first_name"), supabase.from("employee_records").select("*").is("permanently_deleted_at", null).order("first_name")]);
     if (profiles.error || records.error) setError("Employee records could not be loaded. Please try again.");
-    else setLive([...(profiles.data || []).map(p => ({ ...profileToFolder(p), accountLinked: true })), ...(records.data || []).map(p => ({ ...profileToFolder(p), accountLinked: false }))]);
+    else setLive([...(profiles.data || []).map(p => ({ ...profileToFolder(p), accountLinked: true })), ...(records.data || []).map(p => ({ ...profileToFolder(p), accountLinked: false, loginUserId: p.login_user_id }))]);
     const jobs = await supabase.from("employee_removal_jobs").select("employee_id").eq("status", "pending");
     setPendingRemovals((jobs.data || []).map(job => job.employee_id));
     setLoading(false);
@@ -46,7 +47,7 @@ export default function EmployeesPage() {
   const departments = ["All", ...new Set(records.map((folder) => folder.values.department).filter(Boolean))];
   const filtered = records.filter(({ values }) => `${values.first_name} ${values.last_name} ${values.email} ${values.person_id}`.toLowerCase().includes(search.toLowerCase()) && (department === "All" || values.department === department) && (status === "All" || values.status === status));
   const close = () => { setSelected(null); setCreating(false); };
-  const save = async (values: EmployeeForm) => {
+  const save = async (values: EmployeeForm, login: EmployeeLogin) => {
     if (!permissions.edit) throw new Error("HR access is required");
     if (selected?.source === "sample") {
       const updated = { ...selected, values };
@@ -56,13 +57,13 @@ export default function EmployeesPage() {
     let id = selected?.id;
     if (creating) {
       if (!permissions.create) throw new Error("Only administrators can create employees");
-      if (!values.email) {
-        const { data, error } = await supabase.from("employee_records").insert({ ...folderUpdate(values), email: "" }).select("*").single();
+      if (!login.enabled) {
+        const { data, error } = await supabase.from("employee_records").insert({ ...folderUpdate(values), email: values.email }).select("*").single();
         if (error || !data) throw new Error(error?.message || "Unable to create employee folder");
         setSelected({ ...profileToFolder(data), accountLinked: false }); setCreating(false); setMode("live");
         await fetchEmployees(); toast.success("Employee saved without a sign-in account"); return;
       }
-      const { data, error } = await supabase.functions.invoke("invite-user", { body: { email: values.email, role: "employee", first_name: values.first_name, last_name: values.last_name } });
+      const { data, error } = await supabase.functions.invoke("invite-user", { body: { ...login, role: "employee", is_employee: true, first_name: values.first_name, last_name: values.last_name, phone: values.phone, department: values.department, job_title: values.job_title } });
       if (error || data?.error || !data?.user_id) throw new Error(data?.error || "Unable to create employee account. Check the email and try again.");
       id = data.user_id;
     }
@@ -73,7 +74,7 @@ export default function EmployeesPage() {
       if (creating) { setCreating(false); await fetchEmployees(); close(); throw new Error("Account created, but HR details were not saved. Open the new employee folder and try saving again."); }
       throw new Error(error?.message || "Unable to save employee details");
     }
-    setSelected({ ...profileToFolder(data), accountLinked: table === "profiles" }); setCreating(false); setMode("live");
+    setSelected({ ...profileToFolder(data), accountLinked: table === "profiles", loginUserId: "login_user_id" in data ? data.login_user_id as string | null : null }); setCreating(false); setMode("live");
     await fetchEmployees(); toast.success("Employee saved");
   };
   const remove = async (restore: boolean) => {
@@ -129,7 +130,14 @@ export default function EmployeesPage() {
       </tbody></table></div>
       {!filtered.length && <div className="py-14 text-center text-muted-foreground"><Users className="mx-auto mb-3" /><p>{records.length ? "No employees match these filters" : mode === "deleted" ? "No deleted employee folders" : "No employee folders yet"}</p></div>}
     </div>}
-    <EmployeeFolderDialog folder={selected} creating={creating} onClose={close} onSave={save} onDelete={remove} onPermanentDelete={removePermanently} permissions={permissions} ownId={user?.id} directory={(mode === "sample" ? samples : live).filter(record => !record.deletedAt)} />
+    <EmployeeFolderDialog folder={selected} creating={creating} onClose={close} onSave={save} onDelete={remove} onPermanentDelete={removePermanently} onLoginSaved={async () => {
+      if (selected) {
+        const { data, error } = await supabase.from(selected.accountLinked === false ? "employee_records" : "profiles").select("*").eq("user_id", selected.id).single();
+        if (error) throw error;
+        setSelected({ ...profileToFolder(data), accountLinked: selected.accountLinked, loginUserId: "login_user_id" in data ? data.login_user_id as string | null : null });
+      }
+      await fetchEmployees();
+    }} permissions={permissions} ownId={user?.id} directory={(mode === "sample" ? samples : live).filter(record => !record.deletedAt)} />
     {permissions.create && <CSVImportDialog open={showImport} onOpenChange={(open) => { setShowImport(open); if (!open) fetchEmployees(); }} type="employees" />}
   </div>;
 }
