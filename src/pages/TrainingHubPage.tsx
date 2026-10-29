@@ -191,21 +191,21 @@ export default function TrainingHubPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <BookOpen className="h-6 w-6 text-primary" /> Training Hub
+      <div className="carib-tile carib-sea rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-lg">
+        <div className="relative z-10">
+          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
+            <BookOpen className="h-7 w-7" /> Training Hub
           </h1>
-          <p className="text-muted-foreground text-sm">Company documents, SOPs, training materials & policies</p>
+          <p className="text-sm opacity-90">Company documents, SOPs, training materials & policies</p>
         </div>
         {isAdminOrManager && (
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleSeedDocuments} disabled={seeding}>
+            <Button onClick={handleSeedDocuments} disabled={seeding} className="carib-tile carib-mango carib-lift border-0 relative z-10">
               <Sparkles className="h-4 w-4 mr-2" /> {seeding ? "Seeding..." : "Seed Defaults"}
             </Button>
           <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
             <DialogTrigger asChild>
-              <Button><Upload className="h-4 w-4 mr-2" /> Upload Document</Button>
+              <Button className="carib-tile carib-coral carib-lift border-0 relative z-10"><Upload className="h-4 w-4 mr-2" /> Upload Document</Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
@@ -244,13 +244,17 @@ export default function TrainingHubPage() {
       </div>
 
       {/* Search and filter */}
-      <section className="border-y border-border py-4 space-y-3" aria-label="Latest platform resources">
-        <h2 className="font-semibold text-foreground">Latest platform resources</h2>
-        <Button variant="outline" asChild><a href="/payroll-demo">Open client payroll demo →</a></Button>
-        {TRAINING_RESOURCES.filter(doc => (filterCategory === "all" || filterCategory === doc.category) && `${doc.title} ${doc.description}`.toLowerCase().includes(searchQuery.toLowerCase())).map(doc => <div key={doc.id} className="flex items-center justify-between gap-3 py-2">
-          <div className="min-w-0"><p className="font-medium text-foreground">{doc.title} <Badge variant="secondary">{doc.badge}</Badge></p><p className="text-sm text-muted-foreground">{doc.description}</p></div>
-          <Button variant="outline" size="icon" onClick={() => downloadFile(doc.url)} aria-label={`Download ${doc.title}`}><Download /></Button>
-        </div>)}
+      <section className="carib-sand carib-band rounded-2xl p-4 sm:p-5 space-y-4 shadow-sm" aria-label="Latest platform resources">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-semibold text-lg text-foreground flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary" /> Latest platform resources</h2>
+          <Button asChild className="carib-tile carib-palm carib-lift border-0"><a href="/payroll-demo">▶ Open client payroll demo</a></Button>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2">
+        {TRAINING_RESOURCES.filter(doc => (filterCategory === "all" || filterCategory === doc.category) && `${doc.title} ${doc.description}`.toLowerCase().includes(searchQuery.toLowerCase())).map((doc, i) => <button type="button" key={doc.id} onClick={() => downloadFile(doc.url)} aria-label={`Download ${doc.title}`} className={`carib-tile ${i % 2 ? "carib-coral" : "carib-sea"} carib-lift rounded-xl p-4 text-left flex items-start justify-between gap-3`}>
+          <div className="min-w-0 relative z-10"><p className="font-semibold">{doc.title}</p><span className="inline-block mt-1 rounded-full bg-background/25 px-2 py-0.5 text-xs font-semibold">{doc.badge}</span><p className="text-sm opacity-90 mt-2">{doc.description}</p></div>
+          <span className="relative z-10 shrink-0 rounded-full bg-background/25 p-2"><Download className="h-5 w-5" /></span>
+        </button>)}
+        </div>
       </section>
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
@@ -271,17 +275,16 @@ export default function TrainingHubPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: "Total Documents", value: documents.length },
-          { label: "Training", value: documents.filter((d: any) => d.category === "training").length },
-          { label: "Policies", value: documents.filter((d: any) => d.category === "policy").length },
-          { label: "SOPs", value: documents.filter((d: any) => d.category === "sop").length },
+          { label: "Total Documents", key: "all", tone: "carib-sea", value: documents.length },
+          { label: "Training", key: "training", tone: "carib-palm", value: documents.filter((d: any) => d.category === "training").length },
+          { label: "Policies", key: "policy", tone: "carib-mango", value: documents.filter((d: any) => d.category === "policy").length },
+          { label: "SOPs", key: "sop", tone: "carib-coral", value: documents.filter((d: any) => d.category === "sop").length },
         ].map(s => (
-          <Card key={s.label}>
-            <CardContent className="pt-4 pb-3 text-center">
-              <div className="text-2xl font-bold text-primary">{s.value}</div>
-              <div className="text-xs text-muted-foreground">{s.label}</div>
-            </CardContent>
-          </Card>
+          <button type="button" key={s.label} onClick={() => setFilterCategory(s.key)} aria-pressed={filterCategory === s.key} className={`carib-tile ${s.tone} carib-lift rounded-xl px-3 py-4 text-center ${filterCategory === s.key ? "carib-tile-active" : ""}`}>
+            <div className="relative z-10 text-3xl font-bold">{s.value}</div>
+            <div className="relative z-10 text-xs font-medium uppercase tracking-wide opacity-90">{s.label}</div>
+            <div className="relative z-10 text-[10px] opacity-80 mt-1">Tap to filter</div>
+          </button>
         ))}
       </div>
 
