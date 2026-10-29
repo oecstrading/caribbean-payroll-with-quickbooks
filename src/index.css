@@ -185,3 +185,9 @@ select option {
   .carib-sand { background: linear-gradient(180deg, hsl(40 80% 97%), hsl(185 60% 96%)); }
   .carib-band { border-top: 4px solid transparent; border-image: linear-gradient(90deg, hsl(var(--carib-sea)), hsl(var(--carib-mango)), hsl(var(--carib-coral)), hsl(var(--carib-hibiscus))) 1; }
 }
+@layer components {
+  .carib-lift { transition: transform .2s ease, box-shadow .2s ease, filter .2s ease; }
+  .carib-lift:hover { transform: translateY(-3px); box-shadow: 0 12px 24px -10px hsl(var(--carib-sea) / .45); filter: saturate(1.15); }
+  .carib-lift:active { transform: translateY(0) scale(.98); }
+  .carib-tile-active { outline: 3px solid hsl(var(--carib-mango)); outline-offset: 2px; }
+}
