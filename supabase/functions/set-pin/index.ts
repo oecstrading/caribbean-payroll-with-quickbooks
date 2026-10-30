@@ -93,6 +93,9 @@ Deno.serve(async (req) => {
     }
 
     await adminClient.from("user_pin_attempts").delete().eq("user_id", user_id);
+    // An administrator-assigned PIN vouches for the account, so PIN sign-in works before the email invite is accepted.
+    const { data: target } = await adminClient.auth.admin.getUserById(user_id);
+    if (target.user && !target.user.email_confirmed_at) await adminClient.auth.admin.updateUserById(user_id, { email_confirm: true });
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
