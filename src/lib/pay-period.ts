@@ -45,10 +45,12 @@ export function periodLabel(type: PayType, start: string, end: string) {
 
 /** Prorates salary and the statutory NIC ceiling / PAYE thresholds to the pay period. */
 export function calculatePeriodPayroll(monthlySalary: number, factor: number, config: CountryTaxConfig,
-  deductions: CreditorDeduction[] = [], additions: PayrollAddition[] = [], overtimePay = 0) {
+  deductions: CreditorDeduction[] = [], additions: PayrollAddition[] = [], overtimePay = 0,
+  options: { nicBasis?: "gross" | "basic"; fixedPaye?: number | null } = {}) {
   const scaled: CountryTaxConfig = { ...config,
     nic: { ...config.nic, maxContribution: config.nic.maxContribution * factor, monthlyCeiling: config.nic.monthlyCeiling * factor },
     paye: { annualAllowance: config.paye.annualAllowance * factor, brackets: config.paye.brackets.map(b => ({ ...b, min: b.min * factor, max: b.max * factor })) },
   };
-  return calculatePayroll(Math.round(monthlySalary * factor * 100) / 100, scaled, overtimePay, deductions, additions);
+  return calculatePayroll(Math.round(monthlySalary * factor * 100) / 100, scaled, overtimePay, deductions, additions, 0, 0,
+    { ...options, fixedPaye: options.fixedPaye === null || options.fixedPaye === undefined ? options.fixedPaye : Math.round(options.fixedPaye * factor * 100) / 100 });
 }

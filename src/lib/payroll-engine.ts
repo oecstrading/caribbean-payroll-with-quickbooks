@@ -280,14 +280,16 @@ export function calculatePayroll(
   creditorDeductions: CreditorDeduction[] = [],
   additions: PayrollAddition[] = [],
   sundayPay: number = 0,
-  holidayPay: number = 0
+  holidayPay: number = 0,
+  options: { nicBasis?: "gross" | "basic"; fixedPaye?: number | null } = {}
 ): PayrollResult {
   const totalAdditions = additions.reduce((sum, a) => sum + a.amount, 0);
   const totalGross = grossMonthly + overtimePay + totalAdditions + sundayPay + holidayPay;
 
   // NIC Calculation
-  const employeeNIC = Math.min(totalGross * config.nic.employeeRate, config.nic.maxContribution);
-  const employerNIC = Math.min(totalGross * config.nic.employerRate, config.nic.maxContribution);
+  const nicBase = options.nicBasis === "basic" ? grossMonthly : totalGross;
+  const employeeNIC = Math.min(nicBase * config.nic.employeeRate, config.nic.maxContribution);
+  const employerNIC = Math.min(nicBase * config.nic.employerRate, config.nic.maxContribution);
 
   // PAYE Calculation (monthly basis)
   const monthlyAllowance = config.paye.annualAllowance / 12;
@@ -308,6 +310,8 @@ export function calculatePayroll(
     paye += taxable * bracket.rate;
     remaining -= taxable;
   }
+
+  if (options.fixedPaye !== undefined && options.fixedPaye !== null && Number.isFinite(options.fixedPaye)) paye = Math.max(0, options.fixedPaye);
 
   const totalCreditorDeductions = creditorDeductions.reduce((sum, d) => sum + d.amount, 0);
   const totalDeductions = employeeNIC + paye + totalCreditorDeductions;

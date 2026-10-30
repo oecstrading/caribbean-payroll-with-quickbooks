@@ -1,3 +1,4 @@
+import { payrollOptions } from "@/lib/employee-folder";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle, ArrowRight, DollarSign, FileText, AlertCircle, Receipt, Mail, Loader2 } from "lucide-react";
@@ -52,7 +53,7 @@ export default function PayrollPage() {
   const [additionsMap, setAdditionsMap] = useState<Record<string, import("@/lib/payroll-engine").PayrollAddition[]>>({});
   const [loans, setLoans] = useState<{ user_id: string; balance: number; monthly_repayment: number }[]>([]);
   const [attendance, setAttendance] = useState<Record<string, PayHours>>({});
-  const [payBases, setPayBases] = useState<Record<string, { basis: string; rate: number }>>({});
+  const [payBases, setPayBases] = useState<Record<string, { basis: string; rate: number; options: ReturnType<typeof payrollOptions> }>>({});
   const { isAdminOrManager, demoMode } = useRole();
   const config = getConfigByJurisdiction(source === "sample" ? "LC" : jurisdiction);
   useEffect(() => {
@@ -77,7 +78,7 @@ export default function PayrollPage() {
       }));
       if (cancelled) return;
       setAttendance(Object.fromEntries(hours));
-      setPayBases(Object.fromEntries(directory.map(p => { const hr = p.hr_details as Record<string, string>; return [p.user_id, { basis: hr.pay_frequency || "", rate: Number(hr.pay_rate || 0) }]; })));
+      setPayBases(Object.fromEntries(directory.map(p => { const hr = p.hr_details as Record<string, string>; return [p.user_id, { basis: hr.pay_frequency || "", rate: Number(hr.pay_rate || 0), options: payrollOptions(hr) }]; })));
       setLiveEmployees([...(profiles.data || []), ...(records.data || [])].filter(p => p.status.toLowerCase() === "active").map(p => ({
         id: p.user_id, firstName: p.first_name, lastName: p.last_name, department: departmentName(p.department),
         monthlySalary: Number(p.monthly_salary || 0), stdHoursPerDay: Number(p.std_hours_per_day || 8),
@@ -135,7 +136,7 @@ export default function PayrollPage() {
         try { const earnings = attendanceEarnings(basis.rate, basis.basis, e.stdHoursPerDay, h); salary = factor > 0 ? earnings.basic / factor : 0; overtime = earnings.overtime; hourlyRate = earnings.hourly; }
         catch (err) { salary = 0; attendanceError = err instanceof Error ? err.message : "Review attendance"; }
       }
-      const result = calculatePeriodPayroll(salary, factor, config, creditorDeductions, additions, overtime);
+      const result = calculatePeriodPayroll(salary, factor, config, creditorDeductions, additions, overtime, source === "live" ? basis?.options : undefined);
       const compliance = checkMinimumWageCompliance(hourlyRate, config);
       return { ...e, payroll: result, hourlyRate, compliance, loanDeductions, attendance: h, attendanceError };
     });
