@@ -21,6 +21,14 @@ export const employeeFolderSchema = z.object({
   pay_rate: z.string().trim().refine(v => !v || /^\d{1,9}(\.\d{1,2})?$/.test(v), "Enter a rate like 1250 or 18.50"),
   weekly_hours: z.string().trim().refine(v => !v || (/^\d{1,3}(\.\d{1,2})?$/.test(v) && Number(v) <= 168), "Enter hours like 40 or 37.5"),
   notes: z.string().trim().max(2000),
+  tax_code: z.string().trim().max(12).refine(v => !v || /^[0-9]{1,4}[A-Z]{0,2}$/i.test(v), "Enter a tax code like 264M"),
+  paye_method: z.enum(["", "Calculated", "Fixed amount"]),
+  paye_fixed_amount: z.string().trim().refine(v => !v || /^\d{1,9}(\.\d{1,2})?$/.test(v), "Enter an amount like 133.13"),
+  nic_basis: z.enum(["", "Total pay", "Basic pay"]),
+  daily_rate_rule: z.enum(["", "Monthly × 12 ÷ 52 ÷ 5", "Fixed daily rate"]),
+  fixed_daily_rate: z.string().trim().refine(v => !v || /^\d{1,7}(\.\d{1,2})?$/.test(v), "Enter a rate like 69.23"),
+  staff_group: z.enum(["", "Staff", "Management", "Director", "Casual"]),
+  cost_centre_code: z.string().trim().max(20),
 }).superRefine((values, context) => {
   if (values.date_of_birth && values.date_of_birth > new Date().toISOString().slice(0, 10)) {
     context.addIssue({ code: "custom", path: ["date_of_birth"], message: "Date of birth cannot be in the future" });
@@ -43,8 +51,9 @@ export const emptyEmployee: EmployeeForm = {
   date_of_birth: "", gender: "", marital_status: "", nationality: "", address: "", city: "", country: "", personal_email: "",
   emergency_name: "", emergency_relationship: "", emergency_phone: "", employment_type: "", work_location: "", supervisor: "",
   probation_end: "", contract_end: "", termination_date: "", termination_reason: "", pay_frequency: "", pay_rate: "", weekly_hours: "", notes: "",
+  tax_code: "", paye_method: "", paye_fixed_amount: "", nic_basis: "", daily_rate_rule: "", fixed_daily_rate: "", staff_group: "", cost_centre_code: "",
 };
-export const hrKeys = ["date_of_birth", "gender", "marital_status", "nationality", "address", "city", "country", "personal_email", "emergency_name", "emergency_relationship", "emergency_phone", "employment_type", "work_location", "supervisor", "probation_end", "contract_end", "termination_date", "termination_reason", "pay_frequency", "pay_rate", "weekly_hours", "notes"] as const;
+export const hrKeys = ["date_of_birth", "gender", "marital_status", "nationality", "address", "city", "country", "personal_email", "emergency_name", "emergency_relationship", "emergency_phone", "employment_type", "work_location", "supervisor", "probation_end", "contract_end", "termination_date", "termination_reason", "pay_frequency", "pay_rate", "weekly_hours", "notes", "tax_code", "paye_method", "paye_fixed_amount", "nic_basis", "daily_rate_rule", "fixed_daily_rate", "staff_group", "cost_centre_code"] as const;
 export const payBases = ["Monthly", "Semi-monthly", "Weekly", "Daily", "Hourly"] as const;
 export const rateLabels: Record<string, string> = { Monthly: "Monthly rate", "Semi-monthly": "Rate per semi-monthly pay", Fortnightly: "Rate per fortnight", Weekly: "Weekly rate", Daily: "Daily rate", Hourly: "Hourly rate" };
 /** Monthly hours = weekly hours × 52 ÷ 12 (falls back to daily hours × 5 days). */
@@ -92,4 +101,10 @@ export function folderUpdate(values: EmployeeForm) {
     start_date: values.start_date || null, schedule: values.schedule, jurisdiction: values.jurisdiction,
     monthly_salary: effectiveMonthlySalary(values), std_hours_per_day: values.std_hours_per_day, ot_rate: values.ot_rate, status: values.status, hr_details,
   };
+}
+/** Per-employee payroll options read from saved HR details; blank values keep the standard platform behaviour. */
+export function payrollOptions(details: unknown): { nicBasis: "gross" | "basic"; fixedPaye: number | null } {
+  const hr = (details && typeof details === "object" && !Array.isArray(details) ? details : {}) as Record<string, unknown>;
+  const fixed = hr.paye_method === "Fixed amount" && typeof hr.paye_fixed_amount === "string" && hr.paye_fixed_amount !== "" ? Number(hr.paye_fixed_amount) : NaN;
+  return { nicBasis: hr.nic_basis === "Basic pay" ? "basic" : "gross", fixedPaye: Number.isFinite(fixed) ? fixed : null };
 }

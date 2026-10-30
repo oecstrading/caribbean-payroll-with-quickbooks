@@ -50,6 +50,7 @@ import PublicTrainingPage from "@/pages/PublicTrainingPage";
 import PayrollDemoPage from "@/pages/PayrollDemoPage";
 import QuickBooksPage from "@/pages/QuickBooksPage";
 import PayrollSettingsPage from "@/pages/PayrollSettingsPage";
+import PayrollImportPage from "@/pages/PayrollImportPage";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -100,6 +101,7 @@ const AppRoutes = () => (
       <Route path="/payroll" element={<PayrollPage />} />
       <Route path="/ai-paymaster" element={<AiPaymasterPage />} />
       <Route path="/payroll-history" element={<PayrollHistoryPage />} />
+      <Route path="/payroll-import" element={<PayrollImportPage />} />
       <Route path="/reports" element={<ReportsPage />} />
       <Route path="/payslips" element={<PayslipPage />} />
       <Route path="/portal" element={<PortalPage />} />
