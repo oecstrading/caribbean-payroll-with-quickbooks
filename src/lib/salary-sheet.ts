@@ -5,7 +5,7 @@ import { getConfigByJurisdiction, calculatePayroll } from "./payroll-engine";
 
 export type Cell = string | number | boolean | Date | null | undefined;
 export type ColumnKey = "name" | "department" | "employeeId" | "hireDate" | "basic" | "days" | "dailyRate" | "dayTotal" | "hourly"
-  | "otHours" | "otRate" | "otTotal" | "travel" | "phone" | "onCall" | "commission" | "otherAllowance" | "total"
+  | "otHours" | "otHours2" | "employeeNumber" | "staffGroup" | "taxMethod" | "otRate" | "otTotal" | "travel" | "phone" | "onCall" | "commission" | "otherAllowance" | "total"
   | "taxCode" | "paye" | "nic" | "salaryDeduction" | "otherDeduction" | "net";
 
 export interface SheetEmployee {
@@ -13,7 +13,7 @@ export interface SheetEmployee {
   basic: number; days: number; dailyRate: number; extraDays: number; extraDayRate: number;
   otHours: number; otHours2: number; travel: number; phone: number; onCall: number; commission: number; otherAllowance: number;
   total: number; taxCode: string; paye: number; nic: number; salaryDeduction: number; otherDeduction: number; net: number;
-  nicOnBasic: boolean; fixedDailyRate: number | null;
+  nicOnBasic: boolean; fixedDailyRate: number | null; employeeNumber: string; staffGroup: string; taxMethod: string;
 }
 export interface ParsedSheet { title: string; columns: Partial<Record<ColumnKey, number>>; employees: SheetEmployee[]; groups: number; headerRow: number }
 
@@ -45,6 +45,10 @@ export function detectColumns(labels: string[]): Partial<Record<ColumnKey, numbe
     else if (l.includes("DEPARTMENT")) set("department", i);
     else if (/\bSSN\b|NIC NO|NIS NO|SOCIAL SECURITY/.test(l)) set("employeeId", i);
     else if (l.includes("HIRED")) set("hireDate", i);
+    else if (/EMPLOYEE (NO|NUMBER)/.test(l)) set("employeeNumber", i);
+    else if (l.includes("STAFF GROUP")) set("staffGroup", i);
+    else if (l.includes("TAX METHOD")) set("taxMethod", i);
+    else if (l.includes("DOUBLE")) set("otHours2", i);
     else if (l.includes("NET")) set("net", i);
     else if (l.includes("PAYE")) set("paye", i);
     else if (l.includes("NIC") || l.includes("N.I.")) set("nic", i);
@@ -106,7 +110,8 @@ export function parseSalarySheet(values: Cell[][], formulas: (string | undefined
     last = {
       row: r + 1, name: label.replace(/\s+/g, " "), employeeId: str(at(row, "employeeId")), department: str(at(row, "department")), group,
       hireDate: str(at(row, "hireDate")), basic: num(at(row, "basic")), days: num(at(row, "days")), dailyRate: num(at(row, "dailyRate")),
-      extraDays: 0, extraDayRate: 0, otHours: num(at(row, "otHours")), otHours2: 0,
+      extraDays: 0, extraDayRate: 0, otHours: num(at(row, "otHours")), otHours2: num(at(row, "otHours2")),
+      employeeNumber: str(at(row, "employeeNumber")), staffGroup: str(at(row, "staffGroup")), taxMethod: str(at(row, "taxMethod")),
       travel: num(at(row, "travel")), phone: num(at(row, "phone")), onCall: num(at(row, "onCall")), commission: num(at(row, "commission")),
       otherAllowance: num(at(row, "otherAllowance")), total: num(at(row, "total")), taxCode: str(at(row, "taxCode")),
       paye: num(at(row, "paye")), nic: num(at(row, "nic")), salaryDeduction: num(at(row, "salaryDeduction")), otherDeduction: num(at(row, "otherDeduction")),
