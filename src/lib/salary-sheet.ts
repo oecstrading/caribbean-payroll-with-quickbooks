@@ -90,7 +90,7 @@ export function parseSalarySheet(values: Cell[][], formulas: (string | undefined
   for (let r = headerRow + 2; r < values.length; r++) {
     const row = values[r] || []; const first = row[nameCol];
     const label = str(first);
-    if (/grand\s*total|clearing/i.test(label)) break;
+    if (/grand\s*total|^totals?$|clearing/i.test(label)) break;
     if (/sub-?\s*total/i.test(label)) { group++; last = null; continue; }
     if (!label || /n\s*i\s*c\s+company/i.test(label)) continue;
     if (isIdLike(first) && last) {
@@ -158,7 +158,7 @@ export function compareSheet(sheet: ParsedSheet, rules: SheetRules): { rows: { e
   const rows = sheet.employees.map(employee => ({ employee, pay: platformPay(employee, rules) }));
   const differences: Difference[] = [];
   for (const { employee: e, pay: p } of rows) {
-    const add = (field: Difference["field"], s: number, v: number, reason: string) => { if (Math.abs(round2(s) - v) > 0.01) differences.push({ name: e.name, row: e.row, field, sheet: round2(s), platform: v, difference: round2(v - s), reason }); };
+    const add = (field: Difference["field"], s: number, v: number, reason: string) => { if (Math.abs(round2(s) - v) > 0.015) differences.push({ name: e.name, row: e.row, field, sheet: round2(s), platform: v, difference: round2(v - s), reason }); };
     const grossReason = e.basic > 0 && e.total === 0 ? "Sheet total salary is 0 although basic salary is filled in" : "Sheet total uses different rates or a typed-in amount";
     add("Gross", e.total, p.gross, grossReason);
     const sheetBase = e.nicOnBasic ? e.basic : e.total;
