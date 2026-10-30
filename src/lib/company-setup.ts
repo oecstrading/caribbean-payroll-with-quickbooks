@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { WORKSPACE_MODULES } from "./workspace-access";
+import { onboardingSchema } from "./company-onboarding";
 
 export const COMPANY_FEATURES = [
   { label: "Would you use Payroll and HR?", modules: ["hr", "payroll", "reports", "leave"] },
@@ -22,6 +23,7 @@ export const companySetupSchema = z.object({
   tax_id: z.string().trim().max(100).default(""),
   vat_number: z.string().trim().max(100).default(""),
   modules: z.array(z.string().refine(v => WORKSPACE_MODULES.some(m => m.id === v))).max(13).default(["hr", "payroll", "reports", "leave", "settings"]),
+  onboarding: onboardingSchema.refine(v => v.reviewed, "Review and confirm the industry defaults before saving").optional(),
 });
 export type CompanySetup = z.infer<typeof companySetupSchema>;
 export const emptyCompanySetup: CompanySetup = { company_name: "", email: "", telephone: "", address: "", website: "", employer_nic_number: "", tax_id: "", vat_number: "", modules: ["hr", "payroll", "reports", "leave", "settings"] };
