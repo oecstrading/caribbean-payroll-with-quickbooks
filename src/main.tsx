@@ -14,7 +14,7 @@ window.addEventListener("vite:preloadError", () => {
 
 // Check for a newly published version on load, every 5 minutes and when the app regains focus; reload once it takes over.
 if ("serviceWorker" in navigator && import.meta.env.PROD) {
-  let refreshing = false;
+  let refreshing = !navigator.serviceWorker.controller; // skip reload on very first install
   navigator.serviceWorker.addEventListener("controllerchange", () => {
     if (refreshing) return;
     refreshing = true;
