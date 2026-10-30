@@ -91,19 +91,15 @@ for i, label in enumerate(labels, 1):
     pay.column_dimensions[c.column_letter].width = 22 if i == 1 else 14
 pay.row_dimensions[2].height = 32
 examples = [
-    ("Example Person One", "Administration", "100001", "E001", "2021-03-01", "Staff", "264M", "Fixed amount", 3000, 0, 0, 0, 0, 0, 0, 250, 0, 0, 133.13, 0, 0),
-    ("Example Person Two", "Sales", "100002", "E002", "2022-07-15", "Staff", "264M", "Calculated", 2000, -1, 6, 2, 300, 0, 0, 150, 0, None, 0, 50, 0),
-    ("Example Director", "Management", "100003", "E003", "2015-01-05", "Director", "360M", "Fixed amount", 15000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3212.5, 0, 0),
+    {1: "Example Person One", 2: "Administration", 3: "100001", 4: "E001", 5: "2021-03-01", 6: "Staff", 7: "264M", 8: "Fixed amount", 9: 3000, 17: 250, 22: 133.13},
+    {1: "Example Person Two", 2: "Sales", 3: "100002", 4: "E002", 5: "2022-07-15", 6: "Staff", 7: "264M", 8: "Calculated", 9: 2000, 10: -1, 13: 6, 14: 2, 15: 300, 18: 150, 24: 50},
+    {1: "Example Director", 2: "Management", 3: "100003", 4: "E003", 5: "2015-01-05", 6: "Director", 7: "360M", 8: "Fixed amount", 9: 15000, 22: 3212.5},
 ]
 first = 4
-for n, ex in enumerate(examples):
+for n, entries in enumerate(examples):
     r = first + n
-    (name, dept, nic, emp, hired, group, code, method, basic, days, ot, dt, travel, phone, oncall, comm, other, paye, sal_ded, other_ded, _) = ex + ((),) if len(ex) == 20 else ex
-    entries = {1: name, 2: dept, 3: nic, 4: emp, 5: hired, 6: group, 7: code, 8: method, 9: basic, 10: days, 13: ot, 14: dt,
-               15: travel, 16: phone, 17: oncall, 18: comm, 19: other, 22: paye, 23: sal_ded, 24: other_ded}
     for col, value in entries.items():
-        c = pay.cell(r, col, value)
-        c.font = blue
+        pay.cell(r, col, value).font = blue
     pay.cell(r, 11, f"=I{r}*12/52/5")
     pay.cell(r, 12, f"=K{r}/Company!$B$7")
     pay.cell(r, 20, f"=I{r}+J{r}*K{r}+M{r}*L{r}*Company!$B$5+N{r}*L{r}*Company!$B$6+SUM(O{r}:S{r})")
