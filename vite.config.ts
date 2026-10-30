@@ -25,7 +25,16 @@ export default defineConfig(({ mode }) => ({
         skipWaiting: true,
         clientsClaim: true,
         cleanupOutdatedCaches: true,
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        // The page itself is never served from cache, so every visit after a publish loads the newest version.
+        globPatterns: ["**/*.{js,css,ico,png,svg,woff2}"],
+        navigateFallback: null,
+        runtimeCaching: [
+          {
+            urlPattern: ({ request }) => request.mode === "navigate",
+            handler: "NetworkFirst",
+            options: { cacheName: "app-pages", networkTimeoutSeconds: 4 },
+          },
+        ],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
       manifest: {
