@@ -2158,6 +2158,7 @@ export type Database = {
           id: string
           logo_url: string | null
           name: string
+          onboarding_config: Json | null
           onboarding_status: string
         }
         Insert: {
@@ -2167,6 +2168,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           name: string
+          onboarding_config?: Json | null
           onboarding_status?: string
         }
         Update: {
@@ -2176,6 +2178,7 @@ export type Database = {
           id?: string
           logo_url?: string | null
           name?: string
+          onboarding_config?: Json | null
           onboarding_status?: string
         }
         Relationships: []
@@ -4024,6 +4027,7 @@ export type Database = {
       }
       validate_company_modules: { Args: { _modules: Json }; Returns: undefined }
       validate_company_setup: { Args: { _details: Json }; Returns: undefined }
+      validate_onboarding_pack: { Args: { _pack: Json }; Returns: undefined }
       validate_workforce_pay: {
         Args: {
           _basic: number

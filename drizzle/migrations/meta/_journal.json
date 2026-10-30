@@ -288,6 +288,20 @@
       "when": 1793146684044,
       "tag": "0040_employee_login_cascade",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1793397754473,
+      "tag": "0041_reviewed_industry_onboarding",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1793397912099,
+      "tag": "0042_initialize_new_company_industry_clock",
+      "breakpoints": true
     }
   ]
 }
