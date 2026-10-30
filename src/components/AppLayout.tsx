@@ -64,6 +64,7 @@ const navItems: NavItem[] = [
   { path: "/payroll", label: "Payroll", icon: DollarSign, bottomNav: true },
   { path: "/ai-paymaster", label: "AI Paymaster", icon: Bot, managerOnly: true },
   { path: "/payroll-history", label: "Payroll History", icon: History },
+  { path: "/payroll-import", label: "Payroll Import", icon: FileText, managerOnly: true },
   { path: "/quickbooks", label: "QuickBooks Sync", icon: Landmark, managerOnly: true },
   { path: "/payroll-settings", label: "Payroll Settings", icon: Settings, managerOnly: true },
   { path: "/payslips", label: "Payslips", icon: Receipt },
