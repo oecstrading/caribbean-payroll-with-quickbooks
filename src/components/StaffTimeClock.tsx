@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import StaffPayCenter from "@/components/StaffPayCenter";
 
 export default function StaffTimeClock({ companyId }: { companyId?: string }) {
  const { user }=useAuth(); const [now,setNow]=useState(new Date()); const [code,setCode]=useState(""); const [pin,setPin]=useState(""); const [next,setNext]=useState<"clock_in"|"clock_out">("clock_in"); const [busy,setBusy]=useState(false); const [pinMode,setPinMode]=useState(!!companyId); const [known,setKnown]=useState(false); const [last,setLast]=useState(""); const [error,setError]=useState("");
@@ -45,6 +46,7 @@ export default function StaffTimeClock({ companyId }: { companyId?: string }) {
   {!user&&!pinMode?<p className="text-muted-foreground">Sign in or use your company's employee clock link.</p>:<Button className="w-full h-16 text-xl bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={busy} onClick={()=>void submit()}>{next==="clock_in"?<LogIn/>:<LogOut/>}{busy?"Recording…":pinMode&&!known?"Check employee clock":next==="clock_in"?"Clock In":"Clock Out"}</Button>}
   {known&&methods.includes("voice")&&<Button variant="ghost" disabled={busy} onClick={()=>void voice()}><Mic size={16}/>Voice clock {next==="clock_in"?"in":"out"}</Button>}
   {known&&history.length>0&&<div className="border-t border-border pt-4 text-left space-y-2"><h3 className="font-semibold">My worked hours</h3><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="text-muted-foreground"><th className="py-2 text-left">Date</th><th>In</th><th>Out</th><th className="text-right">Hours</th></tr></thead><tbody>{history.map(h=><tr key={h.shift_date} className="border-t border-border"><td className="py-3">{h.shift_date}</td><td className="text-center">{h.clock_in?new Date(h.clock_in).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}):"Missing"}</td><td className="text-center">{h.clock_out?new Date(h.clock_out).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}):"—"}</td><td className="text-right">{h.approved_hours===null?"Pending":Number(h.approved_hours).toFixed(2)}</td></tr>)}</tbody></table></div></div>}
+  {user&&!pinMode&&known&&<StaffPayCenter/>}
   {last&&<p role="status" className="text-success font-medium">{last}</p>}{error&&<p role="alert" className="text-destructive text-sm">{error}</p>}
   <p className="text-xs text-muted-foreground flex justify-center items-center gap-2"><ShieldCheck size={14}/>Live attendance · Company-protected records</p>
  </section>;
