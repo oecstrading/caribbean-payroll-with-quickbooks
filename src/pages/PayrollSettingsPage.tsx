@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useRole } from "@/hooks/useRole";
 import { toast } from "sonner";
+import { PAYROLL_ITEMS as ITEM_LABELS } from "@/lib/qbo-items";
 
 interface Mapping {
   id: string;

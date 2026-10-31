@@ -117,10 +117,10 @@ function parseCompany(sheets: WorkbookSheet[]): OnboardingCompany {
     const value = row[1];
     if (field === "quickbooks") company.quickbooks = yes(value);
     else if (["ot_multiplier", "ot2_multiplier", "hours_per_day", "working_days", "weekly_hours", "nic_max"].includes(field)) {
-      if (str(value)) (company as Record<string, unknown>)[field] = num(value);
+      if (str(value)) (company as unknown as Record<string, unknown>)[field] = num(value);
     } else if (["employee_nic_rate", "employer_nic_rate"].includes(field)) {
-      if (str(value)) { const n = num(value); (company as Record<string, unknown>)[field] = n > 1 ? n / 100 : n; }
-    } else if (str(value)) (company as Record<string, unknown>)[field] = str(value);
+      if (str(value)) { const n = num(value); (company as unknown as Record<string, unknown>)[field] = n > 1 ? n / 100 : n; }
+    } else if (str(value)) (company as unknown as Record<string, unknown>)[field] = str(value);
   }
   company.jurisdiction = countryToJurisdiction(company.country);
   if (!company.company_name) company.missing.push("Company name");
