@@ -49,6 +49,8 @@ const sections: { id: string; label: string; icon: typeof User; fields: Field[] 
     { key: "daily_rate_rule", label: "Daily rate rule", options: ["Monthly × 12 ÷ 52 ÷ 5", "Fixed daily rate"] },
     { key: "fixed_daily_rate", label: "Fixed daily rate", type: "number" },
     { key: "cost_centre_code", label: "Accounting cost-centre code (e.g. 66010)" },
+    { key: "bank_name", label: "Bank name" }, { key: "bank_branch", label: "Bank branch" },
+    { key: "bank_account_number", label: "Bank account number" }, { key: "bank_account_type", label: "Bank account type", options: ["Savings", "Current", "Cheque"] },
   ] },
   { id: "emergency", label: "Emergency", icon: Heart, fields: [
     { key: "emergency_name", label: "Emergency contact name" }, { key: "emergency_relationship", label: "Relationship" }, { key: "emergency_phone", label: "Emergency phone", type: "tel" },
