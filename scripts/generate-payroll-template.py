@@ -308,4 +308,68 @@ for ws in (ad, lo):
             c.number_format = MONEY
 
 wb.save(OUT)
+
+# 9. Store the worked-out values beside their formulas ------------------------
+# openpyxl writes formulas without cached results, so an untouched upload would read the
+# worked-out columns as zero. Excel and LibreOffice store both; do the same here.
+import re
+import zipfile
+from shutil import copyfile
+
+emp_rate = settings[ROW["Employee NIC rate"] - 2][1]
+nic_max = settings[ROW["NIC monthly maximum"] - 2][1]
+nic_on = settings[ROW["NIC worked out on"] - 2][1]
+hpd = settings[ROW["Hours per working day"] - 2][1]
+ot_mult = settings[ROW["Overtime multiplier"] - 2][1]
+dt_mult = settings[ROW["Double-time multiplier"] - 2][1]
+
+def pay_row(entries):
+    g = lambda col: entries.get(col, 0) or 0
+    basic, days = g(9), g(10)
+    daily = basic * 12 / 52 / 5
+    hourly = daily / hpd
+    allowances = sum(g(c) for c in range(15, 20))
+    total = basic + days * daily + g(13) * hourly * ot_mult + g(14) * hourly * dt_mult + allowances
+    nic = min((basic if nic_on == "Basic pay" else total) * emp_rate, nic_max)
+    paye = g(22)
+    return {9: basic, 11: daily, 12: hourly, 20: total, 21: nic, 22: paye, 23: g(23), 24: g(24),
+            25: total - nic - paye - g(23) - g(24)}
+
+cached = {}
+for n, entries in enumerate(examples):
+    for col, value in pay_row(entries).items():
+        cached[f"{pay.cell(2, col).column_letter}{first + n}"] = round(value, 10)
+for col in (9, 20, 21, 22, 23, 24, 25):
+    letter = pay.cell(2, col).column_letter
+    cached[f"{letter}{total_row}"] = round(sum(cached[f"{letter}{first + n}"] for n in range(len(examples))), 10)
+
+def letter_of(ref):
+    return re.match(r"[A-Z]+", ref).group(0)
+
+def inject(xml, sheet_name):
+    if sheet_name != "Payroll":
+        return xml
+    for ref, value in cached.items():
+        if letter_of(ref) not in ("I", "K", "L", "T", "U", "V", "W", "X", "Y"):
+            continue
+        pattern = re.compile(r'(<c r="%s"[^>]*>)(.*?)(</c>)' % ref, re.S)
+        if not pattern.search(xml):
+            continue
+        body = pattern.search(xml).group(2)
+        body = re.sub(r"<v>.*?</v>", "", body, flags=re.S)
+        body = re.sub(r"<v/>", "", body)
+        xml = pattern.sub(lambda m: m.group(1) + body + f"<v>{value!r}</v>" + m.group(3), xml, count=1)
+    return xml
+
+tmp = OUT + ".tmp"
+with zipfile.ZipFile(OUT) as src, zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as dst:
+    for item in src.infolist():
+        data = src.read(item.filename)
+        if item.filename.startswith("xl/worksheets/sheet"):
+            name = re.search(r"sheet\d+\.xml", item.filename).group(0)
+            order = [ws.title for ws in wb.worksheets]
+            index = int(re.search(r"(\d+)", name).group(1)) - 1
+            data = inject(data.decode(), order[index]).encode()
+        dst.writestr(item, data)
+copyfile(tmp, OUT)
 print(OUT)
