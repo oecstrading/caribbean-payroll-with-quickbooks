@@ -1,14 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "fs";
-import { pathToFileURL } from "url";
+import { resolve } from "path";
 import { readWorkbook } from "@/lib/read-workbook";
 import { readOnboarding, HR_FIELD_HEADERS, DERIVED_FIELDS, COMPANY_KEYS, TEMPLATE_FILE } from "@/lib/onboarding-sheet";
 import { emptyEmployee, type EmployeeForm } from "@/lib/employee-folder";
 import { parseSalarySheet, platformPay, defaultRules } from "@/lib/salary-sheet";
 import { PAYROLL_ITEMS } from "@/lib/qbo-items";
 
-const file = new URL(pathToFileURL(`${process.cwd()}/public${TEMPLATE_FILE}`).pathname);
-const buffer = readFileSync(file);
+const buffer = readFileSync(resolve("public", TEMPLATE_FILE));
 const sheets = readWorkbook(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength));
 const bundle = readOnboarding(sheets);
 const payroll = sheets.find(s => s.name === "Payroll")!;
