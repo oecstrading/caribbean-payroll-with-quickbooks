@@ -29,6 +29,10 @@ export const employeeFolderSchema = z.object({
   fixed_daily_rate: z.string().trim().refine(v => !v || /^\d{1,7}(\.\d{1,2})?$/.test(v), "Enter a rate like 69.23"),
   staff_group: z.enum(["", "Staff", "Management", "Director", "Casual"]),
   cost_centre_code: z.string().trim().max(20),
+  bank_name: z.string().trim().max(120),
+  bank_branch: z.string().trim().max(120),
+  bank_account_number: z.string().trim().max(40),
+  bank_account_type: z.enum(["", "Savings", "Current", "Cheque"]),
 }).superRefine((values, context) => {
   if (values.date_of_birth && values.date_of_birth > new Date().toISOString().slice(0, 10)) {
     context.addIssue({ code: "custom", path: ["date_of_birth"], message: "Date of birth cannot be in the future" });
@@ -52,8 +56,9 @@ export const emptyEmployee: EmployeeForm = {
   emergency_name: "", emergency_relationship: "", emergency_phone: "", employment_type: "", work_location: "", supervisor: "",
   probation_end: "", contract_end: "", termination_date: "", termination_reason: "", pay_frequency: "", pay_rate: "", weekly_hours: "", notes: "",
   tax_code: "", paye_method: "", paye_fixed_amount: "", nic_basis: "", daily_rate_rule: "", fixed_daily_rate: "", staff_group: "", cost_centre_code: "",
+  bank_name: "", bank_branch: "", bank_account_number: "", bank_account_type: "",
 };
-export const hrKeys = ["date_of_birth", "gender", "marital_status", "nationality", "address", "city", "country", "personal_email", "emergency_name", "emergency_relationship", "emergency_phone", "employment_type", "work_location", "supervisor", "probation_end", "contract_end", "termination_date", "termination_reason", "pay_frequency", "pay_rate", "weekly_hours", "notes", "tax_code", "paye_method", "paye_fixed_amount", "nic_basis", "daily_rate_rule", "fixed_daily_rate", "staff_group", "cost_centre_code"] as const;
+export const hrKeys = ["date_of_birth", "gender", "marital_status", "nationality", "address", "city", "country", "personal_email", "emergency_name", "emergency_relationship", "emergency_phone", "employment_type", "work_location", "supervisor", "probation_end", "contract_end", "termination_date", "termination_reason", "pay_frequency", "pay_rate", "weekly_hours", "notes", "tax_code", "paye_method", "paye_fixed_amount", "nic_basis", "daily_rate_rule", "fixed_daily_rate", "staff_group", "cost_centre_code", "bank_name", "bank_branch", "bank_account_number", "bank_account_type"] as const;
 export const payBases = ["Monthly", "Semi-monthly", "Weekly", "Daily", "Hourly"] as const;
 export const rateLabels: Record<string, string> = { Monthly: "Monthly rate", "Semi-monthly": "Rate per semi-monthly pay", Fortnightly: "Rate per fortnight", Weekly: "Weekly rate", Daily: "Daily rate", Hourly: "Hourly rate" };
 /** Monthly hours = weekly hours × 52 ÷ 12 (falls back to daily hours × 5 days). */
