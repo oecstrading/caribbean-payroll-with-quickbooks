@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { type CompanySetup } from "@/lib/company-setup";
 import { industryPacks, makeOnboardingPack, onboardingTemplates, ONBOARDING_COUNTRIES } from "@/lib/company-onboarding";
 import { companyAction } from "@/lib/company-api";
+import { downloadFile } from "@/lib/download-file";
+import { TEMPLATE_FILE, TEMPLATE_NAME } from "@/lib/onboarding-sheet";
 import { toast } from "sonner";
 
 export default function CompanyIndustrySetup({ value, onChange }: { value: CompanySetup; onChange: (v: CompanySetup) => void }) {
@@ -44,7 +46,9 @@ export default function CompanyIndustrySetup({ value, onChange }: { value: Compa
       <div className="space-y-2"><Label htmlFor="company-departments">Department templates (one per line)</Label><Textarea id="company-departments" value={pack.departments.join("\n")} onChange={e => change({ departments: e.target.value.split("\n") })} /></div>
       <div className="flex flex-wrap gap-2">{onboardingTemplates(pack).map(t => <Button key={t.name} type="button" variant="outline" size="sm" onClick={() => {
         const url = URL.createObjectURL(new Blob([t.text], { type: "text/plain" })); const a = document.createElement("a"); a.href = url; a.download = `${pack.industry}-${t.name.toLowerCase().replace(/ /g, "-")}.txt`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
-      }}><Download size={14} className="mr-2" />{t.name}</Button>)}</div>
+      }}><Download size={14} className="mr-2" />{t.name}</Button>)}
+        <Button type="button" variant="outline" size="sm" onClick={() => void downloadFile(TEMPLATE_FILE, TEMPLATE_NAME)}><Download size={14} className="mr-2" />Payroll onboarding template (Excel)</Button>
+      </div>
       <Button type="button" variant="outline" disabled={busy} onClick={() => void recommend()}><Sparkles size={16} className="mr-2" />{busy ? "Preparing recommendations…" : "AI onboarding review"}</Button>
       {pack.ai_notes && <div className="whitespace-pre-wrap text-sm border-l-4 border-primary pl-4">{pack.ai_notes}</div>}
       <p className="text-sm text-muted-foreground">Suggested starting points, not certified legal standards. Confirm local taxes, overtime, safety requirements and pay dates with your accountant. No employees, rates, sites or QuickBooks connections are invented.</p>
