@@ -4,8 +4,8 @@ import type { Cell } from "./salary-sheet";
 export interface WorkbookSheet { name: string; values: Cell[][]; formulas: (string | undefined)[][] }
 
 /** Read every sheet's cached values and formulas from an .xlsx/.xls/.csv file. */
-export function readWorkbook(data: ArrayBuffer): WorkbookSheet[] {
-  const book = XLSX.read(data, { type: "array", cellFormula: true, cellDates: true });
+export function readWorkbook(data: ArrayBuffer | Uint8Array): WorkbookSheet[] {
+  const book = XLSX.read(data instanceof Uint8Array ? data : new Uint8Array(data), { type: "array", cellFormula: true, cellDates: true });
   return book.SheetNames.map(name => {
     const sheet = book.Sheets[name];
     const ref = sheet["!ref"];
