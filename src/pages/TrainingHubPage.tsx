@@ -23,6 +23,7 @@ const CATEGORIES = [
   { value: "sop", label: "Standard Operating Procedure" },
   { value: "manual", label: "User Manual" },
   { value: "marketing", label: "Marketing" },
+  { value: "template", label: "Onboarding Template" },
   { value: "general", label: "General" },
 ];
 

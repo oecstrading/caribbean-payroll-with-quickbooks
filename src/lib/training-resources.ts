@@ -1,4 +1,5 @@
 export const TRAINING_RESOURCES = [
   { id: "builtin-guide-v7", title: "User Guide — Client Demo & Payroll Workflow", description: "Five employees across four departments, varied PAYE and deductions, exception resolution, 13 reports and simulated accounting delivery.", category: "manual", badge: "Latest v7", url: "/training/OECS_User_Manual_v7.pdf" },
   { id: "builtin-flyer-v4", title: "Brochure / Flyer — HR to Payroll", description: "Caribbean payroll and HR, departmental reporting, AI-assisted review and QuickBooks mapping with clear go-live safeguards.", category: "marketing", badge: "Latest v4", url: "/training/OECS_Brochure_v4.pdf" },
+  { id: "builtin-template-v2", title: "Payroll Onboarding Template (Excel)", description: "One sheet per step: company rules, every employee HR field, this month's pay, allowances, deductions, loan balances and QuickBooks account codes. Fill it in and upload under Menu → Payroll Import.", category: "template", badge: "Excel v2", url: "/templates/Payroll_Onboarding_Template_v2.xlsx" },
 ];
