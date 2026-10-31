@@ -7,7 +7,7 @@ import { emptyEmployee, type EmployeeForm } from "@/lib/employee-folder";
 import { parseSalarySheet, platformPay, defaultRules } from "@/lib/salary-sheet";
 import { PAYROLL_ITEMS } from "@/lib/qbo-items";
 
-const buffer = readFileSync(resolve("public", TEMPLATE_FILE));
+const buffer = readFileSync(resolve("public", TEMPLATE_FILE.replace(/^\//, "")));
 const sheets = readWorkbook(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength));
 const bundle = readOnboarding(sheets);
 const payroll = sheets.find(s => s.name === "Payroll")!;
