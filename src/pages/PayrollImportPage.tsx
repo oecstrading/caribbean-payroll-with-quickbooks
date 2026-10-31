@@ -45,6 +45,8 @@ export default function PayrollImportPage() {
   const complete = questions.length > 0 && answered === questions.length;
   const rules = rulesFromAnswers(answers);
   const comparison = useMemo(() => parsed && complete ? compareSheet(parsed, rules) : null, [parsed, complete, JSON.stringify(rules)]);
+  const visibleSteps = [onboarding && "found", parsed && "questions", comparison && "compare", onboarding && "approve"].filter(Boolean) as string[];
+  const step = (key: string) => visibleSteps.indexOf(key) + 1;
 
   const onFile = async (file: File | undefined) => {
     if (!file) return;
@@ -211,12 +213,12 @@ export default function PayrollImportPage() {
 
       {onboarding && onboarding.company.missing.length > 0 && <p className="text-sm text-muted-foreground">Still needed from the Company sheet: {onboarding.company.missing.join(", ")}.</p>}
 
-      {onboarding && <Card><CardHeader className="pb-2"><CardTitle className="text-lg flex items-center gap-2"><FileSpreadsheet size={18} />1 · What the Paymaster found</CardTitle></CardHeader>
+      {onboarding && <Card><CardHeader className="pb-2"><CardTitle className="text-lg flex items-center gap-2"><FileSpreadsheet size={18} />{step("found")} · What the Paymaster found</CardTitle></CardHeader>
         <CardContent className="space-y-3 text-sm">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             {tiles.map(({ icon: Icon, label, value, note }) => <div key={label} className="rounded-xl bg-muted p-3">
               <p className="text-xs text-muted-foreground flex items-center gap-1"><Icon size={12} />{label}</p>
-              <p className="font-bold text-base truncate" title={value}>{value}</p>
+              <p className="font-bold text-base break-words leading-tight" title={value}>{value}</p>
               {note && <p className="text-xs text-muted-foreground truncate">{note}</p>}
             </div>)}
           </div>
@@ -238,7 +240,7 @@ export default function PayrollImportPage() {
           {onboarding.company.quickbooks && <p className="text-xs text-muted-foreground">This sheet asks for QuickBooks sync. The account codes below are saved to the mapping screen; connect the account itself under QuickBooks.</p>}
         </CardContent></Card>}
 
-      {parsed && <Card><CardHeader className="pb-2"><CardTitle className="text-lg flex items-center gap-2"><Bot size={18} />2 · Questions before the Paymaster uses this sheet</CardTitle></CardHeader>
+      {parsed && <Card><CardHeader className="pb-2"><CardTitle className="text-lg flex items-center gap-2"><Bot size={18} />{step("questions")} · Questions before the Paymaster uses this sheet</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-1"><Progress value={questions.length ? answered / questions.length * 100 : 0} /><p className="text-xs text-muted-foreground">{answered} of {questions.length} answered{complete ? " · ready to check" : ""}</p></div>
           {questions.map((q, i) => <fieldset key={q.id} className="rounded-xl border border-border p-4 space-y-2">
@@ -249,7 +251,7 @@ export default function PayrollImportPage() {
           {!complete && questions.length > 0 && <Button variant="secondary" onClick={() => setAnswers(a => Object.fromEntries(questions.map(q => [q.id, a[q.id] || q.recommended])))}>Use the suggested answers for the rest</Button>}
         </CardContent></Card>}
 
-      {comparison && parsed && <Card><CardHeader className="pb-2"><CardTitle className="text-lg flex items-center gap-2"><CheckCircle2 size={18} />3 · Platform payroll vs. the spreadsheet</CardTitle></CardHeader>
+      {comparison && parsed && <Card><CardHeader className="pb-2"><CardTitle className="text-lg flex items-center gap-2"><CheckCircle2 size={18} />{step("compare")} · Platform payroll vs. the spreadsheet</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
             {[["Sheet gross", comparison.totals.sheetGross], ["Platform gross", comparison.totals.platformGross], ["Sheet net", comparison.totals.sheetNet], ["Platform net", comparison.totals.platformNet]].map(([l, v]) => <div key={l} className="rounded-xl bg-muted p-3"><p className="text-xs text-muted-foreground">{l}</p><p className="font-bold text-base">{formatCurrency(Number(v))}</p></div>)}
@@ -263,7 +265,7 @@ export default function PayrollImportPage() {
           </details>
         </CardContent></Card>}
 
-      {onboarding && <Card><CardHeader className="pb-2"><CardTitle className="text-lg flex items-center gap-2"><Users size={18} />4 · Approve the import</CardTitle></CardHeader>
+      {onboarding && <Card><CardHeader className="pb-2"><CardTitle className="text-lg flex items-center gap-2"><Users size={18} />{step("approve")} · Approve the import</CardTitle></CardHeader>
         <CardContent className="space-y-3 text-sm">
           <p>Creates {employeeCount} employee folders with the full HR profile, pay basis and bank details from the Employees sheet, plus {onboarding.entries.filter(e => e.kind === "allowance").length} allowances, {onboarding.entries.filter(e => e.kind === "deduction").length} deductions, {onboarding.loans.length} loan balances and {onboarding.accounts.length} QuickBooks account codes. {onboarding.company.company_name ? `Company details are saved for ${onboarding.company.company_name}. ` : ""}Existing employees with the same name are skipped. No payroll is run or saved; you still run and approve payroll on the Payroll page.</p>
           {!isAdmin ? <p className="flex items-center gap-2 text-muted-foreground"><AlertTriangle size={16} />{isAdminOrManager ? "Only an administrator can approve the import." : "Administrator access required."}</p> : imported ? <p className="font-medium">{imported.created} folders created · {imported.allowances} allowances · {imported.deductions} deductions · {imported.loans} loans · {imported.accounts} account codes.{imported.skipped.length ? ` Skipped (already exist): ${imported.skipped.join(", ")}.` : ""}</p> : <>
