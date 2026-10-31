@@ -110,7 +110,7 @@ export default function PayrollPage() {
     if (!payrollData.length || !selected.length || !isAdminOrManager || periodError || attendanceBlocked) return;
     if (source === "sample") { setApproved(true); toast.success("Sample completed; no live payroll saved."); return; }
     setProcessing(true);
-    const { error } = await supabase.rpc("approve_payroll_run", {
+    const { data: runId, error } = await supabase.rpc("approve_payroll_run", {
       _pay_type: payType, _start: range.start, _end: range.end, _notes: notes || undefined, _jurisdiction: jurisdiction, _departments: selected,
       _rows: payrollData.map(e => ({ user_id: e.id, department: e.department, basic_pay: e.payroll.basicPay,
         overtime_pay: e.payroll.overtimePay, gross_pay: e.payroll.grossMonthly, employee_nic: e.payroll.employeeNIC,
@@ -119,6 +119,25 @@ export default function PayrollPage() {
     setProcessing(false);
     if (error) { toast.error(error.message); return; }
     setApproved(true); toast.success("Department payroll saved with payslips and reports.");
+    void runAfterApproval(runId as string | null);
+  };
+
+  // After the human approves, finish the routine steps automatically: email payslips and post to QuickBooks.
+  const runAfterApproval = async (runId: string | null) => {
+    const period = `${range.start} to ${range.end}`;
+    let sent = 0, skipped = 0;
+    for (const e of payrollData) {
+      if (!e.email) { skipped++; continue; }
+      const p = e.payroll;
+      const html = `<h2>Payslip ${period}</h2><p>${e.firstName} ${e.lastName} · ${e.department}</p><table cellpadding="6"><tr><td>Basic pay</td><td>${p.basicPay.toFixed(2)}</td></tr><tr><td>Overtime</td><td>${p.overtimePay.toFixed(2)}</td></tr><tr><td>Gross</td><td>${p.grossMonthly.toFixed(2)}</td></tr><tr><td>NIC</td><td>${p.employeeNIC.toFixed(2)}</td></tr><tr><td>PAYE</td><td>${p.paye.toFixed(2)}</td></tr><tr><td>Total deductions</td><td>${p.totalDeductions.toFixed(2)}</td></tr><tr><td><strong>Net pay</strong></td><td><strong>XCD ${p.netPay.toFixed(2)}</strong></td></tr></table>`;
+      const { data, error } = await supabase.functions.invoke("email-payslip", { body: { user_id: e.id, payslip_html: html, period } });
+      if (error || data?.error) skipped++; else sent++;
+    }
+    toast.info(`Payslips emailed: ${sent}${skipped ? ` · ${skipped} need manual delivery (no email or login)` : ""}`);
+    if (!runId) return;
+    const { data, error } = await supabase.functions.invoke("qbo-sync", { body: { action: "sync", payroll_run_id: runId } });
+    if (error || data?.error) toast.warning("QuickBooks post queued for review on the QuickBooks page.");
+    else toast.success("Payroll journal posted to QuickBooks.");
   };
 
   const inDepartments = selectDepartments(employees, selected);
