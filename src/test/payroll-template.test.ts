@@ -7,7 +7,7 @@ import { emptyEmployee, type EmployeeForm } from "@/lib/employee-folder";
 import { parseSalarySheet, platformPay, defaultRules } from "@/lib/salary-sheet";
 import { PAYROLL_ITEMS } from "@/lib/qbo-items";
 
-const file = new URL(pathToFileURL(`${process.cwd()}/${TEMPLATE_FILE.replace(/^\//, "")}`).pathname);
+const file = new URL(pathToFileURL(`${process.cwd()}/public${TEMPLATE_FILE}`).pathname);
 const buffer = readFileSync(file);
 const sheets = readWorkbook(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength));
 const bundle = readOnboarding(sheets);
