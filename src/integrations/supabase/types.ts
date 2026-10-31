@@ -3128,6 +3128,65 @@ export type Database = {
           },
         ]
       }
+      staff_pay_requests: {
+        Row: {
+          created_at: string
+          employee_id: string
+          id: string
+          kind: string
+          org_id: string
+          reason: string
+          requested_clock_in: string | null
+          requested_clock_out: string | null
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          shift_date: string | null
+          shift_id: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          id?: string
+          kind: string
+          org_id: string
+          reason: string
+          requested_clock_in?: string | null
+          requested_clock_out?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          shift_date?: string | null
+          shift_id?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          id?: string
+          kind?: string
+          org_id?: string
+          reason?: string
+          requested_clock_in?: string | null
+          requested_clock_out?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          shift_date?: string | null
+          shift_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_pay_requests_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "workforce_shifts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       system_settings: {
         Row: {
           geofence_radius: number
@@ -3883,6 +3942,7 @@ export type Database = {
         Args: { _actor: string; _employee: string; _user: string }
         Returns: undefined
       }
+      my_pay_preview: { Args: { _end: string; _start: string }; Returns: Json }
       payroll_period_factor: {
         Args: { _end: string; _pay_type: string; _start: string }
         Returns: number
@@ -3985,6 +4045,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      review_staff_pay_request: {
+        Args: { _approve: boolean; _id: string; _note: string }
+        Returns: undefined
+      }
       review_workforce_shift: {
         Args: { _hours: number; _notes: string; _shift: string }
         Returns: undefined
@@ -4021,6 +4085,17 @@ export type Database = {
         Returns: undefined
       }
       staff_employment_key: { Args: never; Returns: string }
+      submit_staff_pay_request: {
+        Args: {
+          _date: string
+          _in: string
+          _kind: string
+          _out: string
+          _reason: string
+          _shift: string
+        }
+        Returns: string
+      }
       update_platform_company: {
         Args: { _actor: string; _details: Json; _org: string }
         Returns: undefined
