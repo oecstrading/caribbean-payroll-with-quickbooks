@@ -278,7 +278,7 @@ export default function PayrollImportPage() {
 function valuesFromPayroll(e: SheetEmployee, pay: PlatformPay, payeMethod: string, dailyRule: string, nicBasis: string, groupAnswer: string, fileName: string): EmployeeForm {
   const { first_name, last_name } = splitName(e.name);
   const fixedPaye = payeMethod === "sheet" || /fixed/i.test(e.taxMethod);
-  const group = e.staffGroup || (e.group > 0 ? groupAnswer : "Staff");
+  const group = (e.staffGroup || (e.group > 0 ? groupAnswer : "Staff")) as EmployeeForm["staff_group"];
   return {
     first_name, last_name, email: "", phone: "", person_id: e.employeeNumber, department: e.department, job_title: "",
     nic_number: e.employeeId, tan_number: "", start_date: /^\d{4}-\d{2}-\d{2}/.test(e.hireDate) ? e.hireDate.slice(0, 10) : "",
