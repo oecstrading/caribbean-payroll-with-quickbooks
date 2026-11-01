@@ -21,4 +21,4 @@
 - Payroll runs carry pay type and start/end dates; salary and statutory thresholds are prorated by a period factor computed identically in src/lib/pay-period.ts and the payroll_period_factor SQL function, and approval rejects overlapping paid periods per employee to prevent double pay.
 - AI Paymaster is a daily-scheduled plus on-demand Edge Function that writes per-company payroll drafts, flags and reminders with a per-company lease and 6h throttle; it never approves or pays, and the browser can only acknowledge drafts, keeping manager approval on the Payroll page as the sole save boundary.
 - Spreadsheet import (src/lib/salary-sheet.ts pay math, src/lib/onboarding-sheet.ts sheets) parses client-side, asks questions, compares to platform rules and writes only after admin approval; the template must cover every stored field. Never runs payroll; extra options live in hr_details.
-- Subdirectories may have their own AGENTS.md; read it before changing files there.
+- Read nested AGENTS.md. Versioned visual guides use the shared Training list; document verified behavior only.
