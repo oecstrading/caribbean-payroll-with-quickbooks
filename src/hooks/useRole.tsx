@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, createContext, useContext } from "react";
+import { useState, useEffect, useCallback, useRef, createContext, useContext } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import type { Database } from "@/integrations/supabase/types";
@@ -52,6 +52,7 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
   const [clockEnabled, setClockEnabled] = useState(false);
   const [authority, setAuthority] = useState({ company_super_admin: false, platform_super_admin: false });
   const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
+  const verifiedFor = useRef<string | null>(null);
   const refreshAccess = useCallback(async () => {
     if (!user) { setAccessError(false); setRole(null); setModules([]); setAuthority({ company_super_admin: false, platform_super_admin: false }); setJurisdiction(null); setLoadedUserId(null); setLoading(false); return; }
     setAccessError(false);
@@ -77,7 +78,11 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
       const nextRole = roleRes.error || accessRes.error ? null : roles.includes("admin") ? "admin" : roles.includes("manager") ? "manager" : roles.includes("employee") ? "employee" : null;
       setRole(nextRole); setModules(nextRole ? (nextRole === "admin" ? roleModules(nextRole) : accessRes.data?.modules ?? roleModules(nextRole)).filter(m => enabled.includes(m)) : []);
       setJurisdiction(profileRes.data?.jurisdiction ?? null);
-    } catch { setAccessError(true); setRole(null); setModules([]); setClockEnabled(false); setCompanyModules([]); setAuthority({ company_super_admin: false, platform_super_admin: false }); }
+      verifiedFor.current = user.id;
+    } catch {
+      // A background re-check that fails keeps the already-verified workspace open.
+      if (verifiedFor.current === user.id) return;
+      setAccessError(true); setRole(null); setModules([]); setClockEnabled(false); setCompanyModules([]); setAuthority({ company_super_admin: false, platform_super_admin: false }); }
     setLoadedUserId(user.id); setLoading(false);
   }, [user?.id]);
   useEffect(() => {
