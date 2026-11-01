@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import { Bot, Download, FileSpreadsheet, Upload, CheckCircle2, AlertTriangle, Users, Building2, HandCoins, Landmark, Tags } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { Bot, Download, FileSpreadsheet, Upload, CheckCircle2, AlertTriangle, Users, Building2, HandCoins, Landmark, Tags, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +35,13 @@ export default function PayrollImportPage() {
   const [importing, setImporting] = useState(false);
   const [imported, setImported] = useState<ImportSummary | null>(null);
   const [params] = useSearchParams();
+  const navigate = useNavigate();
+  const abort = () => {
+    if (!window.confirm("Abort this setup? The uploaded sheet and your answers will be discarded. Nothing has been saved.")) return;
+    setFileName(""); setBook([]); setSheetName(""); setAnswers({}); setError(""); setConfirmed(false); setImported(null);
+    toast.success("Setup aborted — nothing was saved");
+    navigate(target ? "/companies" : "/payroll-import", { replace: true });
+  };
   const target = params.get("company") ? { company: params.get("company")!, industry: params.get("industry") ?? "general", country: params.get("country") ?? "LC" } : null;
   useEffect(() => { if (target) setAnswers(a => a.jurisdiction ? a : { ...a, jurisdiction: target.country }); }, [target?.country]);
 
@@ -210,6 +217,7 @@ export default function PayrollImportPage() {
           <Button variant="secondary" className="min-h-11" onClick={() => downloadFile(TEMPLATE_FILE, TEMPLATE_NAME)}><Download size={16} />Download blank template</Button>
           <label className="inline-flex items-center gap-2 min-h-11 px-4 rounded-md bg-background text-foreground font-medium cursor-pointer hover:opacity-90">
             <Upload size={16} />Upload salary sheet<input type="file" className="sr-only" accept=".xlsx,.xls,.csv" onChange={e => { onFile(e.target.files?.[0]); e.target.value = ""; }} /></label>
+            {(target || book.length > 0) && !importing && <Button type="button" variant="destructive" onClick={abort} className="min-h-11"><X size={16} />Abort setup</Button>}
         </div>
       </header>
 
