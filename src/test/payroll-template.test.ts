@@ -34,7 +34,10 @@ describe("payroll onboarding template coverage", () => {
   });
 
   it("reads the finished template into full employee folders, entries, loans and account codes", () => {
-    expect(bundle.company.company_name).toBe("Example Company Ltd");
+    // Unchanged template examples are blanked and flagged, never saved as real details.
+    expect(bundle.company.company_name).toBe("");
+    expect(bundle.company.missing.some(m => m.startsWith("Company name"))).toBe(true);
+    expect(bundle.company.missing.some(m => m.startsWith("Tax ID"))).toBe(true);
     expect(bundle.company.jurisdiction).toBe("LC");
     expect(bundle.company.employee_nic_rate).toBe(0.05);
     expect(bundle.company.quickbooks).toBe(false);
