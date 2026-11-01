@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { Building2, Plus, Link2, Copy, Pencil, XCircle, RefreshCw } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { industryPacks, ONBOARDING_COUNTRIES } from "@/lib/company-onboarding";
+import { Building2, FileSpreadsheet, Plus, Link2, Copy, Pencil, XCircle, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -14,6 +16,8 @@ import { toast } from "sonner";
 type Company = { id: string; name: string; onboarding_status: string; created_at: string; details: unknown };
 type Invitation = { id: string; email: string; company_name: string; expires_at: string; accepted_at: string | null; revoked_at: string | null };
 export default function CompaniesPage() {
+  const navigate = useNavigate();
+  const [convert, setConvert] = useState<{ company: string; industry: string; country: string } | null>(null);
   const [allowed, setAllowed] = useState<boolean | null>(null);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
