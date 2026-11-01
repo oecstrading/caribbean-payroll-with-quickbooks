@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, createContext, useContext } from "react";
+import { useState, useEffect, useCallback, useRef, createContext, useContext } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import type { Database } from "@/integrations/supabase/types";
@@ -52,18 +52,21 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
   const [clockEnabled, setClockEnabled] = useState(false);
   const [authority, setAuthority] = useState({ company_super_admin: false, platform_super_admin: false });
   const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
+  const verifiedFor = useRef<string | null>(null);
   const refreshAccess = useCallback(async () => {
     if (!user) { setAccessError(false); setRole(null); setModules([]); setAuthority({ company_super_admin: false, platform_super_admin: false }); setJurisdiction(null); setLoadedUserId(null); setLoading(false); return; }
     setAccessError(false);
     try {
-      const [roleRes, profileRes, accessRes, companyRes, authorityRes, clockRes] = await Promise.all([
+      // Fail to a retryable error after 12s instead of an endless loading screen.
+      const timeout = new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error("Access check timed out")), 12000));
+      const [roleRes, profileRes, accessRes, companyRes, authorityRes, clockRes] = await Promise.race([Promise.all([
         supabase.from("user_roles").select("role").eq("user_id", user.id),
         supabase.from("profiles").select("jurisdiction").eq("user_id", user.id).maybeSingle(),
         supabase.from("user_workspace_access").select("modules").eq("user_id", user.id).maybeSingle(),
         supabase.rpc("company_configuration"),
         supabase.rpc("administrator_authority", { _user: user.id }),
         supabase.rpc("has_employee_clock_access", { _employee: user.id }),
-      ]);
+      ]), timeout]);
       if ([roleRes, profileRes, accessRes, companyRes, authorityRes, clockRes].some(result => result.error)) throw new Error("Access verification unavailable");
       setClockEnabled(!clockRes.error && clockRes.data === true);
       const trusted = authorityRes.data as { company_super_admin?: boolean; platform_super_admin?: boolean } | null;
@@ -75,7 +78,11 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
       const nextRole = roleRes.error || accessRes.error ? null : roles.includes("admin") ? "admin" : roles.includes("manager") ? "manager" : roles.includes("employee") ? "employee" : null;
       setRole(nextRole); setModules(nextRole ? (nextRole === "admin" ? roleModules(nextRole) : accessRes.data?.modules ?? roleModules(nextRole)).filter(m => enabled.includes(m)) : []);
       setJurisdiction(profileRes.data?.jurisdiction ?? null);
-    } catch { setAccessError(true); setRole(null); setModules([]); setClockEnabled(false); setCompanyModules([]); setAuthority({ company_super_admin: false, platform_super_admin: false }); }
+      verifiedFor.current = user.id;
+    } catch {
+      // A background re-check that fails keeps the already-verified workspace open.
+      if (verifiedFor.current === user.id) return;
+      setAccessError(true); setRole(null); setModules([]); setClockEnabled(false); setCompanyModules([]); setAuthority({ company_super_admin: false, platform_super_admin: false }); }
     setLoadedUserId(user.id); setLoading(false);
   }, [user?.id]);
   useEffect(() => {
