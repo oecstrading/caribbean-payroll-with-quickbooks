@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import ClockReminders from "@/components/ClockReminders";
+import type { ClockSchedule } from "@/lib/clock-reminders";
 import { Clock, LogIn, LogOut, Mic, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +14,7 @@ export default function StaffTimeClock({ companyId }: { companyId?: string }) {
  const { user }=useAuth(); const [now,setNow]=useState(new Date()); const [code,setCode]=useState(""); const [pin,setPin]=useState(""); const [next,setNext]=useState<"clock_in"|"clock_out">("clock_in"); const [busy,setBusy]=useState(false); const [pinMode,setPinMode]=useState(!!companyId); const [known,setKnown]=useState(false); const [last,setLast]=useState(""); const [error,setError]=useState("");
  const [resolvedCompany,setResolvedCompany]=useState(companyId??"");
  const [methods,setMethods]=useState<string[]>([]);
+ const [schedule,setSchedule]=useState<ClockSchedule|null>(null);
  const [history,setHistory]=useState<{shift_date:string;clock_in:string|null;clock_out:string|null;approved_hours:number|null;review_status:string}[]>([]);
  useEffect(()=>{if(companyId){setResolvedCompany(companyId);return;}if(user)void supabase.rpc("current_org_id").then(({data})=>setResolvedCompany(data??""));},[companyId,user?.id]);
  useEffect(()=>{const t=setInterval(()=>setNow(new Date()),1000);return()=>clearInterval(t);},[]);
@@ -28,7 +31,7 @@ export default function StaffTimeClock({ companyId }: { companyId?: string }) {
   const {data,error}=await supabase.functions.invoke("workforce-clock",{body});
   if(error) { let message=error.message; if(error.context instanceof Response){const detail=await error.context.json().catch(()=>null);message=detail?.error??message;} throw new Error(message); }
   if(data?.error)throw new Error(data.error);
-  setNext(data.next);setKnown(true);if(data.history)setHistory(data.history);if(data.allowed_methods)setMethods(data.allowed_methods);if(action==="punch"){setLast(`${next==="clock_in"?"Clocked in":"Clocked out"} · ${new Date(data.punched_at).toLocaleTimeString()}`);await request("status",mode);setPin("");toast.success("Attendance saved");}
+  setNext(data.next);setKnown(true);if(data.history)setHistory(data.history);if(data.allowed_methods)setMethods(data.allowed_methods);if(data.schedule!==undefined)setSchedule(data.schedule);if(action==="punch"){setLast(`${next==="clock_in"?"Clocked in":"Clocked out"} · ${new Date(data.punched_at).toLocaleTimeString()}`);await request("status",mode);setPin("");toast.success("Attendance saved");}
  }
  useEffect(()=>{if(user&&!pinMode)void request("status").catch(e=>setError(e.message));},[user?.id,pinMode]);
  async function submit(mode="device") {setBusy(true);setError("");try{await request(pinMode&&!known?"status":"punch",mode);}catch(e){setError(e instanceof Error?e.message:"Clock unavailable");}finally{setBusy(false);}}
@@ -46,6 +49,7 @@ export default function StaffTimeClock({ companyId }: { companyId?: string }) {
   {!user&&!pinMode?<p className="text-muted-foreground">Sign in or use your company's employee clock link.</p>:<Button className="w-full h-16 text-xl bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={busy} onClick={()=>void submit()}>{next==="clock_in"?<LogIn/>:<LogOut/>}{busy?"Recording…":pinMode&&!known?"Check employee clock":next==="clock_in"?"Clock In":"Clock Out"}</Button>}
   {known&&methods.includes("voice")&&<Button variant="ghost" disabled={busy} onClick={()=>void voice()}><Mic size={16}/>Voice clock {next==="clock_in"?"in":"out"}</Button>}
   {known&&history.length>0&&<div className="border-t border-border pt-4 text-left space-y-2"><h3 className="font-semibold">My worked hours</h3><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="text-muted-foreground"><th className="py-2 text-left">Date</th><th>In</th><th>Out</th><th className="text-right">Hours</th></tr></thead><tbody>{history.map(h=><tr key={h.shift_date} className="border-t border-border"><td className="py-3">{h.shift_date}</td><td className="text-center">{h.clock_in?new Date(h.clock_in).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}):"Missing"}</td><td className="text-center">{h.clock_out?new Date(h.clock_out).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}):"—"}</td><td className="text-right">{h.approved_hours===null?"Pending":Number(h.approved_hours).toFixed(2)}</td></tr>)}</tbody></table></div></div>}
+  {known&&<ClockReminders schedule={schedule} next={next}/>}
   {user&&!pinMode&&known&&<StaffPayCenter/>}
   {last&&<p role="status" className="text-success font-medium">{last}</p>}{error&&<p role="alert" className="text-destructive text-sm">{error}</p>}
   <p className="text-xs text-muted-foreground flex justify-center items-center gap-2"><ShieldCheck size={14}/>Live attendance · Company-protected records</p>
