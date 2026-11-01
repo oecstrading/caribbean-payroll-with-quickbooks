@@ -69,6 +69,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
             <span className="font-display font-bold text-sm" style={{ color: "hsl(195 90% 22%)" }}>OE</span>
           </div>
           <p className="text-sm text-white/90">Loading your Caribbean payroll…</p>
+          <button type="button" onClick={() => window.location.reload()} className="text-xs underline text-white/80 opacity-0 animate-[fade-in_0.3s_ease-out_8s_forwards]">Taking a while? Tap to reload</button>
         </div>
       </div>
     );
