@@ -11,6 +11,7 @@ export const STATUTORY_LEVIES: Record<string, LevyRule[]> = {
     { name: "NHT", employeeRate: 0.02, employerRate: 0.03 },
     { name: "HEART/NSTA", employeeRate: 0, employerRate: 0.03 },
   ],
+  GY: [],
   BB: [{ name: "Training Levy", employeeRate: 0, employerRate: 0.005 }],
 };
 
