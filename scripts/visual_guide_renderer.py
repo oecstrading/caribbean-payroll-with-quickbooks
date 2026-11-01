@@ -108,7 +108,7 @@ def cover(c,title,subtitle,edition,total):
     text(c,'CARIBBEAN WORKFORCE • HUMAN APPROVAL',36,H-43,W-72,9,color=SEA,bold=True)
     text(c,'OECS HR & Payroll',36,H-77,W-72,29,bold=True,max_h=50)
     text(c,title,36,H-138,W-72,21,color=BLUE,bold=True,max_h=65)
-    c.drawImage(str(ROOT/'src/assets/payroll-visual-guide.jpg'),36,330,W-72,349,mask='auto')
+    c.drawImage(str(ROOT/'src/assets/payroll-visual-guide.jpg'),36,330,W-72,330,mask='auto')
     # Image position is fixed below the title band.
     text(c,subtitle,36,306,W-72,13,bold=True,max_h=54)
     text(c,'Install → Clock → Resolve → Prepare → Approve → Report',36,239,W-72,10,color=SEA,bold=True,max_h=36)
