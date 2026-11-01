@@ -1,5 +1,6 @@
 import { useRole } from "@/hooks/useRole";
 import SavedPayrollReports from "@/components/SavedPayrollReports";
+import PayrollRegisterReport from "@/components/PayrollRegisterReport";
 import { motion } from "framer-motion";
 import { FileText, Download, Printer, Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -120,6 +121,7 @@ export default function ReportsPage() {
         <p className="text-sm text-muted-foreground mt-1">Government reports, payslips, and statutory exports</p>
       </div>
 
+      <PayrollRegisterReport />
       <SavedPayrollReports />
       {demoMode && <><h2 className="text-lg font-display font-semibold text-foreground">Sample statutory reports · March 2026</h2>
       {/* Government Reports */}
