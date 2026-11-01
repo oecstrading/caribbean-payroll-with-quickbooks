@@ -114,7 +114,7 @@ GUIDE = [
 ('Before replacing simulation with customer production', 'Use real employee login setup, verified company permissions and live clock validation. Confirm statutory rules, rates, loan balances and bank details. Human approval remains mandatory. Configure and independently test QuickBooks production authorization/posting; verify actual employee and accountant email delivery with consent. Demo completion does not establish these services are operational, nor guarantee uptime or legal compliance.')]),
 ]
 BROCHURE = [
-('OECS HR & Payroll', [('', 'Brochure / Flyer v4 · Caribbean workforce management'), ('From employee folder to approved payroll', 'Prepare HR records. Choose pay rates and hours. Run payroll for your dates and departments. Ask the AI Payroll Officer to review the draft, then approve with confidence and retain clear reports.'), ('Flexible for your workforce', 'Monthly • Semi-monthly • Weekly • Custom final-pay dates<br/>Hourly and daily rates • Weekly hours • Departmental and consolidated reports')]),
+('OECS HR & Payroll', [('', 'Brochure / Flyer v5 · Caribbean workforce management'), ('From employee folder to approved payroll', 'Prepare HR records. Choose pay rates and hours. Run payroll for your dates and departments. Ask the AI Payroll Officer to review the draft, then approve with confidence and retain clear reports.'), ('Flexible for your workforce', 'Monthly • Semi-monthly • Weekly • Custom final-pay dates<br/>Hourly and daily rates • Weekly hours • Departmental and consolidated reports')]),
 ('Your payroll manager’s workflow', [
 ('01 / Prepare', 'Maintain employee folders, even without email. Select departments, job titles and schedules; add your own entries. Store contracts and certifications privately with expiry dates and controlled sharing.'),
 ('02 / Calculate', 'Choose the employee’s rate and weekly hours. Hourly pay uses the saved monthly equivalent—not a fixed 9-to-5. Example: XCD 10/hour × 36 hours/week = XCD 1,560/month, or approximately XCD 360 for a weekly run before deductions.'),
@@ -130,6 +130,14 @@ BROCHURE = [
 ('Share the guide and train your team', f'<link href="{PUBLIC}">{PUBLIC}</link><br/>Latest resources become available on the published site after republishing. Managers can upload company training documents. Keep confidential employee records in private folders.'),
 ('Workflow references', '<link href="https://support.gusto.com/article/250211164235690/use-gus-gustos-ai-assistant">Gusto Gus</link> · <link href="https://www.rippling.com/platform/ai">Rippling AI</link> · <link href="https://www.adp.com/what-we-offer/products/adp-workforce-now/payroll.aspx">ADP Payroll</link><br/>Public examples checked 20 October 2026; no affiliation or integration implied.')]),
 ]
+BROCHURE.append(('New: faster onboarding, smarter reports', [
+('Three ways to start a company', 'Start from scratch, use our Excel onboarding template, or bring an existing payroll sheet. Coloured buttons with hover guides explain each path. Template examples are placeholders to replace; Abort setup discards an unfinished import without saving.'),
+('Spreadsheet to payroll, compared', 'The AI Paymaster reads a past payroll sheet, asks only what it cannot work out, rebuilds every payslip with platform rules and shows each difference before an administrator approves anything.'),
+('Staff never miss a punch', 'Optional phone reminders 5 minutes before shift start and end, plus an alarm for missing punches. Staff see draft pay before pay day and send punch corrections or pay questions for manager approval.'),
+('Caribbean-ready reports', 'Payroll Register &amp; Summary with cash requirement and employer liabilities; Statutory Remittance Report with local tax-form wording for Saint Lucia, Jamaica, Trinidad &amp; Tobago, Barbados and Guyana; Time &amp; Attendance Audit with overtime, double time, late and absence flags and absence cost.'),
+('Honest limits', 'Some levy rates are estimates to confirm with an accountant. Phone alarms ring only while the app is open. Reports support remittances but are not filed government forms. People approve payroll; AI never pays.')]))
+
 if __name__ == '__main__':
+    build('OECS_Brochure_v5.pdf', 'Brochure v5', BROCHURE)
     from visual_guide_renderer import build_current_guides
     build_current_guides()

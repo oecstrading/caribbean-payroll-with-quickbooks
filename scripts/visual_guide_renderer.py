@@ -131,5 +131,5 @@ def build_visual(filename,title,subtitle,edition,pages):
     c.save(); print(f'{dest} ({total} pages)')
 
 def build_current_guides():
-    build_visual('OECS_User_Manual_v8.pdf','Visual User Guide','The complete employee-to-approved-payroll journey','User Guide v8',USER)
-    build_visual('OECS_Company_Setup_Guide_v1.pdf','Company Setup Guide','From existing spreadsheets to your first reviewed payroll','Setup Guide v1',SETUP)
+    build_visual('OECS_User_Manual_v9.pdf','Visual User Guide','The complete employee-to-approved-payroll journey','User Guide v9',USER)
+    build_visual('OECS_Company_Setup_Guide_v2.pdf','Company Setup Guide','From existing spreadsheets to your first reviewed payroll','Setup Guide v2',SETUP)
