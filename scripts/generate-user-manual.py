@@ -131,4 +131,5 @@ BROCHURE = [
 ('Workflow references', '<link href="https://support.gusto.com/article/250211164235690/use-gus-gustos-ai-assistant">Gusto Gus</link> · <link href="https://www.rippling.com/platform/ai">Rippling AI</link> · <link href="https://www.adp.com/what-we-offer/products/adp-workforce-now/payroll.aspx">ADP Payroll</link><br/>Public examples checked 20 October 2026; no affiliation or integration implied.')]),
 ]
 if __name__ == '__main__':
-    build('OECS_User_Manual_v7.pdf', 'User Guide v7', GUIDE)
+    from visual_guide_renderer import build_current_guides
+    build_current_guides()

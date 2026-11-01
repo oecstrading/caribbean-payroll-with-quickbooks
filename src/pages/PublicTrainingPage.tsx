@@ -77,7 +77,7 @@ export default function PublicTrainingPage() {
                   <p className="text-sm text-muted-foreground">{doc.description}</p>
                   <div className="flex flex-col sm:flex-row gap-2">
                     <Button className="flex-1" onClick={() => downloadFile(doc.url)}>
-                      <Download className="h-4 w-4 mr-2" /> Download PDF
+                      <Download className="h-4 w-4 mr-2" /> {doc.category === "template" ? "Download Excel" : "Download PDF"}
                     </Button>
                     <Button
                       variant="outline"
@@ -92,7 +92,7 @@ export default function PublicTrainingPage() {
                     rel="noopener noreferrer"
                     className="text-xs text-primary hover:underline truncate"
                   >
-                    View PDF
+                    {doc.category === "template" ? "Open Excel template" : "View PDF"}
                   </a>
                 </CardContent>
               </Card>
