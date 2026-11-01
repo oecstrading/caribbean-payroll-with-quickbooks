@@ -106,6 +106,21 @@ function columnsFromHeader(row: Cell[]) {
   return map;
 }
 
+/** Example values shipped in the onboarding template; left unchanged they are treated as missing, never saved. */
+export const TEMPLATE_PLACEHOLDERS: Record<string, string> = {
+  company_name: "Example Company Ltd",
+  employer_nic_number: "EMP-0001",
+  tax_id: "TIN-000000",
+  vat_number: "VAT-000000",
+  telephone: "+1 758 000 0000",
+  website: "https://example.com",
+  address: "Example Street, Castries",
+};
+const PLACEHOLDER_LABELS: Record<string, string> = {
+  company_name: "Company name", employer_nic_number: "Employer NIC number", tax_id: "Tax ID",
+  vat_number: "VAT number", telephone: "Telephone", website: "Website", address: "Address",
+};
+
 function parseCompany(sheets: WorkbookSheet[]): OnboardingCompany {
   const sheet = findSheet(sheets, name => name === "company");
   const company: OnboardingCompany = { ...emptyCompany, missing: [] };
@@ -123,7 +138,14 @@ function parseCompany(sheets: WorkbookSheet[]): OnboardingCompany {
     } else if (str(value)) (company as unknown as Record<string, unknown>)[field] = str(value);
   }
   company.jurisdiction = countryToJurisdiction(company.country);
-  if (!company.company_name) company.missing.push("Company name");
+  const rec = company as unknown as Record<string, unknown>;
+  for (const [field, example] of Object.entries(TEMPLATE_PLACEHOLDERS)) {
+    if (str(rec[field]) && str(rec[field]).toLowerCase() === example.toLowerCase()) {
+      rec[field] = "";
+      company.missing.push(`${PLACEHOLDER_LABELS[field]} (still the template example "${example}")`);
+    }
+  }
+  if (!company.company_name && !company.missing.some(m => m.startsWith("Company name"))) company.missing.push("Company name");
   if (!company.jurisdiction) company.missing.push("Country (a supported OECS country)");
   return company;
 }
