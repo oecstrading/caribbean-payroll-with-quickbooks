@@ -31,11 +31,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     });
 
+    // Never let a stalled session check keep the loading screen up forever.
+    const fallback = window.setTimeout(() => setLoading(false), 6000);
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
-    });
+    }).catch(() => setLoading(false)).finally(() => window.clearTimeout(fallback));
 
     return () => subscription.unsubscribe();
   }, []);

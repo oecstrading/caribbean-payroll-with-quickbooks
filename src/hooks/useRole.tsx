@@ -56,14 +56,16 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
     if (!user) { setAccessError(false); setRole(null); setModules([]); setAuthority({ company_super_admin: false, platform_super_admin: false }); setJurisdiction(null); setLoadedUserId(null); setLoading(false); return; }
     setAccessError(false);
     try {
-      const [roleRes, profileRes, accessRes, companyRes, authorityRes, clockRes] = await Promise.all([
+      // Fail to a retryable error after 12s instead of an endless loading screen.
+      const timeout = new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error("Access check timed out")), 12000));
+      const [roleRes, profileRes, accessRes, companyRes, authorityRes, clockRes] = await Promise.race([Promise.all([
         supabase.from("user_roles").select("role").eq("user_id", user.id),
         supabase.from("profiles").select("jurisdiction").eq("user_id", user.id).maybeSingle(),
         supabase.from("user_workspace_access").select("modules").eq("user_id", user.id).maybeSingle(),
         supabase.rpc("company_configuration"),
         supabase.rpc("administrator_authority", { _user: user.id }),
         supabase.rpc("has_employee_clock_access", { _employee: user.id }),
-      ]);
+      ]), timeout]);
       if ([roleRes, profileRes, accessRes, companyRes, authorityRes, clockRes].some(result => result.error)) throw new Error("Access verification unavailable");
       setClockEnabled(!clockRes.error && clockRes.data === true);
       const trusted = authorityRes.data as { company_super_admin?: boolean; platform_super_admin?: boolean } | null;
