@@ -140,7 +140,8 @@ function parseCompany(sheets: WorkbookSheet[]): OnboardingCompany {
   company.jurisdiction = countryToJurisdiction(company.country);
   const rec = company as unknown as Record<string, unknown>;
   for (const [field, example] of Object.entries(TEMPLATE_PLACEHOLDERS)) {
-    if (str(rec[field]) && str(rec[field]).toLowerCase() === example.toLowerCase()) {
+    const current = String(rec[field] ?? "").trim();
+    if (current && current.toLowerCase() === example.toLowerCase()) {
       rec[field] = "";
       company.missing.push(`${PLACEHOLDER_LABELS[field]} (still the template example "${example}")`);
     }
