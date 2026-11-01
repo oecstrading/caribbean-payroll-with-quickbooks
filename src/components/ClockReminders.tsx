@@ -35,7 +35,7 @@ export default function ClockReminders({ schedule, next }: { schedule: ClockSche
       const text = REMINDER_TEXT[due.kind];
       alarm(); toast.warning(text, { duration: 15000 });
       if ("Notification" in window && Notification.permission === "granted") {
-        navigator.serviceWorker?.getRegistration().then(r => r ? r.showNotification("Time clock", { body: text, tag: due.key }) : new Notification("Time clock", { body: text })).catch(() => new Notification("Time clock", { body: text }));
+        navigator.serviceWorker?.getRegistration().then(r => { if (r) return r.showNotification("Time clock", { body: text, tag: due.key }); new Notification("Time clock", { body: text }); }).catch(() => { new Notification("Time clock", { body: text }); });
       }
     };
     check(); const id = window.setInterval(check, 30_000);
