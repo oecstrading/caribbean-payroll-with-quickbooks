@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Bot, Download, FileSpreadsheet, Upload, CheckCircle2, AlertTriangle, Users, Building2, HandCoins, Landmark, Tags } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,9 @@ export default function PayrollImportPage() {
   const [confirmed, setConfirmed] = useState(false);
   const [importing, setImporting] = useState(false);
   const [imported, setImported] = useState<ImportSummary | null>(null);
+  const [params] = useSearchParams();
+  const target = params.get("company") ? { company: params.get("company")!, industry: params.get("industry") ?? "general", country: params.get("country") ?? "LC" } : null;
+  useEffect(() => { if (target) setAnswers(a => a.jurisdiction ? a : { ...a, jurisdiction: target.country }); }, [target?.country]);
 
   const payrollSheets = useMemo(() => book.filter(s => { try { parseSalarySheet(s.values, s.formulas); return true; } catch { return false; } }), [book]);
   const onboarding = useMemo<OnboardingBundle | null>(() => book.length ? readOnboarding(book) : null, [book]);
@@ -209,6 +213,7 @@ export default function PayrollImportPage() {
         </div>
       </header>
 
+      {target && <div className="rounded-xl border-l-4 border-primary bg-card p-4 text-sm"><p className="font-semibold">Converting: {target.company}</p><p className="text-muted-foreground">Industry: {target.industry} · Jurisdiction: {target.country}. Upload the past payroll sheet above to start the AI setup and comparison.</p></div>}
       {error && <p role="alert" className="text-destructive text-sm">{error}</p>}
 
       {onboarding && onboarding.company.missing.length > 0 && <p className="text-sm text-muted-foreground">Still needed from the Company sheet: {onboarding.company.missing.join(", ")}.</p>}
