@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -55,6 +56,12 @@ import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
 
+function SlowLoadHint() {
+  const [show, setShow] = useState(false);
+  useEffect(() => { const t = window.setTimeout(() => setShow(true), 8000); return () => window.clearTimeout(t); }, []);
+  return show ? <button type="button" onClick={() => window.location.reload()} className="text-xs underline text-white/80">Taking a while? Tap to reload</button> : null;
+}
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading, signOut } = useAuth();
   const { role, loading: accessLoading, accessError, refreshAccess } = useRole();
@@ -69,7 +76,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
             <span className="font-display font-bold text-sm" style={{ color: "hsl(195 90% 22%)" }}>OE</span>
           </div>
           <p className="text-sm text-white/90">Loading your Caribbean payroll…</p>
-          <button type="button" onClick={() => window.location.reload()} className="text-xs underline text-white/80 opacity-0 animate-[fade-in_0.3s_ease-out_8s_forwards]">Taking a while? Tap to reload</button>
+          <SlowLoadHint />
         </div>
       </div>
     );
