@@ -49,8 +49,14 @@ export default function PayrollImportPage() {
   const onboarding = useMemo<OnboardingBundle | null>(() => book.length ? readOnboarding(book) : null, [book]);
   const parsed = useMemo<ParsedSheet | null>(() => {
     const sheet = payrollSheets.find(s => s.name === sheetName); if (!sheet) return null;
-    try { setError(""); return parseSalarySheet(sheet.values, sheet.formulas); } catch (e) { setError(e instanceof Error ? e.message : "Couldn't read this sheet"); return null; }
-  }, [payrollSheets, sheetName]);
+    try {
+      setError("");
+      const result = parseSalarySheet(sheet.values, sheet.formulas);
+      // Drop leftover template sample rows that aren't people on the Employees sheet.
+      const known = new Set((onboarding?.employees || []).map(e => e.name.toLowerCase()));
+      return { ...result, employees: result.employees.filter(e => known.has(e.name.toLowerCase()) || !isExampleName(e.name)) };
+    } catch (e) { setError(e instanceof Error ? e.message : "Couldn't read this sheet"); return null; }
+  }, [payrollSheets, sheetName, onboarding]);
   const questions = useMemo(() => parsed ? importQuestions(parsed, answers.jurisdiction || "LC") : [], [parsed, answers.jurisdiction]);
   const answered = questions.filter(q => answers[q.id]).length;
   const complete = questions.length > 0 && answered === questions.length;
