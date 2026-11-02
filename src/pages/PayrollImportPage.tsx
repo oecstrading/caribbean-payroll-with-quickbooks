@@ -15,7 +15,7 @@ import { parseSalarySheet, importQuestions, rulesFromAnswers, compareSheet, spli
 import { formatCurrency } from "@/lib/payroll-engine";
 import { downloadFile } from "@/lib/download-file";
 import { folderUpdate, type EmployeeForm } from "@/lib/employee-folder";
-import { readOnboarding, countryToJurisdiction, TEMPLATE_FILE, TEMPLATE_NAME, type OnboardingBundle, type OnboardingEmployee } from "@/lib/onboarding-sheet";
+import { readOnboarding, isExampleName, countryToJurisdiction, TEMPLATE_FILE, TEMPLATE_NAME, type OnboardingBundle, type OnboardingEmployee } from "@/lib/onboarding-sheet";
 
 const key = (name: string) => name.trim().toLowerCase().replace(/\s+/g, " ");
 
