@@ -3841,6 +3841,16 @@ export type Database = {
         }
         Returns: string
       }
+      approve_payslip_import: {
+        Args: {
+          _end: string
+          _jurisdiction: string
+          _notes?: string
+          _rows: Json
+          _start: string
+        }
+        Returns: string
+      }
       can_access_applicant_file: { Args: { _path: string }; Returns: boolean }
       can_access_employee_document: {
         Args: { _employee: string; _shared: boolean }
