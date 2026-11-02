@@ -64,6 +64,17 @@ const num = (value: Cell) => {
   return Number.isFinite(n) ? n : 0;
 };
 const yes = (value: Cell) => /^(y|yes|true|1)/i.test(str(value));
+/** Template sample rows ("Example Person One") are guidance only and are never imported. */
+export const isExampleName = (name: string) => /^example\s/i.test(name.trim());
+/** Accept the date shapes people type in Excel: 2026-02 (first of month), 2026/2/5, 5/2/2026 (day first). */
+export function normalizeDate(text: string): string {
+  const t = text.trim(); let m: RegExpMatchArray | null;
+  const pad = (n: string) => n.padStart(2, "0");
+  if ((m = t.match(/^(\d{4})[-/.](\d{1,2})$/))) return `${m[1]}-${pad(m[2])}-01`;
+  if ((m = t.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/))) return `${m[1]}-${pad(m[2])}-${pad(m[3])}`;
+  if ((m = t.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/))) return `${m[3]}-${pad(m[2])}-${pad(m[1])}`;
+  return t;
+}
 const blank = (row: Cell[]) => !row || row.every(c => str(c) === "");
 const upper = (value: Cell) => str(value).toUpperCase();
 
@@ -166,10 +177,16 @@ function parseEmployees(sheets: WorkbookSheet[], problems: string[]): Onboarding
       if (col === undefined) continue;
       const cell = row[col];
       const text = cell instanceof Date ? cell.toISOString().slice(0, 10) : str(cell);
-      if (text !== "") (values as Record<string, unknown>)[field] = text;
+      if (text !== "") (values as Record<string, unknown>)[field] = /(_date|_end|date_of_birth)$/.test(field) ? normalizeDate(text) : text;
     }
     const name = `${values.first_name} ${values.last_name}`.trim();
-    if (!name) continue;
+    if (!name || isExampleName(name)) continue;
+    for (const key of ["probation_end", "contract_end", "termination_date"] as const) {
+      if (values.start_date && values[key] && values[key] < values.start_date) {
+        problems.push(`${name}: ${key.replace(/_/g, " ")} ${values[key]} was before the hire date ${values.start_date}, so it was left blank — add the correct date in the employee folder.`);
+        values[key] = "";
+      }
+    }
     const parsed = employeeFolderSchema.safeParse(values);
     const issues = parsed.success ? [] : Object.entries(parsed.error.flatten().fieldErrors)
       .map(([field, messages]) => `${field}: ${(messages || []).join(", ")}`);
@@ -189,6 +206,7 @@ function parseEntries(sheets: WorkbookSheet[], problems: string[]): OnboardingEn
     const row = sheet.values[r];
     if (blank(row)) continue;
     const name = str(at(row, "EMPLOYEE NAME"));
+    if (isExampleName(name)) continue;
     const description = str(at(row, "DESCRIPTION"));
     const amount = num(at(row, "MONTHLY AMOUNT"));
     if (!name || !description || amount <= 0) { problems.push(`Allowances & Deductions row ${r + 1}: needs an employee, a description and an amount above zero.`); continue; }
@@ -216,6 +234,7 @@ function parseLoans(sheets: WorkbookSheet[], problems: string[]): OnboardingLoan
       original: num(at(row, "ORIGINAL AMOUNT")), balance: num(at(row, "BALANCE STILL OWED")),
       monthly: num(at(row, "MONTHLY REPAYMENT")), notes: str(at(row, "NOTES")),
     };
+    if (isExampleName(loan.name)) continue;
     if (!loan.name || !loan.creditor) { problems.push(`Loans row ${r + 1}: needs an employee and a lender.`); continue; }
     const checked = loanSchema.safeParse({
       employee: "00000000-0000-4000-8000-000000000000", creditor: "00000000-0000-4000-8000-000000000001",
@@ -284,8 +303,9 @@ export function readOnboarding(sheets: WorkbookSheet[]): OnboardingBundle {
   const departmentNames = new Set(departments.map(d => d.department.toLowerCase()));
   for (const employee of employees) {
     const department = employee.values.department.trim();
-    if (department && departmentNames.size && !departmentNames.has(department.toLowerCase())) {
-      problems.push(`${employee.name}: department "${department}" is not listed on the Departments sheet.`);
+    if (department && !departmentNames.has(department.toLowerCase())) {
+      departmentNames.add(department.toLowerCase());
+      departments.push({ department, cost_centre: employee.values.cost_centre_code || "", accounts: {}, row: 0 });
     }
   }
   return {

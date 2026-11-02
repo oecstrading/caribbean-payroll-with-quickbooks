@@ -96,7 +96,7 @@ export function parseSalarySheet(values: Cell[][], formulas: (string | undefined
     const label = str(first);
     if (/grand\s*total|^totals?$|clearing/i.test(label)) break;
     if (/sub-?\s*total/i.test(label)) { group++; last = null; continue; }
-    if (!label || /n\s*i\s*c\s+company/i.test(label)) continue;
+    if (!label || /n\s*i\s*c\s+company/i.test(label) || /^example\s/i.test(label)) continue;
     if (isIdLike(first) && last) {
       if (!last.employeeId) last.employeeId = label;
       last.otHours2 += num(at(row, "otHours")); last.extraDays += num(at(row, "days")); last.extraDayRate = num(at(row, "dailyRate")) || last.extraDayRate;
