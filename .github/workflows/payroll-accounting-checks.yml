@@ -1,0 +1,27 @@
+name: Payroll accounting checks
+on:
+  push:
+    branches: [fix/payroll-accounting-guards-20261102]
+  pull_request:
+    paths:
+      - 'src/lib/**'
+      - 'src/test/**'
+      - 'supabase/functions/_shared/qbo-journal.ts'
+      - 'supabase/functions/qbo-sync/index.ts'
+      - 'package.json'
+      - 'package-lock.json'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test -- --run
+      - run: npm run build
+      - run: npm run lint
