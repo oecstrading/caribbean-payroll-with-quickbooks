@@ -180,7 +180,7 @@ function parseEmployees(sheets: WorkbookSheet[], problems: string[]): Onboarding
       if (text !== "") (values as Record<string, unknown>)[field] = /(_date|_end|date_of_birth)$/.test(field) ? normalizeDate(text) : text;
     }
     const name = `${values.first_name} ${values.last_name}`.trim();
-    if (!name || isExampleName(name)) continue;
+    if (!name) continue;
     for (const key of ["probation_end", "contract_end", "termination_date"] as const) {
       if (values.start_date && values[key] && values[key] < values.start_date) {
         problems.push(`${name}: ${key.replace(/_/g, " ")} ${values[key]} was before the hire date ${values.start_date}, so it was left blank — add the correct date in the employee folder.`);
@@ -206,7 +206,6 @@ function parseEntries(sheets: WorkbookSheet[], problems: string[]): OnboardingEn
     const row = sheet.values[r];
     if (blank(row)) continue;
     const name = str(at(row, "EMPLOYEE NAME"));
-    if (isExampleName(name)) continue;
     const description = str(at(row, "DESCRIPTION"));
     const amount = num(at(row, "MONTHLY AMOUNT"));
     if (!name || !description || amount <= 0) { problems.push(`Allowances & Deductions row ${r + 1}: needs an employee, a description and an amount above zero.`); continue; }
@@ -234,7 +233,6 @@ function parseLoans(sheets: WorkbookSheet[], problems: string[]): OnboardingLoan
       original: num(at(row, "ORIGINAL AMOUNT")), balance: num(at(row, "BALANCE STILL OWED")),
       monthly: num(at(row, "MONTHLY REPAYMENT")), notes: str(at(row, "NOTES")),
     };
-    if (isExampleName(loan.name)) continue;
     if (!loan.name || !loan.creditor) { problems.push(`Loans row ${r + 1}: needs an employee and a lender.`); continue; }
     const checked = loanSchema.safeParse({
       employee: "00000000-0000-4000-8000-000000000000", creditor: "00000000-0000-4000-8000-000000000001",
@@ -297,6 +295,10 @@ export function readOnboarding(sheets: WorkbookSheet[]): OnboardingBundle {
   const accounts = parseAccounts(sheets, problems);
   const departments = parseDepartments(sheets, problems);
   const names = new Set(employees.map(e => e.name.toLowerCase()));
+  // Leftover template sample rows that don't belong to anyone on the Employees sheet are dropped, not reported.
+  const own = (item: { name: string }) => names.has(item.name.toLowerCase()) || !isExampleName(item.name);
+  entries.splice(0, entries.length, ...entries.filter(own));
+  loans.splice(0, loans.length, ...loans.filter(own));
   for (const item of [...entries, ...loans]) {
     if (!names.has(item.name.toLowerCase())) problems.push(`"${item.name}" on row ${item.row} has no matching employee on the Employees sheet.`);
   }
