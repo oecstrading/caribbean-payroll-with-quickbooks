@@ -56,7 +56,7 @@ function parseOne(lines: Line[]): ParsedSlip | null {
   const eIdx = lines.findIndex(l => l[0]?.text === "Earnings and Hours");
   const tIdx = lines.findIndex((l, i) => i > eIdx && l[0]?.text === "Taxes");
   const aIdx = lines.findIndex((l, i) => i > tIdx && /^Adjustments to Net Pay/.test(l[0]?.text || ""));
-  const nIdx = lines.findIndex((l, i) => i > aIdx && l[0]?.text === "Net Pay");
+  const nIdx = lines.findIndex((l, i) => i > Math.max(aIdx, tIdx) && l[0]?.text === "Net Pay");
   if (eIdx < 0 || tIdx < 0 || nIdx < 0) return null;
 
   // Earnings: left block columns from the header; anything right of "Paid Time Off"/"Non-taxable" is the side panel.
@@ -93,19 +93,20 @@ function parseOne(lines: Line[]): ParsedSlip | null {
     const hit = nums.find(t => nearest(t, { Current: cur?.end ?? 0, YTD: yt?.end ?? 1e9 }) === "Current");
     return hit ? toNum(hit.text) : null;
   };
-  for (let i = tIdx + 1; i < aIdx; i++) {
+  const taxEnd = aIdx >= 0 ? aIdx : nIdx;
+  for (let i = tIdx + 1; i < taxEnd; i++) {
     const l = lines[i]; if (!l[0] || NUM.test(l[0].text)) continue;
     slip.taxes += Math.abs(sectionCurrent(lines[tIdx], l) ?? 0);
   }
   slip.taxes = money(slip.taxes);
-  for (let i = aIdx + 1; i < nIdx; i++) {
+  for (let i = aIdx + 1; aIdx >= 0 && i < nIdx; i++) {
     const l = lines[i]; if (!l[0] || NUM.test(l[0].text)) continue;
     const v = sectionCurrent(lines[aIdx], l); if (v === null) continue;
     if (/^N\.?I\.?C\.?\s*\(EE\)|national insurance/i.test(l[0].text)) slip.nicEE = money(slip.nicEE + Math.abs(v));
     else slip.otherDeductions.push({ label: l[0].text, current: money(Math.abs(v)) });
   }
   slip.totalAdjustments = money(slip.nicEE + slip.otherDeductions.reduce((s, d) => s + d.current, 0));
-  slip.net = sectionCurrent(lines[aIdx], lines[nIdx]) ?? 0;
+  slip.net = sectionCurrent(lines[aIdx >= 0 ? aIdx : tIdx], lines[nIdx]) ?? 0;
   return slip;
 }
 
