@@ -9,7 +9,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import CompanySetupFields from "@/components/CompanySetupFields";
-import { companySetupSchema, emptyCompanySetup, companySetupLink, type CompanySetup } from "@/lib/company-setup";
+import { companySetupSchema, companySaveError, emptyCompanySetup, companySetupLink, type CompanySetup } from "@/lib/company-setup";
 import { companyAction } from "@/lib/company-api";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -55,7 +55,7 @@ export default function CompaniesPage() {
         toast.success(mode === "administrator" ? "Company prepared; share the link with its administrator" : "Customer setup link created");
       }
       await load();
-    } catch (err) { toast.error(err instanceof Error ? err.message : "Unable to save company"); }
+    } catch (err) { toast.error(companySaveError(err)); }
     finally { setBusy(false); }
   }
   async function revoke(id: string) {

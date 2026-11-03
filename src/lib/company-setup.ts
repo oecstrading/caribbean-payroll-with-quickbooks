@@ -19,7 +19,7 @@ export const companySetupSchema = z.object({
   email: z.string().trim().email("Enter the customer's administrator email").max(255),
   telephone: z.string().trim().max(80).default(""),
   address: z.string().trim().max(500).default(""),
-  website: z.string().trim().max(255).refine(v => !v || /^https?:\/\//i.test(v), "Use an https:// website address").default(""),
+  website: z.string().trim().max(255).transform(v => v && !v.includes(":") ? `https://${v}` : v).refine(v => !v || /^https?:\/\//i.test(v), "Use an https:// website address").default(""),
   employer_nic_number: z.string().trim().max(100).default(""),
   tax_id: z.string().trim().max(100).default(""),
   vat_number: z.string().trim().max(100).default(""),
@@ -35,4 +35,12 @@ export function setupToken(hash: string) {
 export function companySetupLink(token: string, origin: string) {
   if (!/^[a-f0-9]{64}$/.test(token)) throw new Error("Invalid invitation");
   return `${new URL(origin).origin}/company-setup#invite=${token}`;
+}
+/** Turns form, server and network failures into one readable sentence. */
+export function companySaveError(err: unknown): string {
+  if (err instanceof z.ZodError) return err.issues[0]?.message ?? "Check the company details";
+  const m = err && typeof err === "object" && "message" in err ? String((err as { message: unknown }).message) : "";
+  if (!m) return "Unable to save company. Please try again.";
+  if (/Invalid company field/i.test(m)) return "One company detail could not be read. Clear it and add it later from Edit.";
+  return m;
 }

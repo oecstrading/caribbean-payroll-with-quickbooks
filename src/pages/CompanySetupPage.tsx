@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import CompanySetupFields from "@/components/CompanySetupFields";
-import { companySetupSchema, emptyCompanySetup, setupToken, type CompanySetup } from "@/lib/company-setup";
+import { companySetupSchema, companySaveError, emptyCompanySetup, setupToken, type CompanySetup } from "@/lib/company-setup";
 import { companyAction } from "@/lib/company-api";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
@@ -61,7 +61,7 @@ export default function CompanySetupPage() {
       await refreshAccess();
       // A full navigation refreshes every company-scoped provider and query cache.
       window.location.replace("/settings");
-    } catch (err) { toast.error(err instanceof Error ? err.message : "Setup failed"); }
+    } catch (err) { toast.error(companySaveError(err)); }
     finally { setBusy(false); }
   }
   return <main className="min-h-screen bg-background text-foreground">
