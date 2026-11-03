@@ -256,7 +256,7 @@ export default function PayrollPage() {
       </section>
 
       {(() => { const emp = payrollData.find(x => x.id === editing); if (!emp) return null;
-        return <PayEditDialog open name={`${emp.firstName} ${emp.lastName}`} config={config} factor={factor}
+        return <PayEditDialog key={emp.id} open name={`${emp.firstName} ${emp.lastName}`} config={config} factor={factor}
           initial={edits[emp.id] ?? linesFromResult(emp.calculated, payBases[emp.id]?.options.nicBasis === "basic", emp.loanDeductions)}
           onSave={ed => setEdits(m => ({ ...m, [emp.id]: ed }))} onReset={() => setEdits(m => { const n = { ...m }; delete n[emp.id]; return n; })} onClose={() => setEditing(null)} />; })()}
       {/* Stepper */}

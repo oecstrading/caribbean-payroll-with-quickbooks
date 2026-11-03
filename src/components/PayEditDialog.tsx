@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Plus, Trash2, RotateCcw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,6 @@ export default function PayEditDialog({ open, name, initial, config, factor, onS
   onSave: (e: PayEdit) => void; onReset: () => void; onClose: () => void;
 }) {
   const [edit, setEdit] = useState<PayEdit | null>(initial);
-  useEffect(() => { if (open) setEdit(initial); }, [open, initial]);
   if (!edit) return null;
   const result = computeEdited(edit, config, factor);
   const update = (id: string, patch: Partial<PayLine>) => setEdit({ ...edit, lines: edit.lines.map(l => l.id === id ? { ...l, ...patch } : l) });
