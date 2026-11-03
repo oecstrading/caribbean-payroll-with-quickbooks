@@ -34,21 +34,25 @@ const steps = ["Review & Sync", "Audit", "Approve & Run"];
 
 export default function PayrollPage() {
   const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState(0);
+  const { user } = useAuth();
+  const [draft] = useState(() => loadPayrollDraft());
+  const restoring = useRef({ step: Boolean(draft), edits: Boolean(draft), selected: draft?.selected ?? null });
+  const [restoredAt, setRestoredAt] = useState<string | null>(draft?.savedAt ?? null);
+  const [currentStep, setCurrentStep] = useState(draft?.currentStep ?? 0);
   const bulkEmailing = false;
   const [processing, setProcessing] = useState(false);
   const [approved, setApproved] = useState(false);
   const [source, setSource] = useState("live");
-  const [payType, setPayType] = useState<PayType>("monthly");
-  const [range, setRange] = useState(() => defaultRange("monthly", new Date().toISOString().slice(0, 10)));
-  const [excluded, setExcluded] = useState<string[]>([]);
-  const [notes, setNotes] = useState("");
+  const [payType, setPayType] = useState<PayType>(draft?.payType ?? "monthly");
+  const [range, setRange] = useState(() => draft?.range ?? defaultRange("monthly", new Date().toISOString().slice(0, 10)));
+  const [excluded, setExcluded] = useState<string[]>(draft?.excluded ?? []);
+  const [notes, setNotes] = useState(draft?.notes ?? "");
   let factor = 0; let periodError = "";
   try { factor = periodFactor(payType, range.start, range.end); } catch (e) { periodError = (e as Error).message; }
   const period = periodLabel(payType, range.start, range.end);
   const startMonth = range.start.slice(0, 7);
   const changePayType = (t: PayType) => { setPayType(t); setRange(defaultRange(t, range.start)); setExcluded([]); };
-  const [jurisdiction, setJurisdiction] = useState("LC");
+  const [jurisdiction, setJurisdiction] = useState(draft?.jurisdiction ?? "LC");
   const [liveEmployees, setLiveEmployees] = useState<Employee[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,9 +61,9 @@ export default function PayrollPage() {
   const [additionsMap, setAdditionsMap] = useState<Record<string, import("@/lib/payroll-engine").PayrollAddition[]>>({});
   const [loans, setLoans] = useState<{ user_id: string; balance: number; monthly_repayment: number }[]>([]);
   const [attendance, setAttendance] = useState<Record<string, PayHours>>({});
-  const [manualMode, setManualMode] = useState(false);
-  const [manualHours, setManualHours] = useState<Record<string, ManualHours>>({});
-  const [edits, setEdits] = useState<Record<string, PayEdit>>({});
+  const [manualMode, setManualMode] = useState(draft?.manualMode ?? false);
+  const [manualHours, setManualHours] = useState<Record<string, ManualHours>>(draft?.manualHours ?? {});
+  const [edits, setEdits] = useState<Record<string, PayEdit>>(draft?.edits ?? {});
   const [editing, setEditing] = useState<string | null>(null);
   const [payBases, setPayBases] = useState<Record<string, { basis: string; rate: number; options: ReturnType<typeof payrollOptions> }>>({});
   const { isAdminOrManager, demoMode } = useRole();
