@@ -344,6 +344,13 @@
       "when": 1793700918061,
       "tag": "0048_manual_payroll_hours",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1793701362374,
+      "tag": "0049_company_default_schedule",
+      "breakpoints": true
     }
   ]
 }

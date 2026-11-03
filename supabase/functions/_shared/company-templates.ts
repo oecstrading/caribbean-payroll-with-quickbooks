@@ -11,9 +11,10 @@ export type OnboardingPack = {
   version: 1; industry: typeof INDUSTRIES[number]; jurisdiction: typeof ONBOARDING_COUNTRIES[number];
   weekly_hours: number; pay_frequency: "weekly" | "semi_monthly" | "monthly";
   departments: string[]; reviewed: boolean; ai_notes: string;
+  work_days?: number[]; shift_start?: string; shift_end?: string; break_minutes?: number;
 };
 export function makeOnboardingPack(industry: OnboardingPack["industry"], jurisdiction: OnboardingPack["jurisdiction"] = "LC"): OnboardingPack {
-  return { version: 1, industry, jurisdiction, weekly_hours: 40, pay_frequency: industry === "construction" ? "weekly" : "monthly", departments: [...industryPacks[industry].departments], reviewed: false, ai_notes: "" };
+  return { version: 1, industry, jurisdiction, weekly_hours: 40, pay_frequency: industry === "construction" ? "weekly" : "monthly", departments: [...industryPacks[industry].departments], reviewed: false, ai_notes: "", work_days: [1, 2, 3, 4, 5], shift_start: "08:30", shift_end: "17:30", break_minutes: 60 };
 }
 export function onboardingTemplates(pack: OnboardingPack) {
   const construction = pack.industry === "construction";

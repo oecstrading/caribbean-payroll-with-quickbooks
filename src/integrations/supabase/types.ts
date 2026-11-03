@@ -3478,6 +3478,10 @@ export type Database = {
       workforce_clock_settings: {
         Row: {
           attendance_payroll: boolean
+          default_break_minutes: number
+          default_shift_end: string
+          default_shift_start: string
+          default_work_days: number[]
           org_id: string
           overtime_basis: string
           overtime_multiplier: number
@@ -3486,6 +3490,10 @@ export type Database = {
         }
         Insert: {
           attendance_payroll?: boolean
+          default_break_minutes?: number
+          default_shift_end?: string
+          default_shift_start?: string
+          default_work_days?: number[]
           org_id: string
           overtime_basis?: string
           overtime_multiplier?: number
@@ -3494,6 +3502,10 @@ export type Database = {
         }
         Update: {
           attendance_payroll?: boolean
+          default_break_minutes?: number
+          default_shift_end?: string
+          default_shift_start?: string
+          default_work_days?: number[]
           org_id?: string
           overtime_basis?: string
           overtime_multiplier?: number
