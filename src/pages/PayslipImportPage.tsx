@@ -104,6 +104,7 @@ export default function PayslipImportPage() {
           </div>
           <div className="space-y-1">
             <p className="font-medium">Who is each slip for?</p>
+            {!people.some(p => p.user_id) && <p className="text-sm text-warning">No employee folders yet. Add each person under Employees first, then come back to these slips — the Paymaster can&apos;t match a slip to someone who isn&apos;t in the directory.</p>}
             {slips.map((s, i) => <div key={i} className="flex flex-wrap items-center gap-2">
               <span className="w-44 font-medium">{s.name}</span>
               <select className="min-h-11 flex-1 rounded-md border bg-background px-3" value={matches[i] || ""} onChange={e => setMatches(m => ({ ...m, [i]: e.target.value }))}>
