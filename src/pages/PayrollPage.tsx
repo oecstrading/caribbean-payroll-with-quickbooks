@@ -1,5 +1,7 @@
 import { payrollOptions } from "@/lib/employee-folder";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { clearPayrollDraft, hasDraftWork, loadPayrollDraft, savePayrollDraft } from "@/lib/payroll-draft";
 import { motion } from "framer-motion";
 import { CheckCircle, ArrowRight, DollarSign, FileText, AlertCircle, Receipt, Mail, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -115,9 +117,33 @@ export default function PayrollPage() {
   const employees = source === "sample" ? sampleEmployees.filter(e => e.status === "Active") : liveEmployees;
   const departments = [...new Set(employees.map(e => departmentName(e.department)))].sort();
   const departmentKey = departments.join("\u0000");
-  useEffect(() => { setSelected(departments); }, [departmentKey, source]);
-  useEffect(() => { setApproved(false); setCurrentStep(0); }, [source, period, jurisdiction, selected, excluded, manualMode, manualHours, edits]);
-  useEffect(() => { setEdits({}); }, [source, range.start, range.end, jurisdiction]);
+  useEffect(() => {
+    const keep = restoring.current.selected;
+    if (keep && source === "live" && departments.length) { restoring.current.selected = null; setSelected(departments.filter(d => keep.includes(d))); return; }
+    if (keep && source === "live") return;
+    setSelected(departments);
+  }, [departmentKey, source]);
+  useEffect(() => { if (restoring.current.step) return; setApproved(false); setCurrentStep(0); }, [source, period, jurisdiction, selected, excluded, manualMode, manualHours, edits]);
+  useEffect(() => { if (restoring.current.edits) { restoring.current.edits = false; return; } setEdits({}); }, [source, range.start, range.end, jurisdiction]);
+  // Release the step lock once the restored departments are in place.
+  useEffect(() => { if (restoring.current.step && !restoring.current.selected) { const t = setTimeout(() => { restoring.current.step = false; }, 0); return () => clearTimeout(t); } }, [selected]);
+  // A draft saved by another person on this device is never shown.
+  useEffect(() => { if (draft && user && draft.userId && draft.userId !== user.id) { clearPayrollDraft(); window.location.reload(); } }, [user?.id]);
+  // Autosave every change to the unapproved payroll so leaving the page never loses work.
+  const draftWork = { manualMode, manualHours, edits, notes };
+  const dirty = source === "live" && !approved && hasDraftWork(draftWork);
+  useEffect(() => {
+    if (source !== "live" || approved || loading) return;
+    if (!hasDraftWork(draftWork)) return;
+    savePayrollDraft({ userId: user?.id ?? null, savedAt: new Date().toISOString(), currentStep, payType, range, excluded, notes, jurisdiction, selected, manualMode, manualHours, edits });
+  }, [source, approved, loading, currentStep, payType, range, excluded, notes, jurisdiction, selected, manualMode, manualHours, edits, user?.id]);
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (ev: BeforeUnloadEvent) => { ev.preventDefault(); ev.returnValue = ""; };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+  const discardDraft = () => { clearPayrollDraft(); window.location.reload(); };
   const handleBulkEmail = () => toast.info("Use saved payslips for email delivery.");
   const handleApprovePayroll = async () => {
     if (!payrollData.length || !selected.length || !isAdminOrManager || periodError || attendanceBlocked || negativeNet.length) return;
@@ -133,7 +159,7 @@ export default function PayrollPage() {
     });
     setProcessing(false);
     if (error) { toast.error(error.message); return; }
-    setApproved(true); toast.success("Department payroll saved with payslips and reports.");
+    clearPayrollDraft(); setRestoredAt(null); setApproved(true); toast.success("Department payroll saved with payslips and reports.");
     void runAfterApproval(runId as string | null);
   };
 
@@ -210,6 +236,10 @@ export default function PayrollPage() {
         <p className="text-xs text-muted-foreground mt-1">{source === "sample" ? "Fictional sample payroll · No live records or emails" : `Live employee payroll · ${payTypeLabels[payType]}`}</p>
       </div>
 
+      {source === "live" && (restoredAt || dirty) && !approved && <div role="status" className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-primary/40 bg-primary/5 p-3 text-sm">
+        <span>{restoredAt ? `Your unapproved payroll was restored (last saved ${new Date(restoredAt).toLocaleString()}). Changes keep saving automatically.` : "Your payroll entries are saved automatically on this device until you approve."}</span>
+        <Button variant="outline" size="sm" onClick={discardDraft}>Discard saved entries</Button>
+      </div>}
       <section className="space-y-4 border-y border-border py-4">
         <Tabs value={source} onValueChange={setSource}><TabsList><TabsTrigger value="live" disabled={processing}>Live employees</TabsTrigger>{demoMode && <TabsTrigger value="sample" disabled={processing}>Sample company</TabsTrigger>}</TabsList></Tabs>
         <div className="flex flex-wrap gap-4">
