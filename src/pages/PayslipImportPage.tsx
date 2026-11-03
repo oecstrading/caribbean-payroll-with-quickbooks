@@ -29,6 +29,27 @@ export default function PayslipImportPage() {
       .then(({ data }) => setPeople((data as Person[]) || []));
   }, []);
 
+  const [creating, setCreating] = useState(false);
+  const loadPeople = async () => {
+    const { data } = await supabase.from("payroll_employee_directory").select("user_id,first_name,last_name,department,jurisdiction").is("deleted_at", null).ilike("status", "active");
+    setPeople((data as Person[]) || []);
+  };
+  const createMissing = async () => {
+    const missing = slips.filter((_, i) => !matches[i]);
+    setCreating(true);
+    try {
+      for (const s of missing) {
+        const parts = s.name.split(" "); const last = parts.length > 1 ? parts.pop()! : ""; 
+        const basic = s.earnings.filter(e => e.kind === "basic").reduce((a, e) => a + e.current, 0);
+        const { error } = await supabase.from("employee_records").insert({ first_name: parts.join(" "), last_name: last, monthly_salary: Math.round(basic * 100) / 100, status: "Active" });
+        if (error) throw error;
+      }
+      await loadPeople();
+      toast.success(`${missing.length} employee folders created from the slips. Fill in their other details later under Employees.`);
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Couldn't create employee folders"); }
+    setCreating(false);
+  };
+
   const reset = () => { setFileName(""); setSlips([]); setLearned(null); setPaye(""); setMatches({}); setConfirmed(false); setSavedRun(""); };
 
   const upload = async (file: File) => {
@@ -104,7 +125,10 @@ export default function PayslipImportPage() {
           </div>
           <div className="space-y-1">
             <p className="font-medium">Who is each slip for?</p>
-            {!people.some(p => p.user_id) && <p className="text-sm text-warning">No employee folders yet. Add each person under Employees first, then come back to these slips — the Paymaster can&apos;t match a slip to someone who isn&apos;t in the directory.</p>}
+            {slips.some((_, i) => !matches[i]) && <div className="flex flex-wrap items-center gap-2 rounded-xl border border-warning/40 bg-warning/10 p-3">
+              <p className="flex-1 text-sm">{slips.filter((_, i) => !matches[i]).length} {slips.filter((_, i) => !matches[i]).length === 1 ? "person on these slips has" : "people on these slips have"} no employee folder yet. Setting up a new company? Let the Paymaster create them from the slips (name and basic pay).</p>
+              <Button className="min-h-11 bg-coral text-coral-foreground hover:bg-coral/90" disabled={creating} onClick={() => void createMissing()}>{creating ? "Creating…" : "Create employee folders from slips"}</Button>
+            </div>}
             {slips.map((s, i) => <div key={i} className="flex flex-wrap items-center gap-2">
               <span className="w-44 font-medium">{s.name}</span>
               <select className="min-h-11 flex-1 rounded-md border bg-background px-3" value={matches[i] || ""} onChange={e => setMatches(m => ({ ...m, [i]: e.target.value }))}>
