@@ -17,6 +17,7 @@ import AiPaymasterPage from "@/pages/AiPaymasterPage";
 import ReportsPage from "@/pages/ReportsPage";
 import SettingsPage from "@/pages/SettingsPage";
 import CompaniesPage from "@/pages/CompaniesPage";
+import MyCompaniesPage from "@/pages/MyCompaniesPage";
 import CompanySetupPage from "@/pages/CompanySetupPage";
 import StaffClockPage from "@/pages/StaffClockPage";
 import PayslipPage from "@/pages/PayslipPage";
@@ -141,6 +142,7 @@ const AppRoutes = () => (
       <Route path="/payroll-settings" element={<PayrollSettingsPage />} />
       <Route path="/settings" element={<SettingsPage />} />
       <Route path="/companies" element={<CompaniesPage />} />
+      <Route path="/my-companies" element={<MyCompaniesPage />} />
     </Route>
     <Route path="/client-portal" element={<ClientPortalPage />} />
     <Route path="/training-public" element={<PublicTrainingPage />} />

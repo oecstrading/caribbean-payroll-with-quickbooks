@@ -14,6 +14,32 @@ export type Database = {
   }
   public: {
     Tables: {
+      active_company_selection: {
+        Row: {
+          org_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          org_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          org_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "active_company_selection_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       applicant_documents: {
         Row: {
           applicant_id: string
@@ -443,6 +469,35 @@ export type Database = {
           },
           {
             foreignKeyName: "clock_punches_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_admin_access: {
+        Row: {
+          created_at: string
+          granted_by: string | null
+          org_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          granted_by?: string | null
+          org_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          granted_by?: string | null
+          org_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_admin_access_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -3868,8 +3923,21 @@ export type Database = {
         Args: { _employee: string; _shared: boolean }
         Returns: boolean
       }
+      can_view_company: { Args: { _org: string }; Returns: boolean }
       claim_user_pin_attempt: { Args: { _user: string }; Returns: boolean }
       client_portal_data: { Args: { _code: string }; Returns: Json }
+      companies_overview: {
+        Args: never
+        Returns: {
+          active_employees: number
+          id: string
+          last_net: number
+          last_period: string
+          name: string
+          open_alerts: number
+          pending_runs: number
+        }[]
+      }
       company_configuration: { Args: never; Returns: Json }
       complete_company_setup: {
         Args: { _details: Json; _token: string; _user: string }
@@ -3963,6 +4031,25 @@ export type Database = {
       link_employee_login: {
         Args: { _actor: string; _employee: string; _user: string }
         Returns: undefined
+      }
+      multi_company_admins: {
+        Args: never
+        Returns: {
+          email: string
+          home_company: string
+          name: string
+          org_ids: string[]
+          user_id: string
+        }[]
+      }
+      my_companies: {
+        Args: never
+        Returns: {
+          id: string
+          is_current: boolean
+          is_home: boolean
+          name: string
+        }[]
       }
       my_pay_preview: { Args: { _end: string; _start: string }; Returns: Json }
       payroll_period_factor: {
@@ -4094,6 +4181,10 @@ export type Database = {
         Args: { _company: boolean; _platform: boolean; _user: string }
         Returns: undefined
       }
+      set_company_admin_access: {
+        Args: { _orgs: string[]; _user: string }
+        Returns: undefined
+      }
       set_employee_loan_active: {
         Args: { _active: boolean; _loan: string }
         Returns: undefined
@@ -4118,6 +4209,7 @@ export type Database = {
         }
         Returns: string
       }
+      switch_company: { Args: { _org: string }; Returns: undefined }
       update_platform_company: {
         Args: { _actor: string; _details: Json; _org: string }
         Returns: undefined
