@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import CompanySwitcher from "@/components/CompanySwitcher";
 import { Outlet, useLocation, useNavigate, Navigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -98,6 +99,7 @@ const navItems: NavItem[] = [
 
 export default function AppLayout() {
   const [platformAdmin, setPlatformAdmin] = useState(false);
+  const [companyCount, setCompanyCount] = useState(0);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -126,7 +128,7 @@ export default function AppLayout() {
     setSearchQuery("");
   }, [location.pathname]);
 
-  const visibleNavItems = [...navItems.filter((item) => canAccess(item.path)), ...(platformAdmin ? [{ path: "/companies", label: "Companies", icon: Building2 }] : [])];
+  const visibleNavItems = [...navItems.filter((item) => canAccess(item.path)), ...(companyCount > 1 ? [{ path: "/my-companies", label: "My Companies", icon: Building2 }] : []), ...(platformAdmin ? [{ path: "/companies", label: "Companies", icon: Building2 }] : [])];
 
   // Search results based on nav items
   const searchResults = useMemo(() => {
@@ -140,14 +142,14 @@ export default function AppLayout() {
   const bottomNavItems = visibleNavItems.filter((item) => item.bottomNav).slice(0, 5);
 
   const handleNav = (path: string) => {
-    if (!(path === "/companies" ? platformAdmin : canAccess(path))) return;
+    if (!(path === "/companies" ? platformAdmin : path === "/my-companies" ? true : canAccess(path))) return;
     navigate(path);
     setMobileOpen(false);
   };
 
   if (accessLoading) return <div className="min-h-screen bg-background flex items-center justify-center text-primary">Loading your workspace…</div>;
   if (!role) return <div className="min-h-screen bg-background flex flex-col gap-4 items-center justify-center text-foreground"><p>Your workspace access could not be loaded.</p><button onClick={signOut}>Sign out</button></div>;
-  if (location.pathname !== "/companies" && !canAccess(location.pathname)) return <Navigate to="/" replace />;
+  if (location.pathname !== "/companies" && location.pathname !== "/my-companies" && !canAccess(location.pathname)) return <Navigate to="/" replace />;
 
   return (
     <>
@@ -291,6 +293,7 @@ export default function AppLayout() {
             >
               <Menu size={20} className="text-foreground" />
             </button>
+            <CompanySwitcher userId={user?.id} onCount={setCompanyCount} />
             <div className="relative hidden sm:block">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
