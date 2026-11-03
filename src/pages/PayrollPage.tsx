@@ -116,7 +116,7 @@ export default function PayrollPage() {
   useEffect(() => { setEdits({}); }, [source, range.start, range.end, jurisdiction]);
   const handleBulkEmail = () => toast.info("Use saved payslips for email delivery.");
   const handleApprovePayroll = async () => {
-    if (!payrollData.length || !selected.length || !isAdminOrManager || periodError || attendanceBlocked) return;
+    if (!payrollData.length || !selected.length || !isAdminOrManager || periodError || attendanceBlocked || negativeNet.length) return;
     if (source === "sample") { setApproved(true); toast.success("Sample completed; no live payroll saved."); return; }
     setProcessing(true);
     const { data: runId, error } = await supabase.rpc("approve_payroll_run", {
@@ -180,6 +180,7 @@ export default function PayrollPage() {
       return { ...e, payroll: result, hourlyRate, compliance, loanDeductions, attendance: h, attendanceError, manual, edited, calculated, payBasis: basis?.basis || "Monthly" };
     });
   const attendanceBlocked = source === "live" && payrollData.some(e => Boolean(e.attendanceError));
+  const negativeNet = payrollData.filter(e => e.payroll.netPay < 0 || e.payroll.paye > e.payroll.grossMonthly);
 
   const totals = payrollData.reduce(
     (acc, e) => ({
@@ -233,6 +234,7 @@ export default function PayrollPage() {
         {periodError ? <p role="alert" className="text-sm text-destructive">{periodError}</p>
           : <p className="text-sm text-muted-foreground">{range.start} to {range.end}{payType === "custom" ? ` · ${workingDays(range.start, range.end)} working days` : ""} · {Math.round(factor * 10000) / 100}% of monthly salary</p>}
         <p className="text-sm text-muted-foreground">{payrollData.length} employees · {selected.length} departments selected</p>
+        {negativeNet.length > 0 && <p role="alert" className="text-destructive">Net pay is below zero or PAYE is more than gross pay for {negativeNet.map(e => `${e.firstName} ${e.lastName}`).join(", ")}. Check the PAYE setting in their employee folder, or click Edit to correct this payroll.</p>}
         {attendanceBlocked && <p role="alert" className="text-destructive">Attendance review required: {payrollData.filter(e => e.attendanceError).map(e => `${e.firstName} ${e.lastName}`).join(", ")}. Confirm worked hours under Attendance before approval.</p>}
         {source === "live" && <Button variant="outline" onClick={() => navigate("/attendance")}>Review attendance and missing punches</Button>}
         {source === "live" && <div className="rounded-lg border border-accent/40 bg-accent/5 p-3 space-y-3">
@@ -506,7 +508,7 @@ export default function PayrollPage() {
               </Button>
               <Button
                 onClick={handleApprovePayroll}
-                disabled={processing || approved || attendanceBlocked || !payrollData.length || !isAdminOrManager || (source === "live" && (loading || !!loadError))}
+                disabled={processing || approved || attendanceBlocked || negativeNet.length > 0 || !payrollData.length || !isAdminOrManager || (source === "live" && (loading || !!loadError))}
                 className="flex items-center gap-2 px-4 md:px-8 py-2.5 md:py-3 bg-success text-success-foreground rounded-lg text-xs md:text-sm font-bold hover:bg-success/90 transition-colors disabled:opacity-50"
               >
                 {processing ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle size={18} />}
