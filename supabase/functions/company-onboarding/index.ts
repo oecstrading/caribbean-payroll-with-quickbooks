@@ -5,7 +5,7 @@ import { z } from "npm:zod@3.25.76";
 import { industryPacks } from "../_shared/company-templates.ts";
 
 const cors = corsHeaders;
-const recommendationSchema = z.object({ action: z.literal("recommend"), token: z.string().regex(/^[a-f0-9]{64}$/).nullish(), industry: z.enum(["general", "construction", "security", "services"]), jurisdiction: z.enum(["LC", "AG", "KN", "DM", "GD"]), weekly_hours: z.number().min(1).max(80), pay_frequency: z.enum(["weekly", "semi_monthly", "monthly"]) }).strict();
+const recommendationSchema = z.object({ action: z.literal("recommend"), token: z.string().regex(/^[a-f0-9]{64}$/).nullish(), industry: z.enum(["general", "construction", "security", "services", "hospitality"]), jurisdiction: z.enum(["LC", "AG", "KN", "DM", "GD"]), weekly_hours: z.number().min(1).max(80), pay_frequency: z.enum(["weekly", "semi_monthly", "monthly"]) }).strict();
 async function recommendation(body: unknown, signal: AbortSignal) {
   const parsed = recommendationSchema.safeParse(body);
   if (!parsed.success) return reply({ error: "Select a valid industry, country, hours and pay cycle" }, 400);

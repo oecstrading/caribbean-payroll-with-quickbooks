@@ -32,3 +32,12 @@ describe("reviewed industry onboarding", () => {
     expect(onboardingTemplates(b)).toHaveLength(4);
   });
 });
+describe("restaurant & bar pack", () => {
+  it("defaults to weekly pay, Wed–Sun 11:00–19:30 and a 30-minute unpaid break", () => {
+    const p = makeOnboardingPack("hospitality");
+    expect(p.pay_frequency).toBe("weekly");
+    expect(p.work_days).toEqual([3, 4, 5, 6, 0]);
+    expect([p.shift_start, p.shift_end, p.break_minutes]).toEqual(["11:00", "19:30", 30]);
+    expect(p.departments).toContain("Kitchen");
+  });
+});
