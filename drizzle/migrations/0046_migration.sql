@@ -1,0 +1,2 @@
+ALTER TABLE public.qbo_account_mappings DROP CONSTRAINT IF EXISTS qbo_account_mappings_payroll_item_key;
+CREATE UNIQUE INDEX IF NOT EXISTS qbo_account_mappings_org_item_key ON public.qbo_account_mappings (org_id, payroll_item);

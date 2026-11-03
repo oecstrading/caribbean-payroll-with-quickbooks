@@ -200,7 +200,12 @@ export default function PayrollImportPage() {
 
       setImported({ created, skipped, allowances, deductions, loans, accounts, company: onboarding.company.company_name });
       toast.success(`${created} employee folders created`);
-    } catch (e) { toast.error(e instanceof Error ? e.message : "Import stopped. Nothing after the error was saved."); }
+    } catch (e) {
+      const err = e as { message?: string; details?: string; hint?: string; code?: string };
+      const detail = err?.message ? [err.message, err.details, err.hint].filter(Boolean).join(" — ") : "";
+      console.error("Payroll import failed", e);
+      toast.error(detail ? `Import stopped: ${detail}. Items before this step were saved.` : "Import stopped. Nothing after the error was saved.", { duration: 12000 });
+    }
     finally { setImporting(false); }
   };
 
