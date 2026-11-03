@@ -4112,6 +4112,16 @@ export type Database = {
       }
       validate_company_modules: { Args: { _modules: Json }; Returns: undefined }
       validate_company_setup: { Args: { _details: Json }; Returns: undefined }
+      validate_manual_pay: {
+        Args: {
+          _basic: number
+          _employee: string
+          _factor: number
+          _h: Json
+          _ot: number
+        }
+        Returns: undefined
+      }
       validate_onboarding_pack: { Args: { _pack: Json }; Returns: undefined }
       validate_workforce_pay: {
         Args: {
