@@ -386,6 +386,13 @@
       "when": 1793734015028,
       "tag": "0054_authority_for_switched_company",
       "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1793734252992,
+      "tag": "0055_my_workspace_access",
+      "breakpoints": true
     }
   ]
 }
