@@ -372,6 +372,13 @@
       "when": 1793725546209,
       "tag": "0052_multi_company_access",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1793733213695,
+      "tag": "0053_one_login_many_companies",
+      "breakpoints": true
     }
   ]
 }
