@@ -59,25 +59,25 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
     try {
       // Fail to a retryable error after 12s instead of an endless loading screen.
       const timeout = new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error("Access check timed out")), 12000));
-      const [roleRes, profileRes, accessRes, companyRes, authorityRes, clockRes] = await Promise.race([Promise.all([
-        supabase.from("user_roles").select("role").eq("user_id", user.id),
-        supabase.from("profiles").select("jurisdiction").eq("user_id", user.id).maybeSingle(),
-        supabase.from("user_workspace_access").select("modules").eq("user_id", user.id).maybeSingle(),
+      // Roles come from the server so they stay valid after switching to another company.
+      const [accessRes, companyRes, authorityRes, clockRes] = await Promise.race([Promise.all([
+        supabase.rpc("my_workspace_access"),
         supabase.rpc("company_configuration"),
         supabase.rpc("administrator_authority", { _user: user.id }),
         supabase.rpc("has_employee_clock_access", { _employee: user.id }),
       ]), timeout]);
-      if ([roleRes, profileRes, accessRes, companyRes, authorityRes, clockRes].some(result => result.error)) throw new Error("Access verification unavailable");
-      setClockEnabled(!clockRes.error && clockRes.data === true);
+      if (accessRes.error || companyRes.error || clockRes.error) throw new Error("Access verification unavailable");
+      setClockEnabled(clockRes.data === true);
       const trusted = authorityRes.data as { company_super_admin?: boolean; platform_super_admin?: boolean } | null;
       setAuthority({ company_super_admin: !authorityRes.error && trusted?.company_super_admin === true, platform_super_admin: !authorityRes.error && trusted?.platform_super_admin === true });
-      const roles = roleRes.data?.map(r => r.role) ?? [];
+      const access = accessRes.data as { roles?: string[]; modules?: string[] | null; jurisdiction?: string | null } | null;
+      const roles = access?.roles ?? [];
       const configuration = companyRes.data as { modules?: string[]; demo_mode?: boolean } | null;
-      const enabled = !companyRes.error ? configuration?.modules ?? [] : [];
+      const enabled = configuration?.modules ?? [];
       setCompanyModules(enabled); setDemoMode(configuration?.demo_mode === true);
-      const nextRole = roleRes.error || accessRes.error ? null : roles.includes("admin") ? "admin" : roles.includes("manager") ? "manager" : roles.includes("employee") ? "employee" : null;
-      setRole(nextRole); setModules(nextRole ? (nextRole === "admin" ? roleModules(nextRole) : accessRes.data?.modules ?? roleModules(nextRole)).filter(m => enabled.includes(m)) : []);
-      setJurisdiction(profileRes.data?.jurisdiction ?? null);
+      const nextRole = roles.includes("admin") ? "admin" : roles.includes("manager") ? "manager" : roles.includes("employee") ? "employee" : null;
+      setRole(nextRole); setModules(nextRole ? (nextRole === "admin" ? roleModules(nextRole) : access?.modules ?? roleModules(nextRole)).filter(m => enabled.includes(m)) : []);
+      setJurisdiction(access?.jurisdiction ?? null);
       verifiedFor.current = user.id;
     } catch {
       // A background re-check that fails keeps the already-verified workspace open.
