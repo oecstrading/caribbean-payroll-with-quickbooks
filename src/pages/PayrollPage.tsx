@@ -118,7 +118,7 @@ export default function PayrollPage() {
       _rows: payrollData.map(e => ({ user_id: e.id, department: e.department, basic_pay: e.payroll.basicPay,
         overtime_pay: e.payroll.overtimePay, gross_pay: e.payroll.grossMonthly, employee_nic: e.payroll.employeeNIC,
         employer_nic: e.payroll.employerNIC, paye: e.payroll.paye, total_deductions: e.payroll.totalDeductions, net_pay: e.payroll.netPay, loan_deductions: e.loanDeductions,
-        ...(e.manual ? { manual_hours: e.manual } : {}) })),
+        ...(e.manual ? { manual_hours: { ...e.manual } as Record<string, number> } : {}) })),
     });
     setProcessing(false);
     if (error) { toast.error(error.message); return; }
