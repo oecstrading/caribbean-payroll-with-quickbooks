@@ -30,6 +30,8 @@ import { attendanceEarnings, type PayHours } from "@/lib/workforce-time";
 import { manualEarnings, type ManualHours } from "@/lib/manual-hours";
 import { computeEdited, linesFromResult, serverLines, type PayEdit } from "@/lib/pay-edits";
 import PayEditDialog from "@/components/PayEditDialog";
+import RecurringReview from "@/components/RecurringReview";
+import { isRecurringFrequency, periodAmount, type RecurringDecision, type RecurringItem } from "@/lib/recurring-items";
 import { Pencil } from "lucide-react";
 
 const steps = ["Review & Sync", "Audit", "Approve & Run"];
@@ -59,8 +61,10 @@ export default function PayrollPage() {
   const [selected, setSelected] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
-  const [deductionsMap, setDeductionsMap] = useState<Record<string, import("@/lib/payroll-engine").CreditorDeduction[]>>({});
-  const [additionsMap, setAdditionsMap] = useState<Record<string, import("@/lib/payroll-engine").PayrollAddition[]>>({});
+  const [deductionsMap, setDeductionsMap] = useState<Record<string, (import("@/lib/payroll-engine").CreditorDeduction & { key: string })[]>>({});
+  const [additionsMap, setAdditionsMap] = useState<Record<string, (import("@/lib/payroll-engine").PayrollAddition & { key: string })[]>>({});
+  const [recurring, setRecurring] = useState<RecurringItem[]>([]);
+  const [decisions, setDecisions] = useState<Record<string, RecurringDecision>>(draft?.decisions ?? {});
   const [loans, setLoans] = useState<{ user_id: string; balance: number; monthly_repayment: number }[]>([]);
   const [attendance, setAttendance] = useState<Record<string, PayHours>>({});
   const [manualMode, setManualMode] = useState(draft?.manualMode ?? false);
@@ -100,16 +104,18 @@ export default function PayrollPage() {
         phone: p.phone || "", startDate: p.start_date || "", schedule: p.schedule || "", otRate: p.ot_rate || 1.5,
         status: "Active", tanNumber: p.tan_number || "",
       })));
-      const dm: typeof deductionsMap = {}; const am: typeof additionsMap = {};
+      const dm: typeof deductionsMap = {}; const am: typeof additionsMap = {}; const rec: RecurringItem[] = [];
       for (const d of deductions.data || []) {
         if ((d.start_date && d.start_date > range.end) || (d.end_date && d.end_date < range.start)) continue;
-        (dm[d.user_id] ||= []).push({ creditorName: d.creditors?.name || "Creditor", amount: Number(d.amount) });
+        (dm[d.user_id] ||= []).push({ creditorName: d.creditors?.name || "Creditor", amount: Number(d.amount), key: `d:${d.id}` });
+        rec.push({ key: `d:${d.id}`, userId: d.user_id, kind: "deduction", name: d.creditors?.name || "Deduction", amount: Number(d.amount), frequency: d.frequency });
       }
       for (const a of additions.data || []) {
         if (a.period && a.period !== startMonth) continue;
-        (am[a.user_id] ||= []).push({ type: a.addition_type, description: a.description || a.addition_type, amount: Number(a.amount) });
+        (am[a.user_id] ||= []).push({ type: a.addition_type, description: a.description || a.addition_type, amount: Number(a.amount), key: `a:${a.id}` });
+        if (isRecurringFrequency(a.frequency)) rec.push({ key: `a:${a.id}`, userId: a.user_id, kind: "addition", name: a.description || a.addition_type.replace("_", " "), amount: Number(a.amount), frequency: a.frequency });
       }
-      setDeductionsMap(dm); setAdditionsMap(am);
+      setDeductionsMap(dm); setAdditionsMap(am); setRecurring(rec);
     };
     load().catch(e => { if (!cancelled) setLoadError(e.message || "Unable to load employees"); }).finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
@@ -124,19 +130,19 @@ export default function PayrollPage() {
     setSelected(departments);
   }, [departmentKey, source]);
   useEffect(() => { if (restoring.current.step) return; setApproved(false); setCurrentStep(0); }, [source, period, jurisdiction, selected, excluded, manualMode, manualHours, edits]);
-  useEffect(() => { if (restoring.current.edits) { restoring.current.edits = false; return; } setEdits({}); }, [source, range.start, range.end, jurisdiction]);
+  useEffect(() => { if (restoring.current.edits) { restoring.current.edits = false; return; } setEdits({}); setDecisions({}); }, [source, range.start, range.end, jurisdiction]);
   // Release the step lock once the restored departments are in place.
   useEffect(() => { if (restoring.current.step && !restoring.current.selected) { const t = setTimeout(() => { restoring.current.step = false; }, 0); return () => clearTimeout(t); } }, [selected]);
   // A draft saved by another person on this device is never shown.
   useEffect(() => { if (draft && user && draft.userId && draft.userId !== user.id) { clearPayrollDraft(); window.location.reload(); } }, [user?.id]);
   // Autosave every change to the unapproved payroll so leaving the page never loses work.
-  const draftWork = { manualMode, manualHours, edits, notes };
+  const draftWork = { manualMode, manualHours, edits, notes, decisions };
   const dirty = source === "live" && !approved && hasDraftWork(draftWork);
   useEffect(() => {
     if (source !== "live" || approved || loading) return;
     if (!hasDraftWork(draftWork)) return;
-    savePayrollDraft({ userId: user?.id ?? null, savedAt: new Date().toISOString(), currentStep, payType, range, excluded, notes, jurisdiction, selected, manualMode, manualHours, edits });
-  }, [source, approved, loading, currentStep, payType, range, excluded, notes, jurisdiction, selected, manualMode, manualHours, edits, user?.id]);
+    savePayrollDraft({ userId: user?.id ?? null, savedAt: new Date().toISOString(), currentStep, payType, range, excluded, notes, jurisdiction, selected, manualMode, manualHours, edits, decisions });
+  }, [source, approved, loading, currentStep, payType, range, excluded, notes, jurisdiction, selected, manualMode, manualHours, edits, decisions, user?.id]);
   useEffect(() => {
     if (!dirty) return;
     const warn = (ev: BeforeUnloadEvent) => { ev.preventDefault(); ev.returnValue = ""; };
@@ -147,6 +153,7 @@ export default function PayrollPage() {
   const handleBulkEmail = () => toast.info("Use saved payslips for email delivery.");
   const handleApprovePayroll = async () => {
     if (!payrollData.length || !selected.length || !isAdminOrManager || periodError || attendanceBlocked || negativeNet.length) return;
+    if (recurringPending.length) { toast.error(`Review ${recurringPending.length} recurring item(s) first: keep, edit or zero each one.`); return; }
     if (source === "sample") { setApproved(true); toast.success("Sample completed; no live payroll saved."); return; }
     setProcessing(true);
     const { data: runId, error } = await supabase.rpc("approve_payroll_run", {
@@ -185,10 +192,10 @@ export default function PayrollPage() {
   const payrollData = (periodError ? [] : inDepartments.filter(e => payType !== "custom" || !excluded.includes(e.id)))
     .map((e) => {
       // Recurring deductions are monthly amounts; prorate them to the pay period.
-      const creditorDeductions = source === "live" ? (deductionsMap[e.id] || []).map(d => ({ ...d, amount: Math.round(d.amount * factor * 100) / 100 })) : [];
+      const creditorDeductions = source === "live" ? (deductionsMap[e.id] || []).map(d => ({ creditorName: d.creditorName, amount: periodAmount(decisions[d.key], Math.round(d.amount * factor * 100) / 100) })).filter(d => d.amount > 0) : [];
       const loanDeductions = source === "live" ? Math.round(loans.filter(l => l.user_id === e.id).reduce((total, l) => total + loanDeduction(l.balance, l.monthly_repayment, factor), 0) * 100) / 100 : 0;
       if (loanDeductions > 0) creditorDeductions.push({ creditorName: "Employee loan repayment", amount: loanDeductions });
-      const additions = source === "live" ? additionsMap[e.id] || [] : [];
+      const additions = source === "live" ? (additionsMap[e.id] || []).map(a => ({ type: a.type, description: a.description, amount: periodAmount(decisions[a.key], a.amount) })).filter(a => a.amount > 0) : [];
       const h = attendance[e.id]; const basis = payBases[e.id];
       let salary = e.monthlySalary; let overtime = 0; let attendanceError = "";
       let hourlyRate = e.monthlySalary / (e.stdHoursPerDay * 22);
@@ -209,6 +216,9 @@ export default function PayrollPage() {
       const compliance = checkMinimumWageCompliance(hourlyRate, config);
       return { ...e, payroll: result, hourlyRate, compliance, loanDeductions, attendance: h, attendanceError, manual, edited, calculated, payBasis: basis?.basis || "Monthly" };
     });
+  const liveIds = new Set(payrollData.map(e => e.id));
+  const recurringHere = source === "live" ? recurring.filter(r => liveIds.has(r.userId)) : [];
+  const recurringPending = recurringHere.filter(r => !decisions[r.key]);
   const attendanceBlocked = source === "live" && payrollData.some(e => Boolean(e.attendanceError));
   const negativeNet = payrollData.filter(e => e.payroll.netPay < 0 || e.payroll.paye > e.payroll.grossMonthly);
 
@@ -270,6 +280,7 @@ export default function PayrollPage() {
         <p className="text-sm text-muted-foreground">{payrollData.length} employees · {selected.length} departments selected</p>
         {negativeNet.length > 0 && <p role="alert" className="text-destructive">Net pay is below zero or PAYE is more than gross pay for {negativeNet.map(e => `${e.firstName} ${e.lastName}`).join(", ")}. Check the PAYE setting in their employee folder, or click Edit to correct this payroll.</p>}
         {attendanceBlocked && <p role="alert" className="text-destructive">Attendance review required: {payrollData.filter(e => e.attendanceError).map(e => `${e.firstName} ${e.lastName}`).join(", ")}. Confirm worked hours under Attendance before approval.</p>}
+        {recurringHere.length > 0 && <RecurringReview items={recurringHere} names={Object.fromEntries(payrollData.map(e => [e.id, `${e.firstName} ${e.lastName}`]))} factor={factor} decisions={decisions} disabled={processing || approved} onChange={(k, d) => setDecisions(m => { const n = { ...m }; if (d) n[k] = d; else delete n[k]; return n; })} />}
         {source === "live" && <Button variant="outline" onClick={() => navigate("/attendance")}>Review attendance and missing punches</Button>}
         {source === "live" && <div className="rounded-lg border border-accent/40 bg-accent/5 p-3 space-y-3">
           <label className="flex items-center gap-2 min-h-11 text-sm font-semibold cursor-pointer">
