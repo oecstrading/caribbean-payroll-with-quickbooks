@@ -351,6 +351,13 @@
       "when": 1793701362374,
       "tag": "0049_company_default_schedule",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1793701853983,
+      "tag": "0050_payroll_edited_lines",
+      "breakpoints": true
     }
   ]
 }
