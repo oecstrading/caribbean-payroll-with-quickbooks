@@ -34,6 +34,9 @@
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
+    --coral: 330 80% 50%;
+    --coral-foreground: 0 0% 100%;
+
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
@@ -77,6 +80,8 @@
     --accent-foreground: 220 26% 14%;
     --success: 160 84% 35%;
     --success-foreground: 0 0% 100%;
+    --coral: 330 80% 60%;
+    --coral-foreground: 0 0% 100%;
     --destructive: 0 62% 30%;
     --destructive-foreground: 210 40% 98%;
     --border: 220 14% 20%;
