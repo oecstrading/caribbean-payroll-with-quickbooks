@@ -4135,6 +4135,7 @@ export type Database = {
         Returns: undefined
       }
       validate_onboarding_pack: { Args: { _pack: Json }; Returns: undefined }
+      validate_pay_lines: { Args: { _row: Json }; Returns: undefined }
       validate_workforce_pay: {
         Args: {
           _basic: number

@@ -26,6 +26,9 @@ import { anonymousReviewRows } from "@/lib/payroll-review";
 import { loanDeduction } from "@/lib/employee-loans";
 import { attendanceEarnings, type PayHours } from "@/lib/workforce-time";
 import { manualEarnings, type ManualHours } from "@/lib/manual-hours";
+import { computeEdited, linesFromResult, serverLines, type PayEdit } from "@/lib/pay-edits";
+import PayEditDialog from "@/components/PayEditDialog";
+import { Pencil } from "lucide-react";
 
 const steps = ["Review & Sync", "Audit", "Approve & Run"];
 
@@ -56,6 +59,8 @@ export default function PayrollPage() {
   const [attendance, setAttendance] = useState<Record<string, PayHours>>({});
   const [manualMode, setManualMode] = useState(false);
   const [manualHours, setManualHours] = useState<Record<string, ManualHours>>({});
+  const [edits, setEdits] = useState<Record<string, PayEdit>>({});
+  const [editing, setEditing] = useState<string | null>(null);
   const [payBases, setPayBases] = useState<Record<string, { basis: string; rate: number; options: ReturnType<typeof payrollOptions> }>>({});
   const { isAdminOrManager, demoMode } = useRole();
   const config = getConfigByJurisdiction(source === "sample" ? "LC" : jurisdiction);
@@ -107,18 +112,20 @@ export default function PayrollPage() {
   const departments = [...new Set(employees.map(e => departmentName(e.department)))].sort();
   const departmentKey = departments.join("\u0000");
   useEffect(() => { setSelected(departments); }, [departmentKey, source]);
-  useEffect(() => { setApproved(false); setCurrentStep(0); }, [source, period, jurisdiction, selected, excluded, manualMode, manualHours]);
+  useEffect(() => { setApproved(false); setCurrentStep(0); }, [source, period, jurisdiction, selected, excluded, manualMode, manualHours, edits]);
+  useEffect(() => { setEdits({}); }, [source, range.start, range.end, jurisdiction]);
   const handleBulkEmail = () => toast.info("Use saved payslips for email delivery.");
   const handleApprovePayroll = async () => {
     if (!payrollData.length || !selected.length || !isAdminOrManager || periodError || attendanceBlocked) return;
     if (source === "sample") { setApproved(true); toast.success("Sample completed; no live payroll saved."); return; }
     setProcessing(true);
     const { data: runId, error } = await supabase.rpc("approve_payroll_run", {
-      _pay_type: payType, _start: range.start, _end: range.end, _notes: (manualMode ? [notes, "Hours entered manually"].filter(Boolean).join(" · ") : notes) || undefined, _jurisdiction: jurisdiction, _departments: selected,
+      _pay_type: payType, _start: range.start, _end: range.end, _notes: ([notes, manualMode ? "Hours entered manually" : "", Object.keys(edits).length ? `Pay edited for ${Object.keys(edits).length} employee(s)` : ""].filter(Boolean).join(" · ") || (manualMode ? [notes, "Hours entered manually"].filter(Boolean).join(" · ") : notes)) || undefined, _jurisdiction: jurisdiction, _departments: selected,
       _rows: payrollData.map(e => ({ user_id: e.id, department: e.department, basic_pay: e.payroll.basicPay,
         overtime_pay: e.payroll.overtimePay, gross_pay: e.payroll.grossMonthly, employee_nic: e.payroll.employeeNIC,
         employer_nic: e.payroll.employerNIC, paye: e.payroll.paye, total_deductions: e.payroll.totalDeductions, net_pay: e.payroll.netPay, loan_deductions: e.loanDeductions,
-        ...(e.manual ? { manual_hours: { ...e.manual } as Record<string, number> } : {}) })),
+        ...(e.edited ? { pay_lines: serverLines(e.edited) } : {}),
+        ...(!e.edited && e.manual ? { manual_hours: { ...e.manual } as Record<string, number> } : {}) })),
     });
     setProcessing(false);
     if (error) { toast.error(error.message); return; }
@@ -165,9 +172,12 @@ export default function PayrollPage() {
         try { const earnings = attendanceEarnings(basis.rate, basis.basis, e.stdHoursPerDay, h); salary = factor > 0 ? earnings.basic / factor : 0; overtime = earnings.overtime; hourlyRate = earnings.hourly; }
         catch (err) { salary = 0; attendanceError = err instanceof Error ? err.message : "Review attendance"; }
       }
-      const result = calculatePeriodPayroll(salary, factor, config, creditorDeductions, additions, overtime, source === "live" ? basis?.options : undefined);
+      const calculated = calculatePeriodPayroll(salary, factor, config, creditorDeductions, additions, overtime, source === "live" ? basis?.options : undefined);
+      const edited = source === "live" ? edits[e.id] : undefined;
+      const result = edited ? computeEdited(edited, config, factor) : calculated;
+      if (edited) attendanceError = "";
       const compliance = checkMinimumWageCompliance(hourlyRate, config);
-      return { ...e, payroll: result, hourlyRate, compliance, loanDeductions, attendance: h, attendanceError, manual, payBasis: basis?.basis || "Monthly" };
+      return { ...e, payroll: result, hourlyRate, compliance, loanDeductions, attendance: h, attendanceError, manual, edited, calculated, payBasis: basis?.basis || "Monthly" };
     });
   const attendanceBlocked = source === "live" && payrollData.some(e => Boolean(e.attendanceError));
 
@@ -245,6 +255,10 @@ export default function PayrollPage() {
         </div>}
       </section>
 
+      {(() => { const emp = payrollData.find(x => x.id === editing); if (!emp) return null;
+        return <PayEditDialog key={emp.id} open name={`${emp.firstName} ${emp.lastName}`} config={config} factor={factor}
+          initial={edits[emp.id] ?? linesFromResult(emp.calculated, payBases[emp.id]?.options.nicBasis === "basic", emp.loanDeductions)}
+          onSave={ed => setEdits(m => ({ ...m, [emp.id]: ed }))} onReset={() => setEdits(m => { const n = { ...m }; delete n[emp.id]; return n; })} onClose={() => setEditing(null)} />; })()}
       {/* Stepper */}
       <div className="flex items-center gap-2">
         {steps.map((step, i) => (
@@ -289,6 +303,7 @@ export default function PayrollPage() {
                     <th className="text-right py-3 px-4 font-medium text-muted-foreground">PAYE</th>
                     <th className="text-right py-3 px-4 font-medium text-muted-foreground">Creditor Ded.</th>
                     <th className="text-right py-3 px-4 font-medium text-muted-foreground">Net Pay</th>
+                    {source === "live" && <th className="py-3 px-4"><span className="sr-only">Edit</span></th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -318,6 +333,7 @@ export default function PayrollPage() {
                       <td className="py-3 px-4 text-right font-mono text-destructive">{formatCurrency(emp.payroll.paye)}</td>
                       <td className="py-3 px-4 text-right font-mono text-destructive">{formatCurrency(emp.payroll.totalCreditorDeductions)}</td>
                       <td className="py-3 px-4 text-right font-mono font-semibold text-success">{formatCurrency(emp.payroll.netPay)}</td>
+                      {source === "live" && <td className="py-3 px-4 text-right"><Button size="sm" variant={emp.edited ? "default" : "outline"} disabled={processing || approved || !isAdminOrManager} onClick={() => setEditing(emp.id)}><Pencil size={14} className="mr-1" />{emp.edited ? "Edited" : "Edit"}</Button></td>}
                     </motion.tr>
                   ))}
                 </tbody>
@@ -331,6 +347,7 @@ export default function PayrollPage() {
                     <td className="py-3 px-4 text-right font-mono text-destructive">{formatCurrency(totals.paye)}</td>
                     <td className="py-3 px-4 text-right font-mono text-destructive">{formatCurrency(totals.creditor)}</td>
                     <td className="py-3 px-4 text-right font-mono font-bold text-success">{formatCurrency(totals.net)}</td>
+                    {source === "live" && <td />}
                   </tr>
                 </tfoot>
               </table>
