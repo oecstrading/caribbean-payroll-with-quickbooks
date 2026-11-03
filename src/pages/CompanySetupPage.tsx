@@ -61,7 +61,7 @@ export default function CompanySetupPage() {
       await refreshAccess();
       // A full navigation refreshes every company-scoped provider and query cache.
       window.location.replace("/settings");
-    } catch (err) { toast.error(err instanceof Error ? err.message : "Setup failed"); }
+    } catch (err) { toast.error(companySaveError(err)); }
     finally { setBusy(false); }
   }
   return <main className="min-h-screen bg-background text-foreground">
