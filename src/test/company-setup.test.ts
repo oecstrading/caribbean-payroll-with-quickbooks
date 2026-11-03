@@ -24,3 +24,13 @@ describe("company onboarding inputs", () => {
     expect(setupToken("#invite=123456")).toBe("");
   });
 });
+import { describe as d2, it as i2, expect as e2 } from "vitest";
+d2("company setup with missing tax details", () => {
+  i2("saves with blank VAT, tax and NIC numbers", () => {
+    const r = companySetupSchema.parse({ company_name: "New Co", email: "owner@example.com", vat_number: "", tax_id: "", employer_nic_number: "" });
+    e2(r.vat_number).toBe("");
+  });
+  i2("adds https to a bare website", () => {
+    e2(companySetupSchema.parse({ company_name: "New Co", email: "o@example.com", website: "newco.lc" }).website).toBe("https://newco.lc");
+  });
+});
