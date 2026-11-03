@@ -330,6 +330,13 @@
       "when": 1793698596282,
       "tag": "0046_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1793698844666,
+      "tag": "0047_allow_payroll_hr_fields",
+      "breakpoints": true
     }
   ]
 }

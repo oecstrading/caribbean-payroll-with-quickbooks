@@ -25,7 +25,8 @@ interface ImportSummary {
 }
 
 export default function PayrollImportPage() {
-  const { isAdmin, isAdminOrManager } = useRole();
+  const { isAdmin, isAdminOrManager, canAccess } = useRole();
+  const qboEnabled = canAccess("/quickbooks");
   const [fileName, setFileName] = useState("");
   const [book, setBook] = useState<WorkbookSheet[]>([]);
   const [sheetName, setSheetName] = useState("");
@@ -187,7 +188,7 @@ export default function PayrollImportPage() {
       }
 
       let accounts = 0;
-      for (const account of onboarding.accounts) {
+      for (const account of qboEnabled ? onboarding.accounts : []) {
         const { data: existingMapping } = await supabase.from("qbo_account_mappings").select("id").eq("payroll_item", account.payroll_item).maybeSingle();
         const payload = { qbo_account_id: account.code, qbo_account_name: account.name, account_type: account.type };
         const write = existingMapping?.id
@@ -200,6 +201,7 @@ export default function PayrollImportPage() {
 
       setImported({ created, skipped, allowances, deductions, loans, accounts, company: onboarding.company.company_name });
       toast.success(`${created} employee folders created`);
+      if (!qboEnabled && onboarding.accounts.length) toast.info(`QuickBooks isn't switched on for this company, so ${onboarding.accounts.length} account codes were skipped. Turn on QuickBooks in the company's features and import again to add them.`, { duration: 12000 });
     } catch (e) {
       const err = e as { message?: string; details?: string; hint?: string; code?: string };
       const detail = err?.message ? [err.message, err.details, err.hint].filter(Boolean).join(" — ") : "";
