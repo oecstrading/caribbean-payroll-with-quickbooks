@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { industryPacks, ONBOARDING_COUNTRIES } from "@/lib/company-onboarding";
-import { Building2, FileSpreadsheet, Plus, Link2, Copy, Pencil, XCircle, RefreshCw, FileDown } from "lucide-react";
+import { Building2, FileSpreadsheet, Plus, Link2, Copy, Pencil, XCircle, RefreshCw, FileDown, Receipt } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
