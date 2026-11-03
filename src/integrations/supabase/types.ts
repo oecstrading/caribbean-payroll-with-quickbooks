@@ -4052,6 +4052,7 @@ export type Database = {
         }[]
       }
       my_pay_preview: { Args: { _end: string; _start: string }; Returns: Json }
+      my_workspace_access: { Args: never; Returns: Json }
       payroll_period_factor: {
         Args: { _end: string; _pay_type: string; _start: string }
         Returns: number
