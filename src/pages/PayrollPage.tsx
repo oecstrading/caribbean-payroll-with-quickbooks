@@ -25,6 +25,7 @@ import PayrollOfficer from "@/components/PayrollOfficer";
 import { anonymousReviewRows } from "@/lib/payroll-review";
 import { loanDeduction } from "@/lib/employee-loans";
 import { attendanceEarnings, type PayHours } from "@/lib/workforce-time";
+import { manualEarnings, type ManualHours } from "@/lib/manual-hours";
 
 const steps = ["Review & Sync", "Audit", "Approve & Run"];
 
@@ -53,6 +54,8 @@ export default function PayrollPage() {
   const [additionsMap, setAdditionsMap] = useState<Record<string, import("@/lib/payroll-engine").PayrollAddition[]>>({});
   const [loans, setLoans] = useState<{ user_id: string; balance: number; monthly_repayment: number }[]>([]);
   const [attendance, setAttendance] = useState<Record<string, PayHours>>({});
+  const [manualMode, setManualMode] = useState(false);
+  const [manualHours, setManualHours] = useState<Record<string, ManualHours>>({});
   const [payBases, setPayBases] = useState<Record<string, { basis: string; rate: number; options: ReturnType<typeof payrollOptions> }>>({});
   const { isAdminOrManager, demoMode } = useRole();
   const config = getConfigByJurisdiction(source === "sample" ? "LC" : jurisdiction);
@@ -104,17 +107,18 @@ export default function PayrollPage() {
   const departments = [...new Set(employees.map(e => departmentName(e.department)))].sort();
   const departmentKey = departments.join("\u0000");
   useEffect(() => { setSelected(departments); }, [departmentKey, source]);
-  useEffect(() => { setApproved(false); setCurrentStep(0); }, [source, period, jurisdiction, selected, excluded]);
+  useEffect(() => { setApproved(false); setCurrentStep(0); }, [source, period, jurisdiction, selected, excluded, manualMode, manualHours]);
   const handleBulkEmail = () => toast.info("Use saved payslips for email delivery.");
   const handleApprovePayroll = async () => {
     if (!payrollData.length || !selected.length || !isAdminOrManager || periodError || attendanceBlocked) return;
     if (source === "sample") { setApproved(true); toast.success("Sample completed; no live payroll saved."); return; }
     setProcessing(true);
     const { data: runId, error } = await supabase.rpc("approve_payroll_run", {
-      _pay_type: payType, _start: range.start, _end: range.end, _notes: notes || undefined, _jurisdiction: jurisdiction, _departments: selected,
+      _pay_type: payType, _start: range.start, _end: range.end, _notes: (manualMode ? [notes, "Hours entered manually"].filter(Boolean).join(" · ") : notes) || undefined, _jurisdiction: jurisdiction, _departments: selected,
       _rows: payrollData.map(e => ({ user_id: e.id, department: e.department, basic_pay: e.payroll.basicPay,
         overtime_pay: e.payroll.overtimePay, gross_pay: e.payroll.grossMonthly, employee_nic: e.payroll.employeeNIC,
-        employer_nic: e.payroll.employerNIC, paye: e.payroll.paye, total_deductions: e.payroll.totalDeductions, net_pay: e.payroll.netPay, loan_deductions: e.loanDeductions })),
+        employer_nic: e.payroll.employerNIC, paye: e.payroll.paye, total_deductions: e.payroll.totalDeductions, net_pay: e.payroll.netPay, loan_deductions: e.loanDeductions,
+        ...(e.manual ? { manual_hours: e.manual } : {}) })),
     });
     setProcessing(false);
     if (error) { toast.error(error.message); return; }
@@ -151,13 +155,19 @@ export default function PayrollPage() {
       const h = attendance[e.id]; const basis = payBases[e.id];
       let salary = e.monthlySalary; let overtime = 0; let attendanceError = "";
       let hourlyRate = e.monthlySalary / (e.stdHoursPerDay * 22);
-      if (source === "live" && h?.enabled && basis && ["Hourly", "Daily"].includes(basis.basis)) {
+      const manual = source === "live" && manualMode ? (manualHours[e.id] || { regular: 0, overtime: 0, double_time: 0 }) : undefined;
+      if (manual) {
+        try { const m = manualEarnings({ basis: basis?.basis || "", rate: basis?.rate || 0, monthlySalary: e.monthlySalary, stdHoursPerDay: e.stdHoursPerDay, otRate: Number(e.otRate) || 1.5, factor }, manual);
+          if (m.hoursBased) salary = factor > 0 ? m.basic / factor : 0; overtime = m.overtime; hourlyRate = m.hourly;
+          if (m.hoursBased && m.hourly <= 0) attendanceError = "Pay rate missing"; }
+        catch (err) { salary = 0; attendanceError = err instanceof Error ? err.message : "Check hours"; }
+      } else if (source === "live" && h?.enabled && basis && ["Hourly", "Daily"].includes(basis.basis)) {
         try { const earnings = attendanceEarnings(basis.rate, basis.basis, e.stdHoursPerDay, h); salary = factor > 0 ? earnings.basic / factor : 0; overtime = earnings.overtime; hourlyRate = earnings.hourly; }
         catch (err) { salary = 0; attendanceError = err instanceof Error ? err.message : "Review attendance"; }
       }
       const result = calculatePeriodPayroll(salary, factor, config, creditorDeductions, additions, overtime, source === "live" ? basis?.options : undefined);
       const compliance = checkMinimumWageCompliance(hourlyRate, config);
-      return { ...e, payroll: result, hourlyRate, compliance, loanDeductions, attendance: h, attendanceError };
+      return { ...e, payroll: result, hourlyRate, compliance, loanDeductions, attendance: h, attendanceError, manual, payBasis: basis?.basis || "Monthly" };
     });
   const attendanceBlocked = source === "live" && payrollData.some(e => Boolean(e.attendanceError));
 
@@ -215,6 +225,24 @@ export default function PayrollPage() {
         <p className="text-sm text-muted-foreground">{payrollData.length} employees · {selected.length} departments selected</p>
         {attendanceBlocked && <p role="alert" className="text-destructive">Attendance review required: {payrollData.filter(e => e.attendanceError).map(e => `${e.firstName} ${e.lastName}`).join(", ")}. Confirm worked hours under Attendance before approval.</p>}
         {source === "live" && <Button variant="outline" onClick={() => navigate("/attendance")}>Review attendance and missing punches</Button>}
+        {source === "live" && <div className="rounded-lg border border-accent/40 bg-accent/5 p-3 space-y-3">
+          <label className="flex items-center gap-2 min-h-11 text-sm font-semibold cursor-pointer">
+            <Checkbox className="h-4 w-4" checked={manualMode} disabled={processing} onCheckedChange={c => setManualMode(Boolean(c))} />
+            Enter hours manually (ignore clock-in / clock-out for this payroll)
+          </label>
+          {manualMode && <>
+            <p className="text-xs text-muted-foreground">Hourly and daily staff are paid for the regular hours you enter. Salaried staff keep their salary; only overtime is added. Overtime uses each employee's overtime rate (usually 1.5×); double time is 2×.</p>
+            <div className="overflow-x-auto"><table className="w-full text-sm">
+              <thead><tr className="text-left text-muted-foreground"><th className="py-1 pr-2">Employee</th><th className="pr-2">Paid</th><th className="pr-2">Regular hrs</th><th className="pr-2">Overtime hrs</th><th className="pr-2">Double-time hrs</th><th className="text-right">Gross</th></tr></thead>
+              <tbody>{payrollData.map(e => { const v = manualHours[e.id] || { regular: 0, overtime: 0, double_time: 0 }; const hoursBased = e.payBasis === "Hourly" || e.payBasis === "Daily";
+                const set = (k: keyof ManualHours, val: string) => setManualHours(m => ({ ...m, [e.id]: { ...v, [k]: Math.max(0, Number(val) || 0) } }));
+                return <tr key={e.id} className="border-t border-border">
+                  <td className="py-1 pr-2">{e.firstName} {e.lastName}</td><td className="pr-2 text-muted-foreground">{e.payBasis}</td>
+                  {(["regular", "overtime", "double_time"] as const).map(k => <td key={k} className="pr-2"><Input aria-label={`${k} hours for ${e.firstName}`} type="number" min={0} step="0.25" className="w-24" disabled={processing || (k === "regular" && !hoursBased)} value={k === "regular" && !hoursBased ? "" : v[k] || ""} placeholder={k === "regular" && !hoursBased ? "salary" : "0"} onChange={ev => set(k, ev.target.value)} /></td>)}
+                  <td className="text-right">{e.payroll.grossMonthly.toFixed(2)}</td></tr>; })}</tbody>
+            </table></div>
+          </>}
+        </div>}
       </section>
 
       {/* Stepper */}
