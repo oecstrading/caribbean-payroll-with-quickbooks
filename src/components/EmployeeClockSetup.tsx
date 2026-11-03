@@ -15,11 +15,12 @@ export default function EmployeeClockSetup({ employeeId, canManage }: { employee
   const [sites, setSites] = useState<{ id: string; name: string }[]>([]);
   useEffect(() => {
     let cancelled = false;
-    void Promise.all([supabase.rpc("employee_clock_configuration", { _employee: employeeId }), supabase.from("client_sites").select("id,name").order("name")]).then(([result, locations]) => {
+    void Promise.all([supabase.rpc("employee_clock_configuration", { _employee: employeeId }), supabase.from("client_sites").select("id,name").order("name"), supabase.from("workforce_clock_settings").select("default_shift_start,default_shift_end,default_work_days,default_break_minutes").maybeSingle()]).then(([result, locations, defs]) => {
+      const d = defs.data;
       if (cancelled) return;
       if (result.error || locations.error) { setError("Clock setup could not be loaded. Reopen the folder to retry."); return; }
       setSites(locations.data || []);
-      setConfig(result.data ? result.data as unknown as Config : { employee_code: employeeId.slice(0, 8), pin_configured: false, shift_start: "08:00", shift_end: "16:00", days_of_week: [1,2,3,4,5], break_minutes: 0, site_id: null, enabled: false, allowed_methods: ["account", "pin", "voice"] });
+      setConfig(result.data ? result.data as unknown as Config : { employee_code: employeeId.slice(0, 8), pin_configured: false, shift_start: d?.default_shift_start?.slice(0, 5) ?? "08:00", shift_end: d?.default_shift_end?.slice(0, 5) ?? "16:00", days_of_week: d?.default_work_days ?? [1,2,3,4,5], break_minutes: d?.default_break_minutes ?? 0, site_id: null, enabled: false, allowed_methods: ["account", "pin", "voice"] });
     });
     return () => { cancelled = true; };
   }, [employeeId]);
