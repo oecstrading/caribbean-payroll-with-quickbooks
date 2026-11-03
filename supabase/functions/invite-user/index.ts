@@ -94,5 +94,9 @@ Deno.serve(async req => {
       }
     }
     return reply({ success: true, user_id: id, invitation_sent: invitationSent });
-  } catch (error) { return reply({ error: error instanceof Error ? error.message : "Account operation failed" }, 400); }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : (error as { message?: string })?.message;
+    console.error("invite-user failed", error);
+    return reply({ error: message || "Account operation failed" }, 400);
+  }
 });
