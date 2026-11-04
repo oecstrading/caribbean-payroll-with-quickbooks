@@ -186,8 +186,6 @@ export default function PayrollPage() {
     const { data, error } = await supabase.functions.invoke("qbo-sync", { body: { action: "sync", payroll_run_id: runId } });
     if (error || data?.error) toast.warning("QuickBooks post queued for review on the QuickBooks page.");
     else toast.success("Payroll journal posted to QuickBooks.");
-    const erp = await supabase.functions.invoke("erpnext-sync", { body: { action: "sync", payroll_run_id: runId, auto: true } });
-    if (!erp.error && erp.data?.name) toast.success(`Payroll journal posted to ERPNext (${erp.data.name}).`);
   };
 
   const inDepartments = selectDepartments(employees, selected);

@@ -51,7 +51,6 @@ import TrainingHubPage from "@/pages/TrainingHubPage";
 import PublicTrainingPage from "@/pages/PublicTrainingPage";
 import PayrollDemoPage from "@/pages/PayrollDemoPage";
 import QuickBooksPage from "@/pages/QuickBooksPage";
-import ErpNextPage from "@/pages/ErpNextPage";
 import PayrollSettingsPage from "@/pages/PayrollSettingsPage";
 import PayrollImportPage from "@/pages/PayrollImportPage";
 import PayslipImportPage from "@/pages/PayslipImportPage";
@@ -140,7 +139,6 @@ const AppRoutes = () => (
       <Route path="/invoicing" element={<InvoicingPage />} />
       <Route path="/training" element={<TrainingHubPage />} />
       <Route path="/quickbooks" element={<QuickBooksPage />} />
-      <Route path="/erpnext" element={<ErpNextPage />} />
       <Route path="/payroll-settings" element={<PayrollSettingsPage />} />
       <Route path="/settings" element={<SettingsPage />} />
       <Route path="/companies" element={<CompaniesPage />} />
