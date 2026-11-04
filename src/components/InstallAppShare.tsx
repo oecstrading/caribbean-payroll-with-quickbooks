@@ -5,13 +5,12 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-// Always share the published address: installed apps update automatically when new features are published.
-const PUBLISHED_URL = "https://caribbean-payroll-with-quickbooks.lovable.app";
+import { staffClockLink } from "@/lib/staff-clock-link";
 
 export function InstallAppShare({ org }: { org: string }) {
   const [open, setOpen] = useState(false);
-  const link = `${PUBLISHED_URL}/time-clock/${org}`;
-  const message = `Install our staff time clock app on your phone: ${link}\n\nOpen the link, then tap "Add to Home Screen" (iPhone: Share button in Safari; Android: Chrome menu ⋮ → Install app). Allow location when you clock in or out.`;
+  const link = staffClockLink(org);
+  const message = `Install our staff time clock app on your phone: ${link}\n\nOpen the link, then tap "Add to Home Screen" (iPhone: Share button in Safari; Android: Chrome menu ⋮ → Install app). Sign in with your employee code and PIN from your manager. Allow location when you clock in or out.`;
   const downloadQr = () => {
     const canvas = document.getElementById("install-qr") as HTMLCanvasElement | null;
     if (!canvas) return;
