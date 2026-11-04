@@ -55,8 +55,8 @@ export const emptyEmployee: EmployeeForm = {
   date_of_birth: "", gender: "", marital_status: "", nationality: "", address: "", city: "", country: "", personal_email: "",
   emergency_name: "", emergency_relationship: "", emergency_phone: "", employment_type: "", work_location: "", supervisor: "",
   probation_end: "", contract_end: "", termination_date: "", termination_reason: "", pay_frequency: "", pay_rate: "", weekly_hours: "", notes: "",
-  tax_code: "", paye_method: "", paye_fixed_amount: "", nic_basis: "", daily_rate_rule: "", fixed_daily_rate: "", staff_group: "", cost_centre_code: "",
-  bank_name: "", bank_branch: "", bank_account_number: "", bank_account_type: "",
+  tax_code: "", paye_method: "Calculated", paye_fixed_amount: "", nic_basis: "Total pay", daily_rate_rule: "Monthly × 12 ÷ 52 ÷ 5", fixed_daily_rate: "", staff_group: "", cost_centre_code: "",
+  bank_name: "Bank of Saint Lucia", bank_branch: "Castries", bank_account_number: "", bank_account_type: "Savings",
 };
 export const hrKeys = ["date_of_birth", "gender", "marital_status", "nationality", "address", "city", "country", "personal_email", "emergency_name", "emergency_relationship", "emergency_phone", "employment_type", "work_location", "supervisor", "probation_end", "contract_end", "termination_date", "termination_reason", "pay_frequency", "pay_rate", "weekly_hours", "notes", "tax_code", "paye_method", "paye_fixed_amount", "nic_basis", "daily_rate_rule", "fixed_daily_rate", "staff_group", "cost_centre_code", "bank_name", "bank_branch", "bank_account_number", "bank_account_type"] as const;
 export const payBases = ["Monthly", "Semi-monthly", "Weekly", "Daily", "Hourly"] as const;

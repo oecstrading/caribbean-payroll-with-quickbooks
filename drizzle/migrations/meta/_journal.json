@@ -407,6 +407,13 @@
       "when": 1793735215385,
       "tag": "0057_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1793803291869,
+      "tag": "0058_multi_company_employee_removal",
+      "breakpoints": true
     }
   ]
 }

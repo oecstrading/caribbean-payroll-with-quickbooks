@@ -3877,6 +3877,10 @@ export type Database = {
       }
     }
     Functions: {
+      actor_manages_org: {
+        Args: { _actor: string; _org: string }
+        Returns: boolean
+      }
       administrator_authority: { Args: { _user: string }; Returns: Json }
       apply_payroll_loans: {
         Args: {
