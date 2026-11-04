@@ -137,7 +137,6 @@ export default function EmployeeFolderDialog({ folder, creating, onClose, onSave
     if (!MANAGED_LISTS.includes(key)) return [key, items];
     return [key, companyLists.has(key) ? companyLists.get(key, []) : items];
   }));
-  const defaultsFor = (key: string) => (basePickerOptions[key as keyof EmployeeForm] || []).filter((item, index, all) => item && all.indexOf(item) === index && !directoryKeys.has(item) || defaultSeed[key]?.includes(item));
   return <>
     <ManageListDialog open={Boolean(managing)} label={managing?.label || ""} items={managing?.items || []} onClose={() => setManaging(null)} onSave={items => companyLists.save(managing!.key, items)} />
     <Dialog open={creating || Boolean(folder)} onOpenChange={(open) => { if (!open && !busy) onClose(); }}>
