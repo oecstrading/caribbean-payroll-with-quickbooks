@@ -3773,6 +3773,8 @@ export type Database = {
           clock_out: string | null
           employee_id: string
           id: string
+          lunch_in: string | null
+          lunch_out: string | null
           org_id: string
           review_notes: string | null
           review_status: string
@@ -3789,6 +3791,8 @@ export type Database = {
           clock_out?: string | null
           employee_id: string
           id?: string
+          lunch_in?: string | null
+          lunch_out?: string | null
           org_id: string
           review_notes?: string | null
           review_status?: string
@@ -3805,6 +3809,8 @@ export type Database = {
           clock_out?: string | null
           employee_id?: string
           id?: string
+          lunch_in?: string | null
+          lunch_out?: string | null
           org_id?: string
           review_notes?: string | null
           review_status?: string
