@@ -1652,6 +1652,91 @@ export type Database = {
           },
         ]
       }
+      erpnext_account_mappings: {
+        Row: {
+          erp_account: string
+          id: string
+          org_id: string
+          payroll_item: string
+          updated_at: string
+        }
+        Insert: {
+          erp_account: string
+          id?: string
+          org_id: string
+          payroll_item: string
+          updated_at?: string
+        }
+        Update: {
+          erp_account?: string
+          id?: string
+          org_id?: string
+          payroll_item?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "erpnext_account_mappings_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      erpnext_connection: {
+        Row: {
+          api_key: string
+          api_secret: string
+          auto_post: boolean
+          base_url: string
+          erp_company: string
+          id: string
+          last_message: string | null
+          last_tested_at: string | null
+          org_id: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          api_key: string
+          api_secret: string
+          auto_post?: boolean
+          base_url: string
+          erp_company: string
+          id?: string
+          last_message?: string | null
+          last_tested_at?: string | null
+          org_id: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          api_key?: string
+          api_secret?: string
+          auto_post?: boolean
+          base_url?: string
+          erp_company?: string
+          id?: string
+          last_message?: string | null
+          last_tested_at?: string | null
+          org_id?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "erpnext_connection_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       geofence_zones: {
         Row: {
           created_at: string
