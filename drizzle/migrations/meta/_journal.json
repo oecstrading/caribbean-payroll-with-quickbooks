@@ -414,6 +414,13 @@
       "when": 1793803291869,
       "tag": "0058_multi_company_employee_removal",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1793807973111,
+      "tag": "0059_clock_code_case_insensitive",
+      "breakpoints": true
     }
   ]
 }
