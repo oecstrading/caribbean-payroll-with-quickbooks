@@ -22,7 +22,7 @@ export default function UserAccountDialog({open,user,canAddAdmin,onClose,onSaved
       let detail=data?.error;
       if(error){try{detail=detail||(await error.context.json()).error}catch{/* fallback */}}
       if(error||detail)throw new Error(detail||"Account could not be saved");
-      toast.success(data.warning|| (data.invitation_sent?"Account saved; invitation sent":"Account saved"));onSaved();onClose();
+      toast.success(data.shared_access?"This person already has a login, so they can now open this company with the same email, username and password":data.warning|| (data.invitation_sent?"Account saved; invitation sent":"Account saved"));onSaved();onClose();
     }catch(error){toast.error(error instanceof Error?error.message:"Unable to save account")}finally{setSaving(false)}
   };
   return <Dialog open={open} onOpenChange={v=>!v&&!saving&&onClose()}><DialogContent className="sm:max-w-xl max-h-[90dvh] overflow-y-auto"><DialogHeader><DialogTitle>{user?"Edit user & login":"Add user"}</DialogTitle></DialogHeader>
