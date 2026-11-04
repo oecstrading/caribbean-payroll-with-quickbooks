@@ -421,6 +421,13 @@
       "when": 1793807973111,
       "tag": "0059_clock_code_case_insensitive",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1793826880372,
+      "tag": "0060_company_picklists",
+      "breakpoints": true
     }
   ]
 }

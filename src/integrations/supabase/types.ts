@@ -505,6 +505,38 @@ export type Database = {
           },
         ]
       }
+      company_picklists: {
+        Row: {
+          id: string
+          items: string[]
+          list_key: string
+          org_id: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          items?: string[]
+          list_key: string
+          org_id?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          items?: string[]
+          list_key?: string
+          org_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_picklists_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_settings: {
         Row: {
           address: string | null
