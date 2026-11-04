@@ -22,3 +22,4 @@
 - AI Paymaster is a daily-scheduled plus on-demand Edge Function that writes per-company payroll drafts, flags and reminders with a per-company lease and 6h throttle; it never approves or pays, and the browser can only acknowledge drafts; manager approval stays the sole save boundary.
 - Spreadsheet (salary-sheet.ts, onboarding-sheet.ts) and pay-slip PDF (payslip-pdf.ts) imports parse client-side, ask questions, compare to platform rules and write only after admin approval; slip saves use approve_payslip_import with payroll-approval guards. Template covers every stored field; extras live in hr_details.
 - Read nested AGENTS.md. Visual guides use the shared Training list and document verified behavior only.
+- Open-ended employee dropdowns use per-company lists (company_picklists, admin/manager edit) that replace built-in defaults; calculation-driving options stay fixed so pay logic cannot break.
