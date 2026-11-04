@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { z } from "npm:zod@3.25.76";
-const bodySchema = z.object({ action: z.enum(["status","punch"]), org_id: z.string().uuid().optional(), employee_code: z.string().regex(/^[A-Za-z0-9_-]{2,40}$/).optional(), pin: z.string().regex(/^\d{4,6}$/).optional(), direction: z.enum(["clock_in","clock_out"]).optional(), mode: z.enum(["device","voice","pin"]).default("device"), latitude: z.number().finite().min(-90).max(90).optional(), longitude: z.number().finite().min(-180).max(180).optional() }).strict();
+const bodySchema = z.object({ action: z.enum(["status","punch"]), org_id: z.string().uuid().optional(), employee_code: z.string().regex(/^[A-Za-z0-9_-]{2,40}$/).optional(), pin: z.string().regex(/^\d{4,6}$/).optional(), direction: z.enum(["clock_in","clock_out","lunch_out","lunch_in"]).optional(), mode: z.enum(["device","voice","pin"]).default("device"), latitude: z.number().finite().min(-90).max(90).optional(), longitude: z.number().finite().min(-180).max(180).optional() }).strict();
 const reply = (data: unknown, status=200) => new Response(JSON.stringify(data), {status, headers:{...corsHeaders,"Content-Type":"application/json","Cache-Control":"no-store"}});
 Deno.serve(async req => {
  if(req.method==="OPTIONS") return new Response("ok",{headers:corsHeaders});
@@ -35,11 +35,11 @@ Deno.serve(async req => {
   const identityMethod=body.pin?"pin":"account";
   if(!methods.includes(identityMethod)||body.mode==="voice"&&!methods.includes("voice")) return reply({error:"This clock method is not enabled by your administrator"},403);
   if(body.action==="status") {
-   const [sh,sc]=await Promise.all([admin.from("workforce_shifts").select("clock_in,clock_out").eq("org_id",org).eq("employee_id",employee).not("clock_in","is",null).is("clock_out",null).order("clock_in",{ascending:false}).limit(1).maybeSingle(),admin.from("workforce_schedules").select("site_id,shift_start,shift_end,days_of_week").eq("org_id",org).eq("employee_id",employee).eq("enabled",true).maybeSingle()]);
+   const [sh,sc]=await Promise.all([admin.from("workforce_shifts").select("clock_in,clock_out,lunch_out,lunch_in").eq("org_id",org).eq("employee_id",employee).not("clock_in","is",null).is("clock_out",null).order("clock_in",{ascending:false}).limit(1).maybeSingle(),admin.from("workforce_schedules").select("site_id,shift_start,shift_end,days_of_week").eq("org_id",org).eq("employee_id",employee).eq("enabled",true).maybeSingle()]);
    if(sh.error||sc.error) return reply({error:"Unable to read clock status"},500);
-   const history=await admin.from("workforce_shifts").select("shift_date,clock_in,clock_out,approved_hours,review_status").eq("org_id",org).eq("employee_id",employee).order("shift_date",{ascending:false}).limit(14);
+   const history=await admin.from("workforce_shifts").select("shift_date,clock_in,clock_out,lunch_out,lunch_in,approved_hours,review_status").eq("org_id",org).eq("employee_id",employee).order("shift_date",{ascending:false}).limit(14);
    if(history.error) return reply({error:"Unable to read worked hours"},500);
-   return reply({next:sh.data?"clock_out":"clock_in",clock_in:sh.data?.clock_in??null,location_required:!!sc.data?.site_id,allowed_methods:methods,history:history.data,schedule:sc.data?{start:sc.data.shift_start,end:sc.data.shift_end,days:sc.data.days_of_week}:null});
+   return reply({next:!sh.data?"clock_in":sh.data.lunch_out&&!sh.data.lunch_in?"lunch_in":"clock_out",lunch_taken:!!sh.data?.lunch_out,clock_in:sh.data?.clock_in??null,location_required:!!sc.data?.site_id,allowed_methods:methods,history:history.data,schedule:sc.data?{start:sc.data.shift_start,end:sc.data.shift_end,days:sc.data.days_of_week}:null});
   }
   if(!body.direction) return reply({error:"Choose clock in or clock out"},400);
   if(body.latitude===undefined||body.longitude===undefined) return reply({error:"Location is required to clock in or out. Turn on location for this browser and try again."},400);
