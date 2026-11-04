@@ -1,0 +1,1 @@
+COMMENT ON TABLE public.erpnext_connection IS 'DEPRECATED: ERPNext integration removed'; COMMENT ON TABLE public.erpnext_account_mappings IS 'DEPRECATED: ERPNext integration removed';
