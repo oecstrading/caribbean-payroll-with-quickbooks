@@ -442,6 +442,13 @@
       "when": 1793827561956,
       "tag": "0062_erpnext_connection",
       "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1793828108426,
+      "tag": "0063_retire_erpnext",
+      "breakpoints": true
     }
   ]
 }
