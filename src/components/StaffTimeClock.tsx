@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { rememberedClockCode, rememberClockCode } from "@/lib/staff-clock-link";
 import StaffPayCenter from "@/components/StaffPayCenter";
 
 export default function StaffTimeClock({ companyId }: { companyId?: string }) {
@@ -17,6 +18,7 @@ export default function StaffTimeClock({ companyId }: { companyId?: string }) {
  const [schedule,setSchedule]=useState<ClockSchedule|null>(null);
  const [history,setHistory]=useState<{shift_date:string;clock_in:string|null;clock_out:string|null;approved_hours:number|null;review_status:string}[]>([]);
  useEffect(()=>{if(companyId){setResolvedCompany(companyId);return;}if(user)void supabase.rpc("current_org_id").then(({data})=>setResolvedCompany(data??""));},[companyId,user?.id]);
+ useEffect(()=>{if(!companyId)return;const fromLink=new URLSearchParams(window.location.search).get("code")?.trim();const c=fromLink||rememberedClockCode(companyId);if(c)setCode(c);if(fromLink)rememberClockCode(companyId,fromLink);},[companyId]);
  useEffect(()=>{const t=setInterval(()=>setNow(new Date()),1000);return()=>clearInterval(t);},[]);
  async function request(action:"status"|"punch", mode="device") {
   const body: Record<string,unknown>={action,mode};
@@ -31,7 +33,7 @@ export default function StaffTimeClock({ companyId }: { companyId?: string }) {
   const {data,error}=await supabase.functions.invoke("workforce-clock",{body});
   if(error) { let message=error.message; if(error.context instanceof Response){const detail=await error.context.json().catch(()=>null);message=detail?.error??message;} throw new Error(message); }
   if(data?.error)throw new Error(data.error);
-  setNext(data.next);setKnown(true);if(data.history)setHistory(data.history);if(data.allowed_methods)setMethods(data.allowed_methods);if(data.schedule!==undefined)setSchedule(data.schedule);if(action==="punch"){setLast(`${next==="clock_in"?"Clocked in":"Clocked out"} · ${new Date(data.punched_at).toLocaleTimeString()}`);await request("status",mode);setPin("");toast.success("Attendance saved");}
+  setNext(data.next);setKnown(true);if(pinMode&&resolvedCompany)rememberClockCode(resolvedCompany,code.trim());if(data.history)setHistory(data.history);if(data.allowed_methods)setMethods(data.allowed_methods);if(data.schedule!==undefined)setSchedule(data.schedule);if(action==="punch"){setLast(`${next==="clock_in"?"Clocked in":"Clocked out"} · ${new Date(data.punched_at).toLocaleTimeString()}`);await request("status",mode);setPin("");toast.success("Attendance saved");}
  }
  useEffect(()=>{if(user&&!pinMode)void request("status").catch(e=>setError(e.message));},[user?.id,pinMode]);
  async function submit(mode="device") {setBusy(true);setError("");try{await request(pinMode&&!known?"status":"punch",mode);}catch(e){setError(e instanceof Error?e.message:"Clock unavailable");}finally{setBusy(false);}}
