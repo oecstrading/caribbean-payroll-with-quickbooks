@@ -1,0 +1,10 @@
+CREATE TABLE public.erpnext_connection (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), org_id uuid NOT NULL UNIQUE REFERENCES public.organizations(id) ON DELETE CASCADE, base_url text NOT NULL, erp_company text NOT NULL, api_key text NOT NULL, api_secret text NOT NULL, auto_post boolean NOT NULL DEFAULT true, status text NOT NULL DEFAULT 'untested', last_message text, last_tested_at timestamptz, updated_by uuid, updated_at timestamptz NOT NULL DEFAULT now());
+GRANT ALL ON public.erpnext_connection TO service_role;
+GRANT SELECT (id, org_id, base_url, erp_company, auto_post, status, last_message, last_tested_at, updated_at) ON public.erpnext_connection TO authenticated;
+ALTER TABLE public.erpnext_connection ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Company accounting staff view ERPNext connection" ON public.erpnext_connection FOR SELECT TO authenticated USING (org_id = public.current_org_id() AND public.has_workspace_access(auth.uid(),'quickbooks'));
+CREATE TABLE public.erpnext_account_mappings (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), org_id uuid NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE, payroll_item text NOT NULL, erp_account text NOT NULL, updated_at timestamptz NOT NULL DEFAULT now(), UNIQUE(org_id, payroll_item));
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.erpnext_account_mappings TO authenticated;
+GRANT ALL ON public.erpnext_account_mappings TO service_role;
+ALTER TABLE public.erpnext_account_mappings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Accounting staff manage ERPNext mappings" ON public.erpnext_account_mappings FOR ALL TO authenticated USING (org_id = public.current_org_id() AND public.has_workspace_access(auth.uid(),'quickbooks') AND public.is_admin_or_manager(auth.uid())) WITH CHECK (org_id = public.current_org_id() AND public.has_workspace_access(auth.uid(),'quickbooks') AND public.is_admin_or_manager(auth.uid()));
