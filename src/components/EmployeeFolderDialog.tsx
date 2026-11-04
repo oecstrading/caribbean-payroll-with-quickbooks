@@ -14,6 +14,12 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import EmployeeDocuments from "@/components/EmployeeDocuments";
 import { ValuePicker } from "@/components/ui/value-picker";
+import { ManageListDialog } from "@/components/ManageListDialog";
+import { useCompanyLists } from "@/hooks/useCompanyLists";
+import { useRole } from "@/hooks/useRole";
+
+/** Open-ended dropdowns each company can customise. Calculation-driving lists (pay basis, PAYE, NIC) stay fixed. */
+const MANAGED_LISTS = ["employment_type", "department", "job_title", "work_location", "schedule", "staff_group", "gender", "marital_status", "bank_account_type", "emergency_relationship", "nationality", "city", "country", "std_hours_per_day", "weekly_hours"];
 import EmployeeLoginSetup from "@/components/EmployeeLoginSetup";
 import EmployeeClockSetup from "@/components/EmployeeClockSetup";
 import { employeeLoginSchema, emptyEmployeeLogin, type EmployeeLogin } from "@/lib/employee-login";
@@ -23,14 +29,14 @@ const sections: { id: string; label: string; icon: typeof User; fields: Field[] 
   { id: "personal", label: "Personal", icon: User, fields: [
     { key: "first_name", label: "First name *" }, { key: "last_name", label: "Last name *" },
     { key: "email", label: "Work email (optional)", type: "email" }, { key: "phone", label: "Phone", type: "tel" },
-    { key: "date_of_birth", label: "Date of birth", type: "date" }, { key: "gender", label: "Gender", options: ["Female", "Male", "Non-binary", "Prefer not to say"] },
-    { key: "marital_status", label: "Marital status", options: ["Single", "Married", "Divorced", "Widowed", "Prefer not to say"] }, { key: "nationality", label: "Nationality" },
+    { key: "date_of_birth", label: "Date of birth", type: "date" }, { key: "gender", label: "Gender" },
+    { key: "marital_status", label: "Marital status" }, { key: "nationality", label: "Nationality" },
     { key: "personal_email", label: "Personal email", type: "email" }, { key: "address", label: "Residential address", wide: true }, { key: "city", label: "City / district" }, { key: "country", label: "Country" },
   ] },
   { id: "employment", label: "Employment", icon: Briefcase, fields: [
     { key: "person_id", label: "Employee number" }, { key: "status", label: "Employment status", options: ["Active", "Inactive", "On Leave"] },
     { key: "department", label: "Department" }, { key: "job_title", label: "Job title" },
-    { key: "employment_type", label: "Employment type", options: ["Full-time", "Part-time", "Contract", "Temporary", "Intern"] },
+    { key: "employment_type", label: "Employment type" },
     { key: "start_date", label: "Start date", type: "date" }, { key: "supervisor", label: "Reporting manager" }, { key: "work_location", label: "Work location" },
     { key: "probation_end", label: "Probation end", type: "date" }, { key: "contract_end", label: "Contract end", type: "date" },
     { key: "termination_date", label: "Termination date", type: "date" }, { key: "termination_reason", label: "Termination reason", wide: true },
@@ -41,7 +47,7 @@ const sections: { id: string; label: string; icon: typeof User; fields: Field[] 
     { key: "monthly_salary", label: "Monthly salary", type: "number" },
     { key: "nic_number", label: "NIC / social insurance number" }, { key: "tan_number", label: "Tax account number" },
     { key: "schedule", label: "Work schedule" }, { key: "std_hours_per_day", label: "Standard daily hours" }, { key: "weekly_hours", label: "Hours per work week" }, { key: "ot_rate", label: "Overtime multiplier", type: "number" },
-    { key: "staff_group", label: "Staff group", options: ["Staff", "Management", "Director", "Casual"] },
+    { key: "staff_group", label: "Staff group" },
     { key: "tax_code", label: "Tax code (e.g. 264M)" },
     { key: "paye_method", label: "PAYE method", options: ["Calculated", "Fixed amount"] },
     { key: "paye_fixed_amount", label: "Fixed PAYE per month", type: "number" },
@@ -50,7 +56,7 @@ const sections: { id: string; label: string; icon: typeof User; fields: Field[] 
     { key: "fixed_daily_rate", label: "Fixed daily rate", type: "number" },
     { key: "cost_centre_code", label: "Accounting cost-centre code (e.g. 66010)" },
     { key: "bank_name", label: "Bank name" }, { key: "bank_branch", label: "Bank branch" },
-    { key: "bank_account_number", label: "Bank account number" }, { key: "bank_account_type", label: "Bank account type", options: ["Savings", "Current", "Cheque"] },
+    { key: "bank_account_number", label: "Bank account number" }, { key: "bank_account_type", label: "Bank account type" },
   ] },
   { id: "emergency", label: "Emergency", icon: Heart, fields: [
     { key: "emergency_name", label: "Emergency contact name" }, { key: "emergency_relationship", label: "Relationship" }, { key: "emergency_phone", label: "Emergency phone", type: "tel" },
@@ -106,7 +112,15 @@ export default function EmployeeFolderDialog({ folder, creating, onClose, onSave
     finally { setBusy(false); }
   };
   const preview = calculatePayroll(effectiveMonthlySalary(values), ST_LUCIA_CONFIG);
-  const pickerOptions: Partial<Record<keyof EmployeeForm, string[]>> = {
+  const companyLists = useCompanyLists();
+  const { isAdminOrManager } = useRole();
+  const [managing, setManaging] = useState<{ key: string; label: string; items: string[] } | null>(null);
+  const basePickerOptions: Partial<Record<keyof EmployeeForm, string[]>> = {
+    bank_account_type: ["Savings", "Current", "Cheque"],
+    staff_group: ["Staff", "Management", "Director", "Casual"],
+    employment_type: ["Full-time", "Part-time", "Contract", "Temporary", "Intern"],
+    marital_status: ["Single", "Married", "Divorced", "Widowed", "Prefer not to say"],
+    gender: ["Female", "Male", "Non-binary", "Prefer not to say"],
     department: ["Administration", "Accounts / Finance", "Human Resources", "Operations", "Sales", "Customer Service", "Installation", "Tinting", "Security", "Maintenance", "Logistics", "IT", ...directory.map(record => record.values.department)],
     job_title: ["Managing Director", "General Manager", "Supervisor", "Team Lead", "Accountant", "Accounts Clerk", "HR Officer", "Administrative Assistant", "Receptionist", "Sales Representative", "Customer Service Representative", "Technician", "Installer", "Driver", "Security Officer", "Cleaner", "Apprentice", ...directory.map(record => record.values.job_title)],
     supervisor: [...directory.map(record => record.values.supervisor), ...directory.filter(record => record.id !== folder?.id && record.values.status === "Active").map(record => `${record.values.first_name} ${record.values.last_name}`)],
@@ -119,7 +133,12 @@ export default function EmployeeFolderDialog({ folder, creating, onClose, onSave
     weekly_hours: ["40", "37.5", "36", "35", "32", "30", "24", "20", "45", "48"],
     emergency_relationship: ["Spouse", "Partner", "Parent", "Child", "Sibling", "Friend", "Other", ...directory.map(record => record.values.emergency_relationship)],
   };
+  const pickerOptions: Partial<Record<keyof EmployeeForm, string[]>> = Object.fromEntries(Object.entries(basePickerOptions).map(([key, items]) => {
+    if (!MANAGED_LISTS.includes(key)) return [key, items];
+    return [key, companyLists.has(key) ? companyLists.get(key, []) : items];
+  }));
   return <>
+    <ManageListDialog open={Boolean(managing)} label={managing?.label || ""} items={managing?.items || []} onClose={() => setManaging(null)} onSave={items => companyLists.save(managing!.key, items)} />
     <Dialog open={creating || Boolean(folder)} onOpenChange={(open) => { if (!open && !busy) onClose(); }}>
       <DialogContent className="sm:max-w-3xl max-h-[90dvh] flex flex-col overflow-hidden p-0 gap-0">
         <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
@@ -141,7 +160,7 @@ export default function EmployeeFolderDialog({ folder, creating, onClose, onSave
               return <div key={field.key} className={field.wide ? "sm:col-span-2 space-y-1.5" : "space-y-1.5"}>
                 <Label htmlFor={`hr-${field.key}`} className="text-xs text-muted-foreground">{label}</Label>
                 {field.options ? <NativeSelect id={`hr-${field.key}`} value={String(values[field.key])} disabled={disabled} onChange={(event) => setValues({ ...values, [field.key]: event.target.value })} className="w-full h-11 rounded-md border border-input bg-background px-3 text-sm text-foreground disabled:opacity-70 focus:outline-none focus:ring-2 focus:ring-ring"><option value="">Not specified</option>{field.options.map((option) => <option key={option}>{option}</option>)}</NativeSelect>
-                  : pickerOptions[field.key] ? <ValuePicker id={`hr-${field.key}`} label={field.label} value={String(values[field.key])} options={pickerOptions[field.key] || []} disabled={disabled} invalid={Boolean(errors[field.key])} onChange={value => setValues({ ...values, [field.key]: value })} />
+                  : pickerOptions[field.key] ? <ValuePicker id={`hr-${field.key}`} label={field.label} value={String(values[field.key])} options={pickerOptions[field.key] || []} disabled={disabled} invalid={Boolean(errors[field.key])} onChange={value => setValues({ ...values, [field.key]: value })} onManage={isAdminOrManager && MANAGED_LISTS.includes(field.key) ? () => setManaging({ key: field.key, label: field.label, items: companyLists.has(field.key) ? companyLists.get(field.key, []) : (pickerOptions[field.key] || []) }) : undefined} />
                   : field.type === "textarea" ? <Textarea id={`hr-${field.key}`} value={String(values[field.key])} disabled={disabled} maxLength={2000} rows={7} onChange={(event) => setValues({ ...values, [field.key]: event.target.value })} />
                   : <Input id={`hr-${field.key}`} type={field.type || "text"} className="h-11" value={computed ? effectiveMonthlySalary(values) : values[field.key]} disabled={disabled} min={field.type === "number" ? 0 : undefined} step={field.type === "number" ? "0.01" : undefined} maxLength={field.key === "email" ? 255 : field.wide ? 500 : field.type === "tel" ? 40 : 100} onChange={(event) => setValues({ ...values, [field.key]: event.target.value })} aria-invalid={Boolean(errors[field.key])} />}
                 {errors[field.key] && <p role="alert" className="text-xs text-destructive">{errors[field.key]}</p>}

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, ChevronsUpDown, Plus } from "lucide-react";
+import { Check, ChevronsUpDown, Plus, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -7,10 +7,12 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 type ValuePickerProps = {
   id: string; label: string; value: string; options: string[];
   onChange: (value: string) => void; disabled?: boolean; invalid?: boolean;
+  /** When set, shows a "Manage choices" action that opens the company list editor. */
+  onManage?: () => void;
 };
 
 /** Existing values and custom HR entries retain their original string storage format. */
-export function ValuePicker({ id, label, value, options, onChange, disabled, invalid }: ValuePickerProps) {
+export function ValuePicker({ id, label, value, options, onChange, disabled, invalid, onManage }: ValuePickerProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const choices = [...new Set([...options, value].map(item => item.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
@@ -34,6 +36,7 @@ export function ValuePicker({ id, label, value, options, onChange, disabled, inv
           </CommandGroup>
         </CommandList>
         {custom && !choices.some(choice => choice.toLowerCase() === custom.toLowerCase()) && <div className="border-t border-border p-1"><Button type="button" variant="ghost" className="w-full h-auto min-h-11 justify-start text-left whitespace-normal" onClick={() => choose(custom)}><Plus className="shrink-0" /><span className="break-words min-w-0">Use “{custom}”</span></Button></div>}
+        {onManage && <div className="border-t border-border p-1"><Button type="button" variant="ghost" className="w-full min-h-11 justify-start text-primary" onClick={() => { setOpen(false); setSearch(""); onManage(); }}><Settings2 />Add, edit or delete choices…</Button></div>}
       </Command>
     </PopoverContent>
   </Popover>;
