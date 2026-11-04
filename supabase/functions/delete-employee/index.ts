@@ -38,8 +38,11 @@ Deno.serve(async req => {
       admin.rpc("is_company_super_admin", { _user: user.id }),
       admin.from("platform_administrators").select("user_id").eq("user_id", user.id).maybeSingle(),
     ]);
+    const targetOrg = profile.data?.org_id ?? record.data?.org_id ?? null;
+    const manages = await admin.rpc("actor_manages_org", { _actor: user.id, _org: targetOrg });
+    if (manages.error) return reply({ error: "Unable to verify removal permissions" }, 503);
     if ([actor, roles, hr, profile, record, targetRoles, platform, superAdmin, actorPlatform].some(r => r.error)) return reply({ error: "Unable to verify removal permissions" }, 503);
-    if (actor.data?.deleted_at || !removalAllowed({ id: user.id, org_id: actor.data?.org_id ?? null, admin: Boolean(roles.data?.some(r => r.role === "admin")), hr: hr.data === true, superAdmin: superAdmin.data === true, platform: Boolean(actorPlatform.data) }, { id: body.employee_id, org_id: profile.data?.org_id ?? record.data?.org_id ?? null, admin: Boolean(targetRoles.data?.some(r => r.role === "admin")), platform: Boolean(platform.data) })) return reply({ error: "Company super administrator authority is required to remove administrators; you cannot delete yourself or another company's users" }, 403);
+    if (actor.data?.deleted_at || !removalAllowed({ id: user.id, org_id: manages.data === true ? targetOrg : actor.data?.org_id ?? null, admin: Boolean(roles.data?.some(r => r.role === "admin")), hr: hr.data === true, superAdmin: superAdmin.data === true, platform: Boolean(actorPlatform.data) }, { id: body.employee_id, org_id: profile.data?.org_id ?? record.data?.org_id ?? null, admin: Boolean(targetRoles.data?.some(r => r.role === "admin")), platform: Boolean(platform.data) })) return reply({ error: user.id === body.employee_id ? "You cannot delete your own account" : "Company super administrator authority is required to remove administrators, and you need access to this person's company" }, 403);
     const { data: job, error: prepareError } = await admin.rpc("prepare_employee_removal", { _actor: user.id, _employee: body.employee_id, _confirmation: body.confirmation });
     if (prepareError || !job) return reply({ error: prepareError?.message || "Unable to prepare removal" }, 400);
     if (job.status === "complete") return reply({ success: true, financial_history_retained: true });
