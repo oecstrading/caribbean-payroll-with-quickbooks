@@ -20,7 +20,7 @@ export default function StaffTimeClock({ companyId }: { companyId?: string }) {
  useEffect(()=>{const t=setInterval(()=>setNow(new Date()),1000);return()=>clearInterval(t);},[]);
  async function request(action:"status"|"punch", mode="device") {
   const body: Record<string,unknown>={action,mode};
-  if(pinMode) { if(!resolvedCompany||!code||!/^\d{4,6}$/.test(pin)) throw new Error("Enter your employee code and 4–6 digit PIN"); Object.assign(body,{org_id:resolvedCompany,employee_code:code,pin}); }
+  if(pinMode) { if(!resolvedCompany||!code.trim()||!/^\d{4,6}$/.test(pin.trim())) throw new Error("Enter your employee code and 4–6 digit PIN"); Object.assign(body,{org_id:resolvedCompany,employee_code:code.trim(),pin:pin.trim()}); }
   if(action==="punch") {
    body.direction=next;
    // Every punch must carry the device location (anti buddy-punching); the server rejects punches without it.
