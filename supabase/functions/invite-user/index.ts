@@ -55,9 +55,19 @@ Deno.serve(async req => {
       }
     } else {
       if (v.role === "admin" && !companySuper) return reply({ error: "Company super administrator required to add administrators" }, 403);
-      if (v.username) {
-        const { data: duplicate } = await admin.from("profiles").select("user_id").eq("login_username", v.username).maybeSingle();
-        if (duplicate) return reply({ error: "Username already in use" }, 400);
+      // Same person already has a login (same email or username): give them access to this company instead of a second account.
+      const matches = [];
+      if (v.email) matches.push(...((await admin.from("profiles").select("user_id,org_id,deleted_at").ilike("email", v.email)).data ?? []));
+      if (v.username) matches.push(...((await admin.from("profiles").select("user_id,org_id,deleted_at").eq("login_username", v.username)).data ?? []));
+      const existing = matches.find(m => !m.deleted_at && m.user_id);
+      if (existing) {
+        if (existing.org_id === org) return reply({ error: "This person already has a login in this company. Edit their existing user instead." }, 400);
+        if (!platformSuper) return reply({ error: "This person already has a login for another company. Ask the platform super admin to give them access to this company (My Companies → Assign companies)." }, 403);
+        const { data: existingRole } = await admin.from("user_roles").select("role").eq("user_id", existing.user_id).maybeSingle();
+        if (existingRole?.role !== "admin" && existingRole?.role !== "manager") return reply({ error: "This login belongs to an employee in another company. Only administrators and managers can share one login across companies." }, 400);
+        const { error: grantError } = await admin.from("company_admin_access").upsert({ user_id: existing.user_id, org_id: org, granted_by: caller.id }, { onConflict: "user_id,org_id" });
+        if (grantError) throw grantError;
+        return reply({ success: true, user_id: existing.user_id, shared_access: true, invitation_sent: false });
       }
       const result = v.email
         ? await admin.auth.admin.inviteUserByEmail(v.email, { redirectTo, data: { first_name: v.first_name, last_name: v.last_name } })
