@@ -28,7 +28,7 @@ export const ROUTE_MODULES: Record<string, WorkspaceModule | "home" | "portal" |
   "/sites": "security", "/guard-tour": "security", "/incidents": "security", "/command-center": "security",
   "/violations": "security", "/roster": "security", "/late-clockin-report": "security",
   "/compliance": "security", "/guard-performance": "security", "/applicants": "recruitment",
-  "/training": "training", "/quickbooks": "quickbooks", "/payroll-settings": "quickbooks", "/settings": "settings",
+  "/training": "training", "/quickbooks": "quickbooks", "/erpnext": "quickbooks", "/payroll-settings": "quickbooks", "/settings": "settings",
 };
 const EMPLOYEE_ROUTES = new Set(["/", "/portal", "/payslips", "/attendance", "/projects", "/equipment", "/daily-reports", "/crews", "/guard-tour", "/incidents", "/training"]);
 export function canOpenPath(role: WorkspaceRole | null, modules: readonly string[], path: string, companyModules: readonly string[] = WORKSPACE_MODULES.map(m => m.id), clockEnabled = false): boolean {
