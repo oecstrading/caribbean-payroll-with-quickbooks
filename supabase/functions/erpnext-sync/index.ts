@@ -94,15 +94,17 @@ Deno.serve(async (req) => {
 
     // preview / sync
     if (!pay.data) return reply({ error: "Payroll access required" }, 403);
-    const [{ data: run }, { data: slips }, { data: maps }] = await Promise.all([
+    const [{ data: run }, { data: slipsA }, { data: slipsB }, { data: maps }] = await Promise.all([
       admin.from("payroll_runs").select("*").eq("org_id", orgId).eq("id", body.payroll_run_id).maybeSingle(),
       admin.from("payslips").select("*").eq("org_id", orgId).eq("payroll_run_id", body.payroll_run_id),
+      admin.from("employee_payslips").select("*").eq("org_id", orgId).eq("payroll_run_id", body.payroll_run_id),
       admin.from("erpnext_account_mappings").select("payroll_item,erp_account").eq("org_id", orgId),
     ]);
     if (!run) return reply({ error: "Payroll run not found" }, 404);
+    const slips = [...(slipsA ?? []), ...(slipsB ?? [])];
     const m = Object.fromEntries((maps ?? []).map((r) => [r.payroll_item, r.erp_account]));
     const t = (slips ?? []).reduce((a: any, s: any) => ({
-      gross: a.gross + Number(s.basic_pay || 0) + Number(s.allowances || 0),
+      gross: a.gross + Number(s.gross_pay || 0) - Number(s.overtime_pay || 0),
       ot: a.ot + Number(s.overtime_pay || 0),
       empNic: a.empNic + Number(s.employee_nic || 0), erNic: a.erNic + Number(s.employer_nic || 0),
       paye: a.paye + Number(s.paye || 0), net: a.net + Number(s.net_pay || 0),
@@ -115,7 +117,7 @@ Deno.serve(async (req) => {
     const debit = r2(lines.reduce((s, l) => s + l.debit, 0)), creditSoFar = r2(lines.reduce((s, l) => s + l.credit, 0));
     add("net_pay_clearing", debit - creditSoFar, "c"); // balances the entry to the cent
     const missing = [...new Set(lines.filter((l) => !l.account).map((l) => l.item))];
-    const result = { lines, total: debit, missing, period: run.period, posting_date: run.run_date ?? run.end_date ?? new Date().toISOString().slice(0, 10) };
+    const result = { lines, total: debit, missing, period: run.period, posting_date: run.period_end ?? run.run_date ?? new Date().toISOString().slice(0, 10) };
     if (body.action === "preview") return reply(result);
 
     if (!conn || conn.status !== "connected") return reply({ error: "Test the ERPNext connection before posting" }, 409);
