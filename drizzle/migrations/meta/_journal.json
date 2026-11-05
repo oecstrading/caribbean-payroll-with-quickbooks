@@ -456,6 +456,13 @@
       "when": 1793840016894,
       "tag": "0064_clock_pin_checks_before_enabled",
       "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1793840560596,
+      "tag": "0065_clock_out_ends_open_lunch",
+      "breakpoints": true
     }
   ]
 }
