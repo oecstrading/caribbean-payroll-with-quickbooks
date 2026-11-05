@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { switchCompany } from "@/lib/multi-company";
+import PayrollDataReset from "@/components/PayrollDataReset";
 
 type Overview = { id: string; name: string; active_employees: number; last_period: string | null; last_net: number | null; open_alerts: number; pending_runs: number };
 type Admin = { user_id: string; name: string; email: string | null; home_company: string | null; org_ids: string[] };
@@ -18,11 +19,13 @@ export default function MyCompaniesPage() {
   const [draft, setDraft] = useState<Record<string, string[]>>({});
   const [saving, setSaving] = useState("");
   const [current, setCurrent] = useState("");
+  const [superAdmin, setSuperAdmin] = useState(false);
 
   async function load() {
     const [o, p, c] = await Promise.all([supabase.rpc("companies_overview"), supabase.rpc("is_platform_admin"), supabase.rpc("current_org_id")]);
     if (o.error) { setError(o.error.message); setRows([]); return; }
     setRows((o.data ?? []) as Overview[]); setCurrent(c.data ?? "");
+    if (c.data) { const s = await supabase.rpc("can_erase_payroll", { _org: c.data }); setSuperAdmin(!!s.data); }
     const isPlatform = !p.error && !!p.data; setPlatform(isPlatform);
     if (isPlatform) {
       const a = await supabase.rpc("multi_company_admins");
@@ -67,6 +70,8 @@ export default function MyCompaniesPage() {
         </Button>
       </article>)}
     </section>
+
+    {(platform || superAdmin) && <PayrollDataReset companies={rows.map(r => ({ id: r.id, name: r.name }))} />}
 
     {platform && <section className="space-y-4">
       <div className="flex items-center gap-2"><ShieldCheck className="text-coral" /><h2 className="font-display text-lg font-semibold">Who can see which companies</h2></div>
