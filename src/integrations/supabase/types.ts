@@ -2533,6 +2533,35 @@ export type Database = {
           },
         ]
       }
+      payroll_go_live: {
+        Row: {
+          org_id: string
+          set_at: string
+          set_by: string | null
+          start_date: string
+        }
+        Insert: {
+          org_id: string
+          set_at?: string
+          set_by?: string | null
+          start_date: string
+        }
+        Update: {
+          org_id?: string
+          set_at?: string
+          set_by?: string | null
+          start_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_go_live_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payroll_runs: {
         Row: {
           created_at: string
@@ -4050,6 +4079,7 @@ export type Database = {
         Args: { _employee: string; _shared: boolean }
         Returns: boolean
       }
+      can_erase_payroll: { Args: { _org: string }; Returns: boolean }
       can_view_company: { Args: { _org: string }; Returns: boolean }
       claim_user_pin_attempt: { Args: { _user: string }; Returns: boolean }
       client_portal_data: { Args: { _code: string }; Returns: Json }
@@ -4128,6 +4158,15 @@ export type Database = {
         Returns: Json
       }
       employee_org_id: { Args: { _employee: string }; Returns: string }
+      erase_payroll_data: {
+        Args: {
+          _confirmation: string
+          _end: string
+          _orgs: string[]
+          _start: string
+        }
+        Returns: Json
+      }
       finish_employee_removal: {
         Args: { _actor: string; _job: string }
         Returns: undefined
@@ -4316,6 +4355,10 @@ export type Database = {
       set_employee_loan_active: {
         Args: { _active: boolean; _loan: string }
         Returns: undefined
+      }
+      set_payroll_go_live: {
+        Args: { _confirmation: string; _orgs: string[]; _start: string }
+        Returns: Json
       }
       set_user_workspace_access: {
         Args: {
