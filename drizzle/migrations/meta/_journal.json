@@ -449,6 +449,13 @@
       "when": 1793828108426,
       "tag": "0063_retire_erpnext",
       "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1793840016894,
+      "tag": "0064_clock_pin_checks_before_enabled",
+      "breakpoints": true
     }
   ]
 }
