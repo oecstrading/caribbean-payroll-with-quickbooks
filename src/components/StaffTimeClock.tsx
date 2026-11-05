@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import AddToHomeScreen from "@/components/AddToHomeScreen";
 import ClockReminders from "@/components/ClockReminders";
 import type { ClockSchedule } from "@/lib/clock-reminders";
 import { Clock, LayoutDashboard, LogIn, LogOut, Mic, ShieldCheck, Utensils } from "lucide-react";
@@ -51,6 +52,7 @@ export default function StaffTimeClock({ companyId }: { companyId?: string }) {
  return <section aria-label="Mobile Time Clock" className="max-w-xl mx-auto w-full border-2 border-destructive rounded-lg bg-card p-6 sm:p-8 space-y-5 text-center shadow-card">
   <h2 className="font-display text-xl font-bold flex justify-center items-center gap-2"><Clock className="text-destructive"/>Mobile Time Clock</h2>
   <time className="block font-display font-bold text-4xl sm:text-5xl tabular-nums min-h-14">{now.toLocaleTimeString("en-US")}</time><p className="text-sm text-muted-foreground">{now.toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"})}</p>
+  <AddToHomeScreen/>
   {resolvedCompany&&user&&<div className="flex gap-2 justify-center"><Button variant={!pinMode?"secondary":"ghost"} onClick={()=>{setPinMode(false);setKnown(false);setHistory([]);}}>My account</Button><Button variant={pinMode?"secondary":"ghost"} onClick={()=>{setPinMode(true);setKnown(false);setHistory([]);}}>Employee PIN</Button></div>}
   {known&&summary&&<div role="tablist" className="grid grid-cols-2 gap-2"><Button role="tab" aria-selected={tab==="clock"} variant={tab==="clock"?"default":"outline"} onClick={()=>setTab("clock")}><Clock size={16}/>Clock</Button><Button role="tab" aria-selected={tab==="me"} variant={tab==="me"?"default":"outline"} onClick={()=>setTab("me")}><LayoutDashboard size={16}/>My dashboard</Button></div>}
   {known&&summary&&tab==="me"?<StaffDashboard summary={summary}/>:<>
