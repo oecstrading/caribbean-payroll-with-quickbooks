@@ -30,7 +30,7 @@ Deno.serve(async req => {
   if(!active.data) return reply({error:"Active employee required"},403);
   const [schedule,company]=await Promise.all([admin.from("workforce_schedules").select("enabled,allowed_methods").eq("org_id",org).eq("employee_id",employee).maybeSingle(),admin.from("organizations").select("enabled_modules").eq("id",org).single()]);
   if(schedule.error||company.error) return reply({error:"Unable to check clock configuration"},503);
-  if(!company.data?.enabled_modules.includes("attendance")||!schedule.data?.enabled) return reply({error:"Your administrator must enable your staff time clock"},403);
+  if(!company.data?.enabled_modules.includes("attendance")||!schedule.data?.enabled) return reply({error:"Your code and PIN are correct, but your time clock is switched off. Ask your administrator to turn on \"Employee clock enabled\" in your employee folder."},403);
   const methods=schedule.data.allowed_methods;
   const identityMethod=body.pin?"pin":"account";
   if(!methods.includes(identityMethod)||body.mode==="voice"&&!methods.includes("voice")) return reply({error:"This clock method is not enabled by your administrator"},403);
