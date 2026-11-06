@@ -3859,6 +3859,7 @@ export type Database = {
           punched_at: string
           received_at: string
           shift_id: string
+          site_id: string | null
         }
         Insert: {
           captured_offline?: boolean
@@ -3875,6 +3876,7 @@ export type Database = {
           punched_at?: string
           received_at?: string
           shift_id: string
+          site_id?: string | null
         }
         Update: {
           captured_offline?: boolean
@@ -3891,6 +3893,7 @@ export type Database = {
           punched_at?: string
           received_at?: string
           shift_id?: string
+          site_id?: string | null
         }
         Relationships: [
           {
@@ -3914,6 +3917,13 @@ export type Database = {
             referencedRelation: "workforce_shifts"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "workforce_punches_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "client_sites"
+            referencedColumns: ["id"]
+          },
         ]
       }
       workforce_schedules: {
@@ -3925,6 +3935,7 @@ export type Database = {
           enabled: boolean
           id: string
           org_id: string
+          roaming: boolean
           shift_end: string
           shift_start: string
           site_id: string | null
@@ -3937,6 +3948,7 @@ export type Database = {
           enabled?: boolean
           id?: string
           org_id: string
+          roaming?: boolean
           shift_end: string
           shift_start: string
           site_id?: string | null
@@ -3949,6 +3961,7 @@ export type Database = {
           enabled?: boolean
           id?: string
           org_id?: string
+          roaming?: boolean
           shift_end?: string
           shift_start?: string
           site_id?: string | null
@@ -4460,6 +4473,10 @@ export type Database = {
       }
       set_company_admin_access: {
         Args: { _orgs: string[]; _user: string }
+        Returns: undefined
+      }
+      set_employee_clock_roaming: {
+        Args: { _employee: string; _roaming: boolean }
         Returns: undefined
       }
       set_employee_loan_active: {

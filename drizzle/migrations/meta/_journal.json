@@ -491,6 +491,13 @@
       "when": 1793965719107,
       "tag": "0069_clock_devices",
       "breakpoints": true
+    },
+    {
+      "idx": 70,
+      "version": "7",
+      "when": 1793966737100,
+      "tag": "0070_roaming_job_site_clock",
+      "breakpoints": true
     }
   ]
 }
