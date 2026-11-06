@@ -53,7 +53,7 @@ def accounting(c, ed):
         x = 40 + i * (cw + 20)
         c.setFillColor(col); c.roundRect(x, 140, cw, ch, 14, stroke=0, fill=1)
         c.setFillColor(colors.white); c.setFont('BB', 13); c.drawString(x + 14, top - 28, h)
-        bullets(c, items, x + 14, top - 54, cw - 28, color=colors.white, dot=SUN, size=10)
+        bullets(c, items, x + 14, top - 60, cw - 28, color=colors.white, dot=SUN, size=11.5)
     c.setFillColor(INK); c.roundRect(40, 40, W - 80, 85, 12, stroke=0, fill=1)
     c.setFillColor(SUN); c.setFont('BB', 12); c.drawString(56, 102, 'Approve once — the books follow')
     wrap(c, 'After a manager approves payroll, payslips are emailed and the journal goes to QuickBooks when connected. Without QuickBooks, reports and exports are ready for your accountant the same day.', 56, 84, W - 112, size=10, color=colors.white)
@@ -78,7 +78,7 @@ def security(c, ed):
 
 def geo(c, ed):
     c.setFillColor(SEA); c.rect(0, 0, W, H, stroke=0, fill=1)
-    c.setFillColor(TEAL); c.setFont('BB', 24); c.drawString(40, H - 60, 'Geofencing + geolocation: proof of presence')
+    c.setFillColor(TEAL); c.setFont('BB', 24); c.drawString(40, H - 60, 'Geofencing & geolocation')
     wrap(c, 'Every clock-in and clock-out records where it happened. Punches outside an active site boundary are refused.', 40, H - 84, W - 80, size=11)
     cx, cy = W / 2, H - 290
     for r, a in [(150, .12), (110, .2), (70, .35)]:
@@ -90,15 +90,15 @@ def geo(c, ed):
         c.setFillColor(colors.white); c.setFont('BB', 11); c.drawCentredString(cx + dx, cy + dy - 4, '✓' if ok else '✗')
     c.setFillColor(CORAL); c.setFont('BB', 10); c.drawCentredString(cx + 175, cy + 80, 'Refused')
     c.setFillColor(LEAF); c.drawCentredString(cx - 40, cy - 2, '')
-    cw = (W - 100) / 3; y0 = 110; ch = H - 470 - y0
+    cw = (W - 100) / 3; y0 = 110; ch = 150
     cards = [('Stops buddy punching', 'Location, PIN and optional selfie must match the worker.', CORAL),
              ('Checked by the server', 'Distances are verified on our side, not trusted from the phone.', TEAL),
              ('Map link on every punch', 'Managers open the exact spot from the attendance list.', SUN)]
     for i, (h, d, col) in enumerate(cards):
         x = 40 + i * (cw + 10)
         c.setFillColor(col); c.roundRect(x, y0, cw, ch, 12, stroke=0, fill=1)
-        c.setFillColor(colors.white); c.setFont('BB', 12); c.drawString(x + 12, y0 + ch - 26, h)
-        wrap(c, d, x + 12, y0 + ch - 48, cw - 24, size=10, color=colors.white)
+        yy = wrap(c, h, x + 12, y0 + ch - 26, cw - 24, font='BB', size=12, lead=15, color=colors.white)
+        wrap(c, d, x + 12, yy - 8, cw - 24, size=10.5, lead=15, color=colors.white)
     wrap(c, 'Fixed-post guards stay tied to their site; roaming crews can punch at any active site. Offline and voice punches always go to a manager.', 40, 70, W - 80, size=10, lead=14, color=INK)
     foot(c, ed, 3)
 
@@ -112,7 +112,14 @@ def projects(c, ed):
              'Labour hours from the clock flow straight into project cost',
              'Project profitability: budget vs actual labour and contractor cost',
              'Approved payroll and project costs line up for your accountant']
-    bullets(c, items, 40, y, W - 80, size=11.5)
+    y = bullets(c, items, 40, y, W - 80, size=11.5) - 20
+    flow = [('Clock in on site', TEAL), ('Hours to project', CORAL), ('Cost vs budget', SUN), ('Approve & post', LEAF)]
+    bw = (W - 80 - 30) / 4
+    for i, (t, col) in enumerate(flow):
+        x = 40 + i * (bw + 10)
+        c.setFillColor(col); c.roundRect(x, y - 70, bw, 70, 12, stroke=0, fill=1)
+        c.setFillColor(colors.white); c.setFont('BB', 22); c.drawCentredString(x + bw / 2, y - 32, str(i + 1))
+        c.setFont('BB', 10); c.drawCentredString(x + bw / 2, y - 54, t)
     c.setFillColor(INK); c.roundRect(40, 40, W - 80, 80, 12, stroke=0, fill=1)
     c.setFillColor(SUN); c.setFont('BB', 12); c.drawString(56, 98, 'Ideal for construction, landscaping and field services')
     wrap(c, 'Clock in on site, see the cost on the project, approve payroll and post the books — one platform.', 56, 78, W - 112, size=10, color=colors.white)
