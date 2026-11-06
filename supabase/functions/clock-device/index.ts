@@ -94,7 +94,8 @@ Deno.serve(async (req) => {
       if (up.error) photoPath = null;
     }
     const punch = await db.from("workforce_punches").update({ device_id: device.id, photo_path: photoPath }).eq("client_punch_id", clientId).select("shift_id").maybeSingle();
-    if (voice && punch.data?.shift_id) {
+    const hasVoice = punch.data?.shift_id ? voice || !!(await db.from("workforce_punches").select("id").eq("shift_id", punch.data.shift_id).eq("mode", "voice").limit(1).maybeSingle()).data : false;
+    if (hasVoice && punch.data?.shift_id) {
       await db.from("workforce_shifts").update({ approved_hours: null, review_status: "pending", review_notes: "Voice punch on company tablet: check the selfie before approving." }).eq("id", punch.data.shift_id).is("reviewed_at", null);
     }
     return reply({ ...(r.data as Record<string, unknown>), name: person.name, voice });
