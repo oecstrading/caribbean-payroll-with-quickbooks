@@ -18,6 +18,8 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
+      injectRegister: null,
+      devOptions: { enabled: false },
       includeAssets: ["favicon.ico", "pwa-icon-192.png", "pwa-icon-512.png"],
       workbox: {
         // Never answer file downloads (PDFs, docs, CSVs…) or training/marketing files with the app shell
@@ -30,7 +32,7 @@ export default defineConfig(({ mode }) => ({
         navigateFallback: null,
         runtimeCaching: [
           {
-            urlPattern: ({ request }) => request.mode === "navigate",
+            urlPattern: ({ request, url }) => request.mode === "navigate" && !url.pathname.startsWith("/~oauth"),
             handler: "NetworkFirst",
             options: { cacheName: "app-pages", networkTimeoutSeconds: 4 },
           },
@@ -44,7 +46,8 @@ export default defineConfig(({ mode }) => ({
         theme_color: "#1c1917",
         background_color: "#1c1917",
         display: "standalone",
-        orientation: "portrait",
+        orientation: "any",
+        id: "/",
         scope: "/",
         start_url: "/",
         icons: [

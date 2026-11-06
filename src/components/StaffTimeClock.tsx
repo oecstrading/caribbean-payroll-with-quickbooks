@@ -26,6 +26,7 @@ export default function StaffTimeClock({ companyId }: { companyId?: string }) {
  const [schedule,setSchedule]=useState<ClockSchedule|null>(null);
  const [history,setHistory]=useState<{shift_date:string;clock_in:string|null;clock_out:string|null;lunch_out?:string|null;lunch_in?:string|null;approved_hours:number|null;review_status:string}[]>([]);
  useEffect(()=>{if(companyId){setResolvedCompany(companyId);return;}if(user)void supabase.rpc("current_org_id").then(({data})=>setResolvedCompany(data??""));},[companyId,user?.id]);
+ useEffect(()=>{if(companyId)try{localStorage.setItem("last-clock-page",window.location.pathname);}catch{/* private mode */}},[companyId]);
  useEffect(()=>{if(!companyId)return;const fromLink=new URLSearchParams(window.location.search).get("code")?.trim();const c=fromLink||rememberedClockCode(companyId);if(c)setCode(c);if(fromLink)rememberClockCode(companyId,fromLink);},[companyId]);
  useEffect(()=>{const t=setInterval(()=>setNow(new Date()),1000);return()=>clearInterval(t);},[]);
  const [online,setOnline]=useState(navigator.onLine); const [queue,setQueue]=useState<QueuedPunch[]>(queuedPunches());
