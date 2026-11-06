@@ -114,6 +114,8 @@ export default function TrainingHubPage() {
     try {
       let seededCount = 0;
       for (const doc of SEED_DOCS) {
+        // Web links are shared as-is; only files are copied into company storage.
+        if (doc.kind === "link") continue;
         // Check if already seeded
         const { data: existing } = await supabase
           .from("training_documents")

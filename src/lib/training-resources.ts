@@ -1,4 +1,17 @@
-export const TRAINING_RESOURCES = [
+export type TrainingResource = {
+  id: string;
+  title: string;
+  description: string;
+  category: "manual" | "marketing" | "template" | "training" | "policy" | "sop" | "general";
+  badge: string;
+  /** Absolute page URL when kind is "link"; app-relative file path when kind is "file". */
+  url: string;
+  /** "file" (default) downloads the document; "link" opens the page in a new tab. */
+  kind?: "file" | "link";
+};
+
+export const TRAINING_RESOURCES: TrainingResource[] = [
+  { id: "builtin-discover", title: "Share Link — Send the Platform to Customers", description: "One tap opens our promo page: the brochure, the user guide, a ready WhatsApp message, an email draft, a copyable link and a QR code. Send it to prospective customers and they see everything in seconds.", category: "marketing", badge: "Live link", url: "https://caribbean-payroll-with-quickbooks.lovable.app/discover", kind: "link" },
   { id: "builtin-guide-v11", title: "Visual User Guide — QuickBooks, Security & Crews", description: "38 illustrated pages. Opens with our key selling points: QuickBooks Online integration or built-in payroll bookkeeping for hand-off to your auditor or accountant; security company tools (guard tours, rosters, compliance, client billing); geofencing and geolocation on every punch; projects and crew management. Then Workforce on the Move and the full payroll workflow.", category: "manual", badge: "Latest v11", url: "/training/OECS_User_Manual_v11.pdf" },
   { id: "builtin-guide-v10", title: "Visual User Guide — Workforce on the Move", description: "34 illustrated pages, opening with the new Workforce on the Move chapter: roaming staff who clock in at any job site, several site moves in one day, optional paid travel time, and personal phones or shared company tablets syncing into one timesheet. Then: app invitations, installation, punches and clock reminders, corrections, draft pay, three company setup paths, spreadsheet import, AI review, human approval and the new Payroll Register, Statutory Remittance and Attendance Audit reports.", category: "manual", badge: "v10", url: "/training/OECS_User_Manual_v10.pdf" },
   { id: "builtin-setup-v2", title: "Company Setup Guide — Spreadsheet to First Payroll", description: "13 illustrated pages: three ways to set up a company (scratch, template, payroll sheet), placeholders, abort, industry packs, the onboarding workbook and the first reviewed payroll.", category: "manual", badge: "Latest v2", url: "/training/OECS_Company_Setup_Guide_v2.pdf" },
