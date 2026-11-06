@@ -15,6 +15,30 @@ export const WORKSPACE_MODULES = [
 ] as const;
 export type WorkspaceModule = typeof WORKSPACE_MODULES[number]["id"];
 export const EMPLOYEE_MODULES: WorkspaceModule[] = ["attendance", "field", "security", "training"];
+/** Job roles the Super Admin assigns. Pay Master and Manager share the manager tier; modules decide their tabs. */
+export type AccessTitle = "admin" | "paymaster" | "manager" | "employee";
+export const ACCESS_TITLES: { id: AccessTitle; label: string; hint: string }[] = [
+  { id: "employee", label: "Employee", hint: "Time clock and own dashboard, signing in with their PIN from any device." },
+  { id: "paymaster", label: "Pay Master", hint: "Payroll management pages. Untick any you don't want them to have." },
+  { id: "manager", label: "Manager", hint: "Only the pages you tick below." },
+  { id: "admin", label: "Administrator", hint: "Every enabled company page plus user management." },
+];
+export const PAYMASTER_MODULES: WorkspaceModule[] = ["hr", "payroll", "reports", "attendance", "leave", "quickbooks", "training"];
+export const PAYMASTER_DEFAULTS: WorkspaceModule[] = ["payroll", "reports", "quickbooks", "training"];
+export const EMPLOYEE_DEFAULTS: WorkspaceModule[] = ["attendance", "training"];
+/** Pages that may be ticked for a job role. */
+export function titleAllowedModules(title: AccessTitle): WorkspaceModule[] {
+  if (title === "employee") return EMPLOYEE_MODULES;
+  if (title === "paymaster") return PAYMASTER_MODULES;
+  return WORKSPACE_MODULES.map(m => m.id);
+}
+/** Pages ticked by default when a job role is chosen. Managers start with nothing until the Super Admin assigns tabs. */
+export function titleDefaultModules(title: AccessTitle): WorkspaceModule[] {
+  if (title === "employee") return EMPLOYEE_DEFAULTS;
+  if (title === "paymaster") return PAYMASTER_DEFAULTS;
+  if (title === "manager") return [];
+  return WORKSPACE_MODULES.map(m => m.id);
+}
 export function roleModules(role: WorkspaceRole | null): WorkspaceModule[] {
   if (!role) return [];
   return role === "employee" ? EMPLOYEE_MODULES : WORKSPACE_MODULES.map(m => m.id);
