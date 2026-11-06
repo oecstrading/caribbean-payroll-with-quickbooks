@@ -3753,6 +3753,7 @@ export type Database = {
           overtime_basis: string
           overtime_multiplier: number
           overtime_threshold: number
+          paid_site_travel: boolean
           selfie_policy: string
           timezone: string
         }
@@ -3766,6 +3767,7 @@ export type Database = {
           overtime_basis?: string
           overtime_multiplier?: number
           overtime_threshold?: number
+          paid_site_travel?: boolean
           selfie_policy?: string
           timezone?: string
         }
@@ -3779,6 +3781,7 @@ export type Database = {
           overtime_basis?: string
           overtime_multiplier?: number
           overtime_threshold?: number
+          paid_site_travel?: boolean
           selfie_policy?: string
           timezone?: string
         }
@@ -4486,6 +4489,7 @@ export type Database = {
         Args: { _active: boolean; _loan: string }
         Returns: undefined
       }
+      set_paid_site_travel: { Args: { _paid: boolean }; Returns: undefined }
       set_payroll_go_live: {
         Args: { _confirmation: string; _orgs: string[]; _start: string }
         Returns: Json
