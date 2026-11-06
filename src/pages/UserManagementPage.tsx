@@ -28,6 +28,7 @@ interface UserWithRole {
   phone: string;
   monthly_salary: number;
   role: AppRole;
+  title: "employee" | "paymaster" | "manager" | null;
   companySuper: boolean;
   platformSuper: boolean;
   login_username: string | null;
