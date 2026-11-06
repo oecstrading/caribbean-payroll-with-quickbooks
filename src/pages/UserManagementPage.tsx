@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useRole } from "@/hooks/useRole";
+import InstallKit from "@/components/InstallKit";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 import WorkspaceAccessDialog from "@/components/WorkspaceAccessDialog";
@@ -177,13 +178,14 @@ export default function UserManagementPage() {
           <h1 className="text-xl md:text-2xl font-display font-bold text-foreground">User Management</h1>
           <p className="text-sm text-muted-foreground mt-1">{users.length} accounts • Platform access & employee links</p>
         </div>
+        <div className="flex flex-wrap gap-2"><InstallKit />
         <Button
           onClick={() => setShowInvite(true)}
           className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
         >
           <UserPlus size={16} />
           Add user
-        </Button>
+        </Button></div>
       </div>
 
       {/* Role Stats */}
