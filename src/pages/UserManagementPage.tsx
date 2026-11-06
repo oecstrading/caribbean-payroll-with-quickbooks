@@ -285,6 +285,8 @@ export default function UserManagementPage() {
                         <Button variant="ghost" size="sm" onClick={() => setAccessUser(u)}><Shield size={14} />Roles & access</Button>
                         {u.user_id !== currentUser?.id && (!u.companySuper || isCompanySuperAdmin) && (!u.platformSuper || isPlatformAdmin) && (u.role !== "admin" || isCompanySuperAdmin) && <Button variant="ghost" size="icon" title={`Delete ${u.email}`} aria-label={`Delete ${u.email}`} onClick={() => { setDeleteUser(u); setDeleteConfirmation(""); }}><Trash2 className="text-destructive" size={16} /></Button>}
                         <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => {
                             setEditUser(u);
                           }}
@@ -293,6 +295,9 @@ export default function UserManagementPage() {
                           Edit
                         </Button>
                         <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={u.status === "Active" ? "Deactivate" : "Activate"}
                           onClick={() => handleDeactivate(u.user_id, u.status)}
                           className="p-1.5 rounded-md hover:bg-secondary transition-colors"
                           title={u.status === "Active" ? "Deactivate" : "Activate"}
@@ -304,6 +309,9 @@ export default function UserManagementPage() {
                           )}
                         </Button>
                         <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Set PIN"
                           onClick={() => { setPinUser(u); setPinValue(""); }}
                           className="p-1.5 rounded-md hover:bg-secondary transition-colors text-xs text-primary font-medium"
                           title="Set PIN"
