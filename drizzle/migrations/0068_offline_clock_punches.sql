@@ -1,0 +1,35 @@
+ALTER TABLE public.workforce_punches ADD COLUMN IF NOT EXISTS captured_offline boolean NOT NULL DEFAULT false;
+ALTER TABLE public.workforce_punches ADD COLUMN IF NOT EXISTS received_at timestamptz NOT NULL DEFAULT now();
+ALTER TABLE public.workforce_punches ADD COLUMN IF NOT EXISTS client_punch_id uuid;
+CREATE UNIQUE INDEX IF NOT EXISTS workforce_punches_client_punch_id_key ON public.workforce_punches(client_punch_id) WHERE client_punch_id IS NOT NULL;
+
+CREATE OR REPLACE FUNCTION public.record_workforce_punch_at(_employee uuid, _org uuid, _direction text, _mode text, _lat double precision, _lon double precision, _at timestamptz, _client uuid)
+ RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public'
+AS $function$ DECLARE sh public.workforce_shifts; sc public.workforce_schedules; tz text; day date; start_at timestamptz; end_at timestamptz; geo json; hours numeric; brk numeric; nxt text; ts timestamptz; offline boolean; prior public.workforce_punches; BEGIN
+IF auth.role() IS DISTINCT FROM 'service_role' OR _direction NOT IN ('clock_in','clock_out','lunch_out','lunch_in') OR _mode NOT IN ('device','pin','voice') THEN RAISE EXCEPTION 'Trusted clock request required'; END IF;
+offline := _at IS NOT NULL; ts := coalesce(_at, now());
+IF offline AND (ts > now() + interval '5 minutes' OR ts < now() - interval '7 days') THEN RAISE EXCEPTION 'Offline punch time is outside the allowed window; ask your manager to add it'; END IF;
+IF _client IS NOT NULL THEN SELECT * INTO prior FROM public.workforce_punches WHERE client_punch_id=_client; IF prior.id IS NOT NULL THEN RETURN jsonb_build_object('direction',prior.direction,'punched_at',prior.punched_at,'duplicate',true); END IF; END IF;
+IF NOT EXISTS(SELECT 1 FROM public.payroll_employee_directory WHERE user_id=_employee AND org_id=_org AND deleted_at IS NULL AND lower(status)='active') THEN RAISE EXCEPTION 'Active employee company required'; END IF;
+PERFORM pg_advisory_xact_lock(hashtext('workforce-'||_employee::text));
+SELECT coalesce((SELECT timezone FROM public.workforce_clock_settings WHERE org_id=_org),'America/St_Lucia') INTO tz; day:=(ts AT TIME ZONE tz)::date;
+SELECT * INTO sc FROM public.workforce_schedules WHERE org_id=_org AND employee_id=_employee AND enabled;
+IF sc.site_id IS NOT NULL AND _direction IN ('clock_in','clock_out') THEN IF _lat IS NULL OR _lon IS NULL OR _lat NOT BETWEEN -90 AND 90 OR _lon NOT BETWEEN -180 AND 180 THEN RAISE EXCEPTION 'Location permission required for this work site'; END IF; geo:=public.verify_guard_location(sc.site_id,_lat,_lon); IF NOT coalesce((geo->>'within_geofence')::boolean,false) THEN RAISE EXCEPTION 'You must be inside your assigned work site'; END IF; END IF;
+IF EXISTS(SELECT 1 FROM public.guard_assignments WHERE user_id=_employee AND org_id=_org AND is_active) AND sc.site_id IS NULL THEN RAISE EXCEPTION 'Manager must assign a clock work site for this guard'; END IF;
+SELECT * INTO sh FROM public.workforce_shifts WHERE org_id=_org AND employee_id=_employee AND clock_in IS NOT NULL AND clock_out IS NULL ORDER BY clock_in DESC LIMIT 1 FOR UPDATE;
+IF _direction='clock_in' AND sh.id IS NOT NULL THEN RAISE EXCEPTION 'Already clocked in; clock out first'; END IF;
+IF _direction<>'clock_in' AND sh.id IS NULL THEN RAISE EXCEPTION 'No open shift; ask your manager to review the missing clock-in'; END IF;
+IF _direction<>'clock_in' AND ts < sh.clock_in THEN RAISE EXCEPTION 'Punch time is before the clock-in; ask your manager'; END IF;
+IF _direction='lunch_out' AND sh.lunch_out IS NOT NULL THEN RAISE EXCEPTION 'Lunch already recorded for this shift'; END IF;
+IF _direction='lunch_in' AND (sh.lunch_out IS NULL OR sh.lunch_in IS NOT NULL) THEN RAISE EXCEPTION 'You are not out for lunch'; END IF;
+IF _direction='clock_out' AND sh.lunch_out IS NOT NULL AND sh.lunch_in IS NULL THEN UPDATE public.workforce_shifts SET lunch_in=ts WHERE id=sh.id RETURNING * INTO sh; END IF;
+IF _direction='clock_in' THEN IF sc.id IS NOT NULL THEN IF sc.shift_end<sc.shift_start AND (ts AT TIME ZONE tz)::time<sc.shift_end THEN day:=day-1; END IF; start_at:=(day+sc.shift_start) AT TIME ZONE tz; end_at:=((day+CASE WHEN sc.shift_end<sc.shift_start THEN 1 ELSE 0 END)+sc.shift_end) AT TIME ZONE tz; END IF; INSERT INTO public.workforce_shifts(org_id,employee_id,shift_date,scheduled_start,scheduled_end,clock_in,break_minutes) VALUES(_org,_employee,day,start_at,end_at,ts,coalesce(sc.break_minutes,0)) ON CONFLICT(org_id,employee_id,shift_date) DO UPDATE SET clock_in=ts WHERE workforce_shifts.clock_in IS NULL AND workforce_shifts.reviewed_at IS NULL RETURNING * INTO sh; IF sh.id IS NULL THEN RAISE EXCEPTION 'A shift already exists for today; ask your manager'; END IF; nxt:='clock_out';
+ELSIF _direction='lunch_out' THEN UPDATE public.workforce_shifts SET lunch_out=ts WHERE id=sh.id; nxt:='lunch_in';
+ELSIF _direction='lunch_in' THEN UPDATE public.workforce_shifts SET lunch_in=ts WHERE id=sh.id; nxt:='clock_out';
+ELSE brk:=CASE WHEN sh.lunch_out IS NOT NULL AND sh.lunch_in IS NOT NULL THEN extract(epoch FROM(sh.lunch_in-sh.lunch_out))/3600 ELSE sh.break_minutes/60.0 END; hours:=greatest(0,extract(epoch FROM(ts-sh.clock_in))/3600-brk); UPDATE public.workforce_shifts SET clock_out=ts,approved_hours=CASE WHEN hours<=24 AND NOT EXISTS(SELECT 1 FROM public.workforce_alerts WHERE shift_id=sh.id AND resolved_at IS NULL) THEN round(hours,4) ELSE NULL END,review_status=CASE WHEN hours<=24 AND NOT EXISTS(SELECT 1 FROM public.workforce_alerts WHERE shift_id=sh.id AND resolved_at IS NULL) THEN 'complete' ELSE 'pending' END WHERE id=sh.id; nxt:='clock_in'; END IF;
+INSERT INTO public.workforce_punches(org_id,employee_id,shift_id,direction,mode,latitude,longitude,punched_at,captured_offline,client_punch_id) VALUES(_org,_employee,sh.id,_direction,_mode,_lat,_lon,ts,offline,_client);
+-- Phone time cannot be trusted: any shift with an offline punch waits for a manager before it counts for pay.
+IF EXISTS(SELECT 1 FROM public.workforce_punches WHERE shift_id=sh.id AND captured_offline) THEN UPDATE public.workforce_shifts SET approved_hours=NULL, review_status='pending', review_notes=CASE WHEN coalesce(review_notes,'') LIKE '%Offline punch%' THEN review_notes ELSE trim(coalesce(review_notes,'')||' Offline punch: verify phone time before approving.') END WHERE id=sh.id AND reviewed_at IS NULL; END IF;
+RETURN jsonb_build_object('direction',_direction,'punched_at',ts,'next',nxt,'offline',offline); END $function$;
+REVOKE ALL ON FUNCTION public.record_workforce_punch_at(uuid,uuid,text,text,double precision,double precision,timestamptz,uuid) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.record_workforce_punch_at(uuid,uuid,text,text,double precision,double precision,timestamptz,uuid) TO service_role;

@@ -3779,6 +3779,8 @@ export type Database = {
       }
       workforce_punches: {
         Row: {
+          captured_offline: boolean
+          client_punch_id: string | null
           direction: string
           employee_id: string
           id: string
@@ -3787,9 +3789,12 @@ export type Database = {
           mode: string
           org_id: string
           punched_at: string
+          received_at: string
           shift_id: string
         }
         Insert: {
+          captured_offline?: boolean
+          client_punch_id?: string | null
           direction: string
           employee_id: string
           id?: string
@@ -3798,9 +3803,12 @@ export type Database = {
           mode: string
           org_id: string
           punched_at?: string
+          received_at?: string
           shift_id: string
         }
         Update: {
+          captured_offline?: boolean
+          client_punch_id?: string | null
           direction?: string
           employee_id?: string
           id?: string
@@ -3809,6 +3817,7 @@ export type Database = {
           mode?: string
           org_id?: string
           punched_at?: string
+          received_at?: string
           shift_id?: string
         }
         Relationships: [
@@ -4284,6 +4293,19 @@ export type Database = {
           _employee: string
           _lat?: number
           _lon?: number
+          _mode: string
+          _org: string
+        }
+        Returns: Json
+      }
+      record_workforce_punch_at: {
+        Args: {
+          _at: string
+          _client: string
+          _direction: string
+          _employee: string
+          _lat: number
+          _lon: number
           _mode: string
           _org: string
         }

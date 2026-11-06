@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { z } from "npm:zod@3.25.76";
-const bodySchema = z.object({ action: z.enum(["status","punch"]), org_id: z.string().uuid().optional(), employee_code: z.string().regex(/^[A-Za-z0-9_-]{2,40}$/).optional(), pin: z.string().regex(/^\d{4,6}$/).optional(), direction: z.enum(["clock_in","clock_out","lunch_out","lunch_in"]).optional(), mode: z.enum(["device","voice","pin"]).default("device"), latitude: z.number().finite().min(-90).max(90).optional(), longitude: z.number().finite().min(-180).max(180).optional() }).strict();
+const bodySchema = z.object({ action: z.enum(["status","punch"]), org_id: z.string().uuid().optional(), employee_code: z.string().regex(/^[A-Za-z0-9_-]{2,40}$/).optional(), pin: z.string().regex(/^\d{4,6}$/).optional(), direction: z.enum(["clock_in","clock_out","lunch_out","lunch_in"]).optional(), mode: z.enum(["device","voice","pin"]).default("device"), latitude: z.number().finite().min(-90).max(90).optional(), longitude: z.number().finite().min(-180).max(180).optional(), captured_at: z.string().datetime({offset:true}).optional(), offline_id: z.string().uuid().optional() }).strict();
 const reply = (data: unknown, status=200) => new Response(JSON.stringify(data), {status, headers:{...corsHeaders,"Content-Type":"application/json","Cache-Control":"no-store"}});
 Deno.serve(async req => {
  if(req.method==="OPTIONS") return new Response("ok",{headers:corsHeaders});
@@ -55,7 +55,9 @@ Deno.serve(async req => {
   }
   if(!body.direction) return reply({error:"Choose clock in or clock out"},400);
   if(body.latitude===undefined||body.longitude===undefined) return reply({error:"Location is required to clock in or out. Turn on location for this browser and try again."},400);
-  const result=await admin.rpc("record_workforce_punch",{_employee:employee,_org:org,_direction:body.direction,_mode:body.pin?"pin":body.mode,_lat:body.latitude??null,_lon:body.longitude??null});
+  const result=body.captured_at
+   ? await admin.rpc("record_workforce_punch_at",{_employee:employee,_org:org,_direction:body.direction,_mode:body.pin?"pin":body.mode,_lat:body.latitude,_lon:body.longitude,_at:body.captured_at,_client:body.offline_id??null})
+   : await admin.rpc("record_workforce_punch",{_employee:employee,_org:org,_direction:body.direction,_mode:body.pin?"pin":body.mode,_lat:body.latitude??null,_lon:body.longitude??null});
   if(result.error) return reply({error:result.error.message},400);
   return reply(result.data);
  } catch { return reply({error:"Time clock request failed. Please try again."},400); }
