@@ -505,6 +505,13 @@
       "when": 1793967201906,
       "tag": "0071_same_day_site_moves",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1793967429821,
+      "tag": "0072_paid_site_travel_setting",
+      "breakpoints": true
     }
   ]
 }
