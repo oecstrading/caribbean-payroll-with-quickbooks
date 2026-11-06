@@ -15,7 +15,7 @@ const fmt = (s: string | null) => (s ? new Date(s).toLocaleString() : "—");
 
 export default function ClockDevicesPage() {
   const [devices, setDevices] = useState<Device[]>([]);
-  const [sites, setSites] = useState<{ id: string; site_name: string }[]>([]);
+  const [sites, setSites] = useState<{ id: string; name: string }[]>([]);
   const [policy, setPolicy] = useState<"optional" | "always">("optional");
   const [shots, setShots] = useState<Shot[]>([]);
   const [open, setOpen] = useState(false);
@@ -25,7 +25,7 @@ export default function ClockDevicesPage() {
   const load = async () => {
     const [d, s, w, p] = await Promise.all([
       supabase.from("clock_devices").select("id,name,department,site_id,activated_at,last_seen_at,revoked_at").order("created_at"),
-      supabase.from("client_sites").select("id,site_name").order("site_name"),
+      supabase.from("client_sites").select("id,name").order("name"),
       supabase.from("workforce_clock_settings").select("selfie_policy").maybeSingle(),
       supabase.from("workforce_punches").select("id,punched_at,direction,mode,photo_path,employee_id,device_id").not("device_id", "is", null).order("punched_at", { ascending: false }).limit(24),
     ]);
@@ -84,7 +84,7 @@ export default function ClockDevicesPage() {
         {devices.map((d) => { const s = status(d); return (
           <div key={d.id} className="space-y-3 rounded-2xl border bg-card p-4">
             <div className="flex items-start justify-between gap-2"><div className="flex items-center gap-2"><Tablet className="h-5 w-5 text-primary" /><h3 className="font-semibold">{d.name}</h3></div><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${s.c}`}>{s.t}</span></div>
-            <p className="text-sm text-muted-foreground">{d.department ?? "All departments"}{d.site_id ? ` · ${sites.find((x) => x.id === d.site_id)?.site_name ?? "Site"}` : ""}</p>
+            <p className="text-sm text-muted-foreground">{d.department ?? "All departments"}{d.site_id ? ` · ${sites.find((x) => x.id === d.site_id)?.name ?? "Site"}` : ""}</p>
             <p className="text-xs text-muted-foreground">Activated {fmt(d.activated_at)} · Last seen {fmt(d.last_seen_at)}</p>
             <div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => renew(d)}><RefreshCw className="mr-1 h-4 w-4" />New code</Button>{!d.revoked_at && <Button size="sm" variant="outline" className="text-destructive" onClick={() => revoke(d)}><Trash2 className="mr-1 h-4 w-4" />Switch off</Button>}</div>
           </div>); })}
@@ -112,7 +112,7 @@ export default function ClockDevicesPage() {
             <div><Label>Department shown first (optional)</Label><Input value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} placeholder="Kitchen" /></div>
             <div><Label>Work site (optional)</Label>
               <select className="h-10 w-full rounded-md border bg-background px-3" value={form.site} onChange={(e) => setForm({ ...form, site: e.target.value })}>
-                <option value="">No site</option>{sites.map((s) => <option key={s.id} value={s.id}>{s.site_name}</option>)}
+                <option value="">No site</option>{sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select></div>
             <Button className="w-full" disabled={!form.name.trim()} onClick={create}>Create and show activation code</Button>
           </div>
