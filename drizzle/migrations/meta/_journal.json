@@ -484,6 +484,13 @@
       "when": 1793964254145,
       "tag": "0068_offline_clock_punches",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1793965719107,
+      "tag": "0069_clock_devices",
+      "breakpoints": true
     }
   ]
 }
