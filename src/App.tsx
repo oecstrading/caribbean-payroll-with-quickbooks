@@ -20,6 +20,8 @@ import CompaniesPage from "@/pages/CompaniesPage";
 import MyCompaniesPage from "@/pages/MyCompaniesPage";
 import CompanySetupPage from "@/pages/CompanySetupPage";
 import StaffClockPage from "@/pages/StaffClockPage";
+import KioskPage from "@/pages/KioskPage";
+import ClockDevicesPage from "@/pages/ClockDevicesPage";
 import PayslipPage from "@/pages/PayslipPage";
 import AuthPage from "@/pages/AuthPage";
 import AcceptInvitationPage from "@/pages/AcceptInvitationPage";
@@ -101,6 +103,7 @@ const AppRoutes = () => (
     <Route path="/company-setup" element={<CompanySetupPage />} />
     <Route path="/time-clock/:companyId" element={<StaffClockPage />} />
     <Route path="/time-clock" element={<StaffClockPage />} />
+    <Route path="/kiosk" element={<KioskPage />} />
     <Route path="/auth" element={<PublicRoute><AuthPage /></PublicRoute>} />
     <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
     <Route path="/reset-password" element={<AcceptInvitationPage />} />
@@ -120,6 +123,7 @@ const AppRoutes = () => (
       <Route path="/leave-management" element={<LeaveManagementPage />} />
       <Route path="/deductions" element={<DeductionsPage />} />
       <Route path="/users" element={<UserManagementPage />} />
+      <Route path="/clock-devices" element={<ClockDevicesPage />} />
       <Route path="/projects" element={<ProjectsPage />} />
       <Route path="/equipment" element={<EquipmentPage />} />
       <Route path="/daily-reports" element={<DailyReportsPage />} />

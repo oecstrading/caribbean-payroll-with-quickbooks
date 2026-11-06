@@ -419,6 +419,69 @@ export type Database = {
           },
         ]
       }
+      clock_devices: {
+        Row: {
+          activated_at: string | null
+          activation_expires_at: string | null
+          activation_hash: string | null
+          created_at: string
+          created_by: string | null
+          department: string | null
+          id: string
+          last_seen_at: string | null
+          name: string
+          org_id: string
+          revoked_at: string | null
+          site_id: string | null
+          token_hash: string | null
+        }
+        Insert: {
+          activated_at?: string | null
+          activation_expires_at?: string | null
+          activation_hash?: string | null
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          id?: string
+          last_seen_at?: string | null
+          name: string
+          org_id: string
+          revoked_at?: string | null
+          site_id?: string | null
+          token_hash?: string | null
+        }
+        Update: {
+          activated_at?: string | null
+          activation_expires_at?: string | null
+          activation_hash?: string | null
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          id?: string
+          last_seen_at?: string | null
+          name?: string
+          org_id?: string
+          revoked_at?: string | null
+          site_id?: string | null
+          token_hash?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clock_devices_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clock_devices_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "client_sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clock_punches: {
         Row: {
           address_label: string | null
@@ -3690,6 +3753,7 @@ export type Database = {
           overtime_basis: string
           overtime_multiplier: number
           overtime_threshold: number
+          selfie_policy: string
           timezone: string
         }
         Insert: {
@@ -3702,6 +3766,7 @@ export type Database = {
           overtime_basis?: string
           overtime_multiplier?: number
           overtime_threshold?: number
+          selfie_policy?: string
           timezone?: string
         }
         Update: {
@@ -3714,6 +3779,7 @@ export type Database = {
           overtime_basis?: string
           overtime_multiplier?: number
           overtime_threshold?: number
+          selfie_policy?: string
           timezone?: string
         }
         Relationships: [
@@ -3781,6 +3847,7 @@ export type Database = {
         Row: {
           captured_offline: boolean
           client_punch_id: string | null
+          device_id: string | null
           direction: string
           employee_id: string
           id: string
@@ -3788,6 +3855,7 @@ export type Database = {
           longitude: number | null
           mode: string
           org_id: string
+          photo_path: string | null
           punched_at: string
           received_at: string
           shift_id: string
@@ -3795,6 +3863,7 @@ export type Database = {
         Insert: {
           captured_offline?: boolean
           client_punch_id?: string | null
+          device_id?: string | null
           direction: string
           employee_id: string
           id?: string
@@ -3802,6 +3871,7 @@ export type Database = {
           longitude?: number | null
           mode: string
           org_id: string
+          photo_path?: string | null
           punched_at?: string
           received_at?: string
           shift_id: string
@@ -3809,6 +3879,7 @@ export type Database = {
         Update: {
           captured_offline?: boolean
           client_punch_id?: string | null
+          device_id?: string | null
           direction?: string
           employee_id?: string
           id?: string
@@ -3816,11 +3887,19 @@ export type Database = {
           longitude?: number | null
           mode?: string
           org_id?: string
+          photo_path?: string | null
           punched_at?: string
           received_at?: string
           shift_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "workforce_punches_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "clock_devices"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "workforce_punches_org_id_fkey"
             columns: ["org_id"]
@@ -4141,6 +4220,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      create_clock_device: {
+        Args: { _department: string; _name: string; _site: string }
+        Returns: Json
+      }
       create_employee_loan: {
         Args: {
           _balance: number
@@ -4311,6 +4394,7 @@ export type Database = {
         }
         Returns: Json
       }
+      renew_clock_device_code: { Args: { _id: string }; Returns: Json }
       reset_attendance_simulation: {
         Args: { _enabled: boolean; _start: string }
         Returns: {
@@ -4354,6 +4438,7 @@ export type Database = {
         Args: { _hours: number; _notes: string; _shift: string }
         Returns: undefined
       }
+      revoke_clock_device: { Args: { _id: string }; Returns: undefined }
       revoke_company_setup: { Args: { _id: string }; Returns: undefined }
       save_own_staff_information: {
         Args: { _details: Json; _user: string }
@@ -4385,6 +4470,7 @@ export type Database = {
         Args: { _confirmation: string; _orgs: string[]; _start: string }
         Returns: Json
       }
+      set_selfie_policy: { Args: { _policy: string }; Returns: undefined }
       set_user_workspace_access: {
         Args: {
           _modules: string[]

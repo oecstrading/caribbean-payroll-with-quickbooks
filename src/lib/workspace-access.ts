@@ -44,7 +44,7 @@ export function roleModules(role: WorkspaceRole | null): WorkspaceModule[] {
   return role === "employee" ? EMPLOYEE_MODULES : WORKSPACE_MODULES.map(m => m.id);
 }
 export const ROUTE_MODULES: Record<string, WorkspaceModule | "home" | "portal" | "users"> = {
-  "/": "home", "/portal": "portal", "/payslips": "portal", "/users": "users",
+  "/": "home", "/portal": "portal", "/payslips": "portal", "/users": "users", "/clock-devices": "users",
   "/employees": "hr", "/payroll": "payroll", "/ai-paymaster": "payroll", "/payroll-history": "payroll", "/payroll-import": "payroll", "/payslip-import": "payroll", "/deductions": "payroll",
   "/reports": "reports", "/attendance": "attendance", "/geofencing": "security", "/leave-management": "leave",
   "/projects": "field", "/equipment": "field", "/daily-reports": "field", "/crews": "field",
