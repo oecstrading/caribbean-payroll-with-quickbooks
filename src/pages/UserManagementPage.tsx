@@ -28,6 +28,7 @@ interface UserWithRole {
   phone: string;
   monthly_salary: number;
   role: AppRole;
+  title: "employee" | "paymaster" | "manager" | null;
   companySuper: boolean;
   platformSuper: boolean;
   login_username: string | null;
@@ -60,6 +61,7 @@ export default function UserManagementPage() {
     // Fetch profiles joined with roles
     const { data: profiles } = await supabase.from("profiles").select("*").is("deleted_at", null);
     const { data: roles } = await supabase.from("user_roles").select("*");
+    const { data: titles } = await supabase.from("user_workspace_access").select("user_id, access_title");
     const authorityResults = await Promise.all((profiles ?? []).map(p => supabase.rpc("administrator_authority", { _user: p.user_id })));
 
     if (profiles && roles) {
@@ -79,6 +81,7 @@ export default function UserManagementPage() {
           phone: p.phone || "",
           monthly_salary: Number(p.monthly_salary) || 0,
           role: (userRole?.role as AppRole) || "employee",
+          title: (titles?.find(t => t.user_id === p.user_id)?.access_title as "employee" | "paymaster" | "manager" | null) ?? null,
           companySuper: authority?.company_super_admin === true,
           platformSuper: authority?.platform_super_admin === true,
         };
@@ -262,7 +265,7 @@ export default function UserManagementPage() {
                     </td>
                     <td className="py-3 px-4 text-foreground">{u.department || "—"}</td>
                     <td className="py-3 px-4">
-                      <Badge className={roleColors[u.role]} variant="secondary">{u.role}</Badge>
+                      <Badge className={roleColors[u.role]} variant="secondary">{u.title === "paymaster" ? "Pay Master" : u.role}</Badge>
                       {u.companySuper && <Badge variant="outline">Company super admin</Badge>}
                       {u.platformSuper && <Badge variant="outline">Platform super admin</Badge>}
                     </td>
