@@ -23,3 +23,4 @@
 - Spreadsheet (salary-sheet.ts, onboarding-sheet.ts) and pay-slip PDF (payslip-pdf.ts) imports parse client-side, ask questions, compare to platform rules and write only after admin approval; slip saves use approve_payslip_import with payroll-approval guards. Template covers every stored field; extras live in hr_details.
 - Read nested AGENTS.md. Visual guides use the shared Training list and document verified behavior only.
 - Open-ended employee dropdowns use per-company lists (company_picklists, admin/manager edit) that replace built-in defaults; calculation-driving options stay fixed so pay logic cannot break.
+- Shared tablet clocks (clock_devices) trust a tablet only via admin-issued 15-minute activation codes exchanged for a hashed token in the clock-device Edge Function; voice-identified and offline tablet punches always go to manager review, voice requires a selfie.
