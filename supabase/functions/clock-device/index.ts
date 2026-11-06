@@ -84,7 +84,10 @@ Deno.serve(async (req) => {
     if ((voice || selfie === "always") && !b.photo) return reply({ error: voice ? "A selfie is required for voice clock-ins." : "Your company requires a selfie with every punch." }, 400);
     const direction = b.direction === "auto" ? next : b.direction;
     const clientId = b.offline_id ?? crypto.randomUUID();
-    const r = await db.rpc("record_workforce_punch_at", { _employee: employee, _org: org, _direction: direction, _mode: voice ? "voice" : "pin", _lat: b.latitude, _lon: b.longitude, _at: b.captured_at ?? null, _client: clientId });
+    let lat = b.latitude, lon = b.longitude;
+    // A registered tablet is bolted to its job site: use the site's position when the tablet has no GPS fix.
+    if ((lat == null || lon == null) && device.site_id) { const st = await db.from("client_sites").select("latitude,longitude").eq("id", device.site_id).maybeSingle(); lat = st.data?.latitude ?? lat; lon = st.data?.longitude ?? lon; }
+    const r = await db.rpc("record_workforce_punch_at", { _employee: employee, _org: org, _direction: direction, _mode: voice ? "voice" : "pin", _lat: lat, _lon: lon, _at: b.captured_at ?? null, _client: clientId });
     if (r.error) return reply({ error: r.error.message }, 400);
     let photoPath: string | null = null;
     if (b.photo) {
