@@ -76,9 +76,17 @@ export default function PublicTrainingPage() {
                 <CardContent className="flex-1 flex flex-col justify-between gap-4">
                   <p className="text-sm text-muted-foreground">{doc.description}</p>
                   <div className="flex flex-col sm:flex-row gap-2">
-                    <Button className="flex-1" onClick={() => downloadFile(doc.url)}>
-                      <Download className="h-4 w-4 mr-2" /> {doc.category === "template" ? "Download Excel" : "Download PDF"}
-                    </Button>
+                    {doc.kind === "link" ? (
+                      <Button className="flex-1" asChild>
+                        <a href={doc.url} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-4 w-4 mr-2" /> Open Share Page
+                        </a>
+                      </Button>
+                    ) : (
+                      <Button className="flex-1" onClick={() => downloadFile(doc.url)}>
+                        <Download className="h-4 w-4 mr-2" /> {doc.category === "template" ? "Download Excel" : "Download PDF"}
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       onClick={() => handleShare(doc.url, doc.title)}
@@ -92,7 +100,7 @@ export default function PublicTrainingPage() {
                     rel="noopener noreferrer"
                     className="text-xs text-primary hover:underline truncate"
                   >
-                    {doc.category === "template" ? "Open Excel template" : "View PDF"}
+                    {doc.kind === "link" ? "Open share page" : doc.category === "template" ? "Open Excel template" : "View PDF"}
                   </a>
                 </CardContent>
               </Card>
