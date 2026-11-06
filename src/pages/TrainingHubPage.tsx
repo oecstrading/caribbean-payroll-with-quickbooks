@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { BookOpen, Upload, Download, Trash2, FileText, Search, Filter, Sparkles } from "lucide-react";
+import { BookOpen, Upload, Download, Trash2, FileText, Search, Filter, Sparkles, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import { TRAINING_RESOURCES } from "@/lib/training-resources";
 
@@ -253,10 +253,16 @@ export default function TrainingHubPage() {
           <Button asChild className="carib-tile carib-palm carib-lift border-0"><a href="/payroll-demo">▶ Open client payroll demo</a></Button>
         </div>
         <div className="grid gap-3 md:grid-cols-2">
-        {TRAINING_RESOURCES.filter(doc => (filterCategory === "all" || filterCategory === doc.category) && `${doc.title} ${doc.description}`.toLowerCase().includes(searchQuery.toLowerCase())).map((doc, i) => <button type="button" key={doc.id} onClick={() => downloadFile(doc.url)} aria-label={`Download ${doc.title}`} className={`carib-tile ${i % 2 ? "carib-coral" : "carib-sea"} carib-lift rounded-xl p-4 text-left flex items-start justify-between gap-3`}>
-          <div className="min-w-0 relative z-10"><p className="font-semibold">{doc.title}</p><span className="inline-block mt-1 rounded-full bg-background/25 px-2 py-0.5 text-xs font-semibold">{doc.badge}</span><p className="text-sm opacity-90 mt-2">{doc.description}</p></div>
-          <span className="relative z-10 shrink-0 rounded-full bg-background/25 p-2"><Download className="h-5 w-5" /></span>
-        </button>)}
+        {TRAINING_RESOURCES.filter(doc => (filterCategory === "all" || filterCategory === doc.category) && `${doc.title} ${doc.description}`.toLowerCase().includes(searchQuery.toLowerCase())).map((doc, i) => {
+          const tile = `carib-tile ${i % 2 ? "carib-coral" : "carib-sea"} carib-lift rounded-xl p-4 text-left flex items-start justify-between gap-3`;
+          const body = <>
+            <div className="min-w-0 relative z-10"><p className="font-semibold">{doc.title}</p><span className="inline-block mt-1 rounded-full bg-background/25 px-2 py-0.5 text-xs font-semibold">{doc.badge}</span><p className="text-sm opacity-90 mt-2">{doc.description}</p></div>
+            <span className="relative z-10 shrink-0 rounded-full bg-background/25 p-2">{doc.kind === "link" ? <ExternalLink className="h-5 w-5" /> : <Download className="h-5 w-5" />}</span>
+          </>;
+          return doc.kind === "link"
+            ? <a key={doc.id} href={doc.url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${doc.title}`} className={tile}>{body}</a>
+            : <button type="button" key={doc.id} onClick={() => downloadFile(doc.url)} aria-label={`Download ${doc.title}`} className={tile}>{body}</button>;
+        })}
         </div>
       </section>
       <div className="flex flex-col sm:flex-row gap-3">
