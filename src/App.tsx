@@ -51,6 +51,7 @@ import ApplicantTrackingPage from "@/pages/ApplicantTrackingPage";
 import InvoicingPage from "@/pages/InvoicingPage";
 import TrainingHubPage from "@/pages/TrainingHubPage";
 import PublicTrainingPage from "@/pages/PublicTrainingPage";
+import PromoPage from "./pages/PromoPage";
 import PayrollDemoPage from "@/pages/PayrollDemoPage";
 import QuickBooksPage from "@/pages/QuickBooksPage";
 import PayrollSettingsPage from "@/pages/PayrollSettingsPage";
@@ -156,6 +157,7 @@ const AppRoutes = () => (
     <Route path="/guide" element={<PublicTrainingPage />} />
     <Route path="/manual" element={<PublicTrainingPage />} />
     <Route path="/brochure" element={<PublicTrainingPage />} />
+    <Route path="/discover" element={<PromoPage />} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
