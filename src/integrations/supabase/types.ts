@@ -4001,6 +4001,7 @@ export type Database = {
           scheduled_end: string | null
           scheduled_start: string | null
           shift_date: string
+          site_gap_minutes: number
         }
         Insert: {
           approved_hours?: number | null
@@ -4019,6 +4020,7 @@ export type Database = {
           scheduled_end?: string | null
           scheduled_start?: string | null
           shift_date: string
+          site_gap_minutes?: number
         }
         Update: {
           approved_hours?: number | null
@@ -4037,6 +4039,7 @@ export type Database = {
           scheduled_end?: string | null
           scheduled_start?: string | null
           shift_date?: string
+          site_gap_minutes?: number
         }
         Relationships: [
           {
