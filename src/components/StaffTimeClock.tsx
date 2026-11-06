@@ -12,6 +12,8 @@ import { toast } from "sonner";
 import { rememberedClockCode, rememberClockCode } from "@/lib/staff-clock-link";
 import StaffPayCenter from "@/components/StaffPayCenter";
 import StaffDashboard, { type StaffSummary } from "@/components/StaffDashboard";
+import { discardPunch, isNetworkFailure, onQueueChange, queuePunch, queuedPunches, startPunchSync, syncPunches, type QueuedPunch } from "@/lib/offline-punches";
+import { CloudOff, RefreshCw } from "lucide-react";
 
 type Dir="clock_in"|"clock_out"|"lunch_out"|"lunch_in";
 const LABEL:Record<Dir,string>={clock_in:"Clock In",clock_out:"Clock Out",lunch_out:"Out to Lunch",lunch_in:"Back from Lunch"};
@@ -26,6 +28,11 @@ export default function StaffTimeClock({ companyId }: { companyId?: string }) {
  useEffect(()=>{if(companyId){setResolvedCompany(companyId);return;}if(user)void supabase.rpc("current_org_id").then(({data})=>setResolvedCompany(data??""));},[companyId,user?.id]);
  useEffect(()=>{if(!companyId)return;const fromLink=new URLSearchParams(window.location.search).get("code")?.trim();const c=fromLink||rememberedClockCode(companyId);if(c)setCode(c);if(fromLink)rememberClockCode(companyId,fromLink);},[companyId]);
  useEffect(()=>{const t=setInterval(()=>setNow(new Date()),1000);return()=>clearInterval(t);},[]);
+ const [online,setOnline]=useState(navigator.onLine); const [queue,setQueue]=useState<QueuedPunch[]>(queuedPunches());
+ useEffect(()=>{const up=()=>setOnline(navigator.onLine);window.addEventListener("online",up);window.addEventListener("offline",up);const off=onQueueChange(()=>setQueue(queuedPunches()));startPunchSync(r=>{if(r.sent)toast.success(`${r.sent} offline punch${r.sent>1?"es":""} synced — waiting for manager check`);if(r.failed)toast.error("An offline punch was not accepted. See the clock screen.");});return()=>{window.removeEventListener("online",up);window.removeEventListener("offline",up);off();};},[]);
+ const stateKey=()=>`clock-next:${resolvedCompany}:${pinMode?code.trim().toLowerCase():user?.id??""}`;
+ const cachedNext=()=>{try{return localStorage.getItem(stateKey()) as Dir|null;}catch{return null;}};
+ const cacheNext=(d:Dir)=>{try{localStorage.setItem(stateKey(),d);}catch{/* private mode */}};
  async function request(action:"status"|"punch", mode="device", dir:Dir=next) {
   const body: Record<string,unknown>={action,mode};
   if(pinMode) { if(!resolvedCompany||!code.trim()||!/^\d{4,6}$/.test(pin.trim())) throw new Error("Enter your employee code and 4–6 digit PIN"); Object.assign(body,{org_id:resolvedCompany,employee_code:code.trim(),pin:pin.trim()}); }
@@ -36,10 +43,21 @@ export default function StaffTimeClock({ companyId }: { companyId?: string }) {
    if(!position)throw new Error("Location is required to clock in or out. Allow location access for this site and try again.");
    Object.assign(body,{latitude:position.coords.latitude,longitude:position.coords.longitude});
   }
-  const {data,error}=await supabase.functions.invoke("workforce-clock",{body});
+  const goOffline=()=>{
+   if(action==="status"){const c=cachedNext();if(!c)throw new Error("No internet. Connect once to check your clock, then you can punch offline.");setNext(c);setLunchTaken(c==="lunch_in"||(c==="clock_out"&&lunchTaken));setKnown(true);return;}
+   queuePunch({direction:dir,latitude:body.latitude as number,longitude:body.longitude as number,mode:pinMode?"pin":mode,...(pinMode?{org_id:resolvedCompany,employee_code:code.trim(),pin:pin.trim()}:{})});
+   const nx:Dir=dir==="clock_in"||dir==="lunch_in"?"clock_out":dir==="lunch_out"?"lunch_in":"clock_in";
+   setNext(nx);if(dir==="lunch_out")setLunchTaken(true);if(dir==="clock_out")setLunchTaken(false);cacheNext(nx);
+   setLast(`${DONE[dir]} · ${new Date().toLocaleTimeString()} · saved offline`);toast.success(`${DONE[dir]} — saved on this phone. It will send when internet returns.`);
+  };
+  if(!navigator.onLine){goOffline();return;}
+  let res;
+  try{res=await supabase.functions.invoke("workforce-clock",{body});}catch(e){if(isNetworkFailure(e)){goOffline();return;}throw e;}
+  const {data,error}=res;
+  if(error&&!(error.context instanceof Response)&&isNetworkFailure(error)){goOffline();return;}
   if(error) { let message=error.message; if(error.context instanceof Response){const detail=await error.context.json().catch(()=>null);message=detail?.error??message;} throw new Error(message); }
   if(data?.error)throw new Error(data.error);
-  setNext(data.next);if(data.lunch_taken!==undefined)setLunchTaken(!!data.lunch_taken);setKnown(true);if(pinMode&&resolvedCompany)rememberClockCode(resolvedCompany,code.trim());if(data.history)setHistory(data.history);if(data.summary)setSummary(data.summary);if(data.allowed_methods)setMethods(data.allowed_methods);if(data.schedule!==undefined)setSchedule(data.schedule);if(action==="punch"){setLast(`${DONE[dir]} · ${new Date(data.punched_at).toLocaleTimeString()}`);await request("status",mode).catch(()=>undefined);toast.success(`${DONE[dir]} — attendance saved`);}
+  if(data.next)cacheNext(data.next);setNext(data.next);if(data.lunch_taken!==undefined)setLunchTaken(!!data.lunch_taken);setKnown(true);if(pinMode&&resolvedCompany)rememberClockCode(resolvedCompany,code.trim());if(data.history)setHistory(data.history);if(data.summary)setSummary(data.summary);if(data.allowed_methods)setMethods(data.allowed_methods);if(data.schedule!==undefined)setSchedule(data.schedule);if(action==="punch"){setLast(`${DONE[dir]} · ${new Date(data.punched_at).toLocaleTimeString()}`);await request("status",mode).catch(()=>undefined);toast.success(`${DONE[dir]} — attendance saved`);}
  }
  useEffect(()=>{if(user&&!pinMode)void request("status").catch(e=>setError(e.message));},[user?.id,pinMode]);
  async function submit(mode="device",dir:Dir=next) {setBusy(true);setError("");try{await request(pinMode&&!known?"status":"punch",mode,dir);}catch(e){setError(e instanceof Error?e.message:"Clock unavailable");}finally{setBusy(false);}}
@@ -70,7 +88,10 @@ export default function StaffTimeClock({ companyId }: { companyId?: string }) {
   </>}
   {known&&<ClockReminders schedule={schedule} next={next==="clock_in"?"clock_in":"clock_out"}/>}
   {user&&!pinMode&&known&&<StaffPayCenter/>}
+  {!online&&<p role="status" className="flex items-center justify-center gap-2 rounded-md bg-warning/15 text-sm font-medium p-2"><CloudOff size={16}/>No internet — punches are saved on this phone and sent later.</p>}
+  {queue.length>0&&<div className="rounded-md border border-warning p-3 text-left text-sm space-y-2"><div className="flex items-center justify-between gap-2"><span className="font-medium">{queue.filter(q=>!q.error).length} punch(es) waiting to send</span><Button size="sm" variant="outline" disabled={!online} onClick={()=>void syncPunches().then(r=>r.sent&&toast.success("Offline punches sent"))}><RefreshCw size={14}/>Send now</Button></div>
+   {queue.map(q=><div key={q.id} className="flex items-center justify-between gap-2 border-t border-border pt-2"><span>{DONE[q.direction]} · {new Date(q.captured_at).toLocaleString([],{dateStyle:"short",timeStyle:"short"})}{q.error&&<span className="block text-destructive">Not accepted: {q.error}</span>}</span>{q.error&&<Button size="sm" variant="ghost" onClick={()=>discardPunch(q.id)}>Dismiss</Button>}</div>)}</div>}
   {last&&<p role="status" className="text-success font-medium">{last}</p>}{error&&<p role="alert" className="text-destructive text-sm">{error}</p>}
-  <p className="text-xs text-muted-foreground flex justify-center items-center gap-2"><ShieldCheck size={14}/>Live attendance · Company-protected records</p>
+  <p className="text-xs text-muted-foreground flex justify-center items-center gap-2"><ShieldCheck size={14}/>{online?"Live attendance · Company-protected records":"Offline mode · punches checked by your manager"}</p>
  </section>;
 }
