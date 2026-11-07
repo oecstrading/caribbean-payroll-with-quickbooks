@@ -28,3 +28,4 @@
 - Read nested AGENTS.md. Visual guides use the shared Training list and document verified behavior only.
 - Open-ended employee dropdowns use per-company lists (company_picklists, admin/manager edit) that replace built-in defaults; calculation-driving options stay fixed so pay logic cannot break.
 - Shared tablet clocks (clock_devices) trust a tablet only via admin-issued 15-minute activation codes exchanged for a hashed token in the clock-device Edge Function; voice-identified and offline tablet punches always go to manager review, voice requires a selfie.
+- A user's home company (profiles.org_id) is their default workspace: a fresh sign-in applies it over the last company switched to, and the applied marker is per browser tab so an in-session company switch is never undone.
