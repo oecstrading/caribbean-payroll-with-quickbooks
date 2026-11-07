@@ -4184,6 +4184,10 @@ export type Database = {
         }
         Returns: string
       }
+      assign_paymaster_companies: {
+        Args: { _modules: string[]; _orgs: string[]; _user: string }
+        Returns: undefined
+      }
       can_access_applicant_file: { Args: { _path: string }; Returns: boolean }
       can_access_employee_document: {
         Args: { _employee: string; _shared: boolean }
