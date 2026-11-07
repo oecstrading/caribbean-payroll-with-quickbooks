@@ -4273,6 +4273,7 @@ export type Database = {
       }
       current_org_id: { Args: never; Returns: string }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
+      delete_punch_selfie: { Args: { _punch_id: string }; Returns: boolean }
       employee_clock_configuration: {
         Args: { _employee: string }
         Returns: Json
