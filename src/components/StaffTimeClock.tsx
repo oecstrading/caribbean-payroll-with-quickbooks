@@ -36,7 +36,7 @@ export default function StaffTimeClock({ companyId }: { companyId?: string }) {
  const cacheNext=(d:Dir)=>{try{localStorage.setItem(stateKey(),d);}catch{/* private mode */}};
  async function request(action:"status"|"punch", mode="device", dir:Dir=next) {
   const body: Record<string,unknown>={action,mode};
-  if(pinMode) { if(!resolvedCompany||!code.trim()||!/^\d{4,6}$/.test(pin.trim())) throw new Error("Enter your employee code and 4–6 digit PIN"); Object.assign(body,{org_id:resolvedCompany,employee_code:code.trim(),pin:pin.trim()}); }
+  if(pinMode) { if(!resolvedCompany||!code.trim()||!/^\d{4,6}$/.test(pin.trim())) throw new Error("Enter your employee code and 4–6 digit PIN"); Object.assign(body,{org_id:resolvedCompany,employee_code:code.trim(),pin:pin.trim(),device_id:clockDeviceId()}); }
   if(action==="punch") {
    body.direction=dir;
    // Every punch must carry the device location (anti buddy-punching); the server rejects punches without it.
