@@ -1,3 +1,5 @@
+import { SummaryCard } from "@/components/SummaryCard";
+import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Clock, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
@@ -26,6 +28,8 @@ export default function AttendancePage() {
   const completeCount = dayRecords.filter((a) => a.status === "Complete").length;
   const missingCount = dayRecords.filter((a) => a.status !== "Complete").length;
   const lateCount = dayRecords.filter((a) => a.late).length;
+  const [detail, setDetail] = useState("");
+  const shownRecords = dayRecords.filter(r => detail === "Complete" ? r.status === "Complete" : detail === "Missing Punch" ? r.status !== "Complete" : detail === "Late Arrivals" ? r.late : detail === "OT Hours" ? r.otHours > 0 : true);
   const totalOT = dayRecords.reduce((s, a) => s + a.otHours, 0);
 
   const handleImport = (records: AttendanceRecord[]) => {
@@ -83,20 +87,11 @@ export default function AttendancePage() {
           { label: "Late Arrivals", value: lateCount, icon: AlertTriangle, color: "text-warning", bg: "bg-warning/10" },
           { label: "OT Hours", value: totalOT.toFixed(1), icon: Clock, color: "text-primary", bg: "bg-primary/10" },
         ].map((stat) => (
-          <Card key={stat.label} className="shadow-card border-border/60">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className={`p-2 rounded-lg ${stat.bg}`}>
-                <stat.icon size={18} className={stat.color} />
-              </div>
-              <div>
-                <p className="text-lg font-display font-bold text-foreground">{stat.value}</p>
-                <p className="text-xs text-muted-foreground">{stat.label}</p>
-              </div>
-            </CardContent>
-          </Card>
+          <SummaryCard key={stat.label} {...stat} active={detail===stat.label} onClick={()=>setDetail(detail===stat.label?"":stat.label)} />
         ))}
       </div>
 
+      {detail && <Button variant="ghost" onClick={()=>setDetail("")}>Show all demonstration records</Button>}
       {/* Timesheet Table */}
       <Card className="shadow-card border-border/60 overflow-hidden">
         <CardHeader className="pb-3">
@@ -118,14 +113,14 @@ export default function AttendancePage() {
               </tr>
             </thead>
             <tbody>
-              {dayRecords.length === 0 ? (
+              {shownRecords.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-8 text-center text-muted-foreground">
                     No attendance records for this date
                   </td>
                 </tr>
               ) : (
-                dayRecords.map((record, i) => (
+                shownRecords.map((record, i) => (
                   <motion.tr
                     key={`${record.personId}-${i}`}
                     initial={{ opacity: 0 }}
