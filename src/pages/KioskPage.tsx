@@ -114,6 +114,7 @@ export default function KioskPage() {
   useEffect(() => {
     if (initialActivation.current) return;
     initialActivation.current = true;
+    if (code) history.replaceState(null, "", "/kiosk");
     if (!token && validActivationCode(code)) void activate();
   }, []);
 

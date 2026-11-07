@@ -15,11 +15,13 @@ export default function KioskDeviceSetup({ active, voiceSupported }: { active: b
 
   // A separate, credential-free manifest makes the installed icon open the clock, not payroll login.
   useEffect(() => {
-    const link = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
-    if (!link) return;
+    const existing = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
+    const link = existing ?? document.createElement("link");
+    link.rel = "manifest";
+    if (!existing) document.head.appendChild(link);
     const original = link.href;
     link.href = "/kiosk.webmanifest";
-    return () => { link.href = original; };
+    return () => { if (existing) link.href = original; else link.remove(); };
   }, []);
 
   const check = async () => {
