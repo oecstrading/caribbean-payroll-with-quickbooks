@@ -14,10 +14,15 @@ Deno.serve(async req => {
     if (!caller) return reply({ error: "Sign in required" }, 401);
     const admin = createClient(url, service, { auth: { persistSession: false, autoRefreshToken: false } });
     const [{ data: role }, { data: org }] = await Promise.all([admin.from("user_roles").select("role").eq("user_id", caller.id).single(), callerClient.rpc("current_org_id")]);
-    if (role?.role !== "admin" || !org) return reply({ error: "Company administrator required" }, 403);
+    if (!org || (role?.role !== "admin" && role?.role !== "manager")) return reply({ error: "Company administrator required" }, 403);
     const parsed = accountSchema.safeParse(await req.json());
     if (!parsed.success) return reply({ error: parsed.error.issues[0]?.message || "Invalid account details" }, 400);
     const v = parsed.data;
+    if (role.role === "manager") {
+      // Pay Masters may only create employee-level sign-ins from an employee folder in their own company.
+      const { data: title } = await admin.from("user_workspace_access").select("access_title").eq("user_id", caller.id).eq("org_id", org).maybeSingle();
+      if (title?.access_title !== "paymaster" || v.action !== "create" || !v.employee_id || v.role !== "employee") return reply({ error: "Company administrator required" }, 403);
+    }
     const { data: authority } = await callerClient.rpc("administrator_authority", { _user: caller.id });
     const companySuper = authority?.company_super_admin === true;
     const platformSuper = authority?.platform_super_admin === true;

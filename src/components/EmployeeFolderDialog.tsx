@@ -178,8 +178,8 @@ export default function EmployeeFolderDialog({ folder, creating, onClose, onSave
           </TabsContent>)}
           <TabsContent value="documents" className="px-6 pb-6 pt-4 mt-0">{folder?.source === "live" ? <EmployeeDocuments employeeKey={folder.id} canManage={permissions.edit && !folder.deletedAt} accountLinked={folder.accountLinked !== false} /> : <p className="text-sm text-muted-foreground">{creating ? "Save the employee folder before adding documents." : "Documents are available for live employee folders only."}</p>}</TabsContent>
           <TabsContent value="login" className="px-6 pb-6 pt-4 mt-0 space-y-5">{creating || folder?.source === "live" && !folder.deletedAt ? <>
-            <EmployeeLoginSetup folder={folder} creating={creating} details={values} login={login} onChange={setLogin} canManage={permissions.create} onSaved={onLoginSaved} />
-            {folder ? <EmployeeClockSetup key={folder.id} employeeId={folder.id} canManage={permissions.create} /> : <p className="text-sm text-muted-foreground">Save the employee to assign their staff clock PIN and schedule.</p>}
+            <EmployeeLoginSetup folder={folder} creating={creating} details={values} login={login} onChange={setLogin} canManage={permissions.create || isAdminOrManager} onSaved={onLoginSaved} />
+            {folder ? <EmployeeClockSetup key={folder.id} employeeId={folder.id} canManage={permissions.create || isAdminOrManager} /> : <p className="text-sm text-muted-foreground">Save the employee to assign their staff clock PIN and schedule.</p>}
           </> : <p className="text-sm text-muted-foreground">Login setup is available for active live employee folders.</p>}</TabsContent>
         </Tabs>
         <div className="border-t border-border p-4 sm:px-6 flex flex-wrap gap-2 justify-between bg-background">
