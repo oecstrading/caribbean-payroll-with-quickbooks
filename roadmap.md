@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] Add secure multi-company Pay Master assignment for external platform users, preserving employment and administrator authority.
+- [ ] Verify assignment rules, company switching, payroll access and Super Admin payroll entry points.
+
 - [x] Enable payroll-history summaries and employee payslip drill-downs, plus matching dashboard and attendance detail filters and report summary breakdowns.
 - [x] Verify signed-in dashboard-to-period details, four saved employee payslips, individual payslip selection, attendance filter navigation and report columns; mobile has no page overflow, 31 tests passed and build OK. Attendance selection had no live records to exercise; no payroll or clock records changed.
 
