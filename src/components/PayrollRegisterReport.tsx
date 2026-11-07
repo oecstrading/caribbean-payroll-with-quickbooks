@@ -56,6 +56,11 @@ export default function PayrollRegisterReport() {
   ];
   const heads = ["Employee", "Department", "Period", "Gross", "PAYE", "NIS/NIB (EE)", "Statutory levies", "Other deductions", "Net pay", "Employer NIS/NIB", "Employer levies", "Cash requirement"];
 
+  const visibleColumns = detail === "Employer liabilities" ? [0,1,2,9,10]
+    : detail === "Employee deductions" ? [0,1,2,4,5,6,7]
+    : detail === "Total gross" ? [0,1,2,3]
+    : detail === "Total net pay" ? [0,1,2,8]
+    : detail === "Total cash requirement" ? [0,1,2,3,9,10,11] : heads.map((_,i)=>i);
   return <Card>
     <CardHeader><CardTitle className="font-display">Payroll Register & Summary</CardTitle><p className="text-sm text-muted-foreground">From approved payslips. Levies use each payroll's jurisdiction rules (OECS islands have none beyond NIS/NIC and PAYE).</p></CardHeader>
     <CardContent className="space-y-5">
@@ -69,11 +74,11 @@ export default function PayrollRegisterReport() {
       </div>
       <div id="register-details" className="flex items-center justify-between gap-3"><h3 className="font-semibold">{detail ? `${detail} breakdown` : "Payroll details"} · {rows.length} payslips</h3>{detail && <Button variant="ghost" onClick={()=>setDetail("")}>Show all columns</Button>}</div>
       <div className="overflow-x-auto"><table className="w-full text-sm">
-        <thead><tr className="border-b border-border text-left text-muted-foreground">{heads.map((h, i) => <th key={h} className={`py-2 px-2 whitespace-nowrap ${i > 2 ? "text-right" : ""}`}>{h}</th>)}</tr></thead>
+        <thead><tr className="border-b border-border text-left text-muted-foreground">{heads.map((h, i) => visibleColumns.includes(i) && <th key={h} className={`py-2 px-2 whitespace-nowrap ${i > 2 ? "text-right" : ""}`}>{h}</th>)}</tr></thead>
         <tbody>{loading ? <tr><td colSpan={12} className="py-6 text-center text-muted-foreground">Loading payslips…</td></tr> : !rows.length ? <tr><td colSpan={12} className="py-6 text-center text-muted-foreground">No approved payslips match these filters.</td></tr> : rows.map(r => <tr key={r.id} className="border-b border-border/50">
           <td className="py-2 px-2">{r.name}</td><td className="px-2">{r.department}</td><td className="px-2 whitespace-nowrap">{r.period}</td>
-          {[r.gross, r.paye, r.nis, r.levy, r.other, r.net, r.employerNis, r.employerLevy, r.gross+r.employerNis+r.employerLevy].map((v, i) => <td key={i} className={`px-2 text-right tabular-nums ${i === 5 ? "font-semibold" : ""}`}>{formatCurrency(v)}</td>)}</tr>)}</tbody>
-        {!!rows.length && <tfoot><tr className="font-semibold border-t-2 border-border"><td className="py-2 px-2" colSpan={3}>Totals</td>{[t.gross, t.paye, t.nis, t.levy, t.other, t.net, t.eNis, t.eLevy, t.gross+employer].map((v, i) => <td key={i} className="px-2 text-right tabular-nums">{formatCurrency(v)}</td>)}</tr></tfoot>}
+          {[r.gross, r.paye, r.nis, r.levy, r.other, r.net, r.employerNis, r.employerLevy, r.gross+r.employerNis+r.employerLevy].map((v, i) => visibleColumns.includes(i+3) && <td key={i} className={`px-2 text-right tabular-nums ${i === 5 ? "font-semibold" : ""}`}>{formatCurrency(v)}</td>)}</tr>)}</tbody>
+        {!!rows.length && <tfoot><tr className="font-semibold border-t-2 border-border"><td className="py-2 px-2" colSpan={3}>Totals</td>{[t.gross, t.paye, t.nis, t.levy, t.other, t.net, t.eNis, t.eLevy, t.gross+employer].map((v, i) => visibleColumns.includes(i+3) && <td key={i} className="px-2 text-right tabular-nums">{formatCurrency(v)}</td>)}</tr></tfoot>}
       </table></div>
     </CardContent>
   </Card>;
