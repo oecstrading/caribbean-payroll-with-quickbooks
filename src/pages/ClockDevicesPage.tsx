@@ -63,6 +63,11 @@ export default function ClockDevicesPage() {
     const { error } = await supabase.rpc("set_selfie_policy", { _policy: v });
     error ? toast.error(error.message) : (setPolicy(v), toast.success("Selfie setting saved"));
   };
+  const deleteSelfie = async (s: Shot) => {
+    if (!confirm(`Delete the selfie for ${s.name ?? "this employee"} at ${fmt(s.punched_at)}? The punch record stays; only the photo is removed.`)) return;
+    const { error } = await supabase.rpc("delete_punch_selfie", { _punch_id: s.id });
+    error ? toast.error(error.message) : (toast.success("Selfie deleted"), void load());
+  };
   const link = issued ? kioskActivationLink(issued.code) : "";
   const invitation = issued ? `Set up ${issued.name} on the company tablet: ${link}\nOpen the link to activate automatically, then allow camera, microphone and location and add it to the home screen. This single-use link expires at ${new Date(issued.expires_at).toLocaleTimeString()}. Use only on the intended company clock device.` : "";
   const status = (d: Device) => d.revoked_at ? { t: "Switched off", c: "bg-destructive/15 text-destructive" } : d.activated_at ? (d.last_seen_at && Date.now() - new Date(d.last_seen_at).getTime() < 10 * 60000 ? { t: "Online", c: "bg-primary/15 text-primary" } : { t: "Offline", c: "bg-accent/30 text-accent-foreground" }) : { t: "Waiting for activation", c: "bg-muted text-muted-foreground" };
@@ -99,7 +104,8 @@ export default function ClockDevicesPage() {
           {shots.map((s) => (
             <div key={s.id} className="overflow-hidden rounded-xl border bg-card text-xs">
               {s.url ? <img src={s.url} alt={`Selfie of ${s.name}`} className="aspect-[4/3] w-full object-cover" /> : <div className="flex aspect-[4/3] items-center justify-center bg-muted text-muted-foreground">No selfie</div>}
-              <div className="p-2"><p className="font-semibold">{s.name}</p><p>{s.direction.replace("_", " ")} · {s.mode === "voice" ? "voice" : "PIN"}</p><p className="text-muted-foreground">{fmt(s.punched_at)} · {s.device}</p></div>
+              <div className="p-2"><p className="font-semibold">{s.name}</p><p>{s.direction.replace("_", " ")} · {s.mode === "voice" ? "voice" : "PIN"}</p><p className="text-muted-foreground">{fmt(s.punched_at)} · {s.device}</p>
+                {s.photo_path && <Button size="sm" variant="outline" className="mt-1 h-7 w-full text-destructive" onClick={() => deleteSelfie(s)}><Trash2 className="mr-1 h-3 w-3" />Delete selfie</Button>}</div>
             </div>
           ))}
           {!shots.length && <p className="col-span-full text-sm text-muted-foreground">No tablet punches yet.</p>}
