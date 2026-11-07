@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import AddToHomeScreen from "@/components/AddToHomeScreen";
+import KioskDeviceSetup from "@/components/KioskDeviceSetup";
+import { activationCode, KIOSK_SETUP_KEY, validActivationCode } from "@/lib/kiosk-setup";
 import {
   DIR_LABEL, KioskError, cacheRoster, cachedRoster, kioskCall, kioskQueue, kioskToken, queueKioskPunch, setKioskToken, spokenDirection, syncKiosk,
   type KioskDir, type KioskPerson, type KioskRoster,
@@ -24,17 +26,21 @@ function position(): Promise<{ latitude: number; longitude: number }> {
 
 function SelfieCamera({ auto, onShot }: { auto: boolean; onShot: (img: string) => void }) {
   const video = useRef<HTMLVideoElement>(null);
-  const [count, setCount] = useState<number | null>(auto ? 3 : null);
+  const [count, setCount] = useState<number | null>(null);
+  const [ready, setReady] = useState(false);
   const [err, setErr] = useState("");
   useEffect(() => {
     let stream: MediaStream | null = null;
-    navigator.mediaDevices?.getUserMedia({ video: { facingMode: "user", width: 480 } }).then((s) => { stream = s; if (video.current) video.current.srcObject = s; }).catch(() => setErr("Camera not available. Allow camera access for this tablet."));
-    return () => stream?.getTracks().forEach((t) => t.stop());
+    let cancelled = false;
+    if (!navigator.mediaDevices?.getUserMedia) setErr("Camera not available in this browser. Open the clock in Safari or Chrome.");
+    else navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: 480 } }).then((s) => { if (cancelled) { s.getTracks().forEach((t) => t.stop()); return; } stream = s; if (video.current) video.current.srcObject = s; }).catch(() => setErr("Camera not available. Allow camera access for this tablet."));
+    return () => { cancelled = true; stream?.getTracks().forEach((t) => t.stop()); };
   }, []);
   const shoot = useCallback(() => {
     const v = video.current; if (!v || !v.videoWidth) return;
     const c = document.createElement("canvas"); c.width = 320; c.height = Math.round(320 * v.videoHeight / v.videoWidth);
-    c.getContext("2d")!.drawImage(v, 0, 0, c.width, c.height);
+    const context = c.getContext("2d"); if (!context) return;
+    context.drawImage(v, 0, 0, c.width, c.height);
     onShot(c.toDataURL("image/jpeg", 0.65));
   }, [onShot]);
   useEffect(() => {
@@ -45,17 +51,19 @@ function SelfieCamera({ auto, onShot }: { auto: boolean; onShot: (img: string) =
   return (
     <div className="space-y-3 text-center">
       <div className="relative mx-auto aspect-[4/3] w-full max-w-sm overflow-hidden rounded-2xl bg-muted">
-        <video ref={video} autoPlay playsInline muted className="h-full w-full -scale-x-100 object-cover" />
+        <video ref={video} autoPlay playsInline muted onLoadedData={() => { setReady(true); if (auto) setCount(3); }} className="h-full w-full -scale-x-100 object-cover" />
         {count !== null && count > 0 && <span className="absolute inset-0 flex items-center justify-center text-7xl font-bold text-primary-foreground drop-shadow-lg">{count}</span>}
       </div>
-      {err ? <p className="text-sm text-destructive">{err}</p> : !auto && <Button size="lg" className="h-14 w-full max-w-sm text-lg" onClick={shoot}><Camera className="mr-2" />Take selfie</Button>}
+      {err ? <p className="text-sm text-destructive">{err}</p> : !auto && <Button size="lg" disabled={!ready} className="h-14 w-full max-w-sm text-lg" onClick={shoot}><Camera className="mr-2" />Take selfie</Button>}
     </div>
   );
 }
 
 export default function KioskPage() {
   const [token, setToken] = useState(kioskToken());
-  const [code, setCode] = useState(new URLSearchParams(location.search).get("code") ?? "");
+  const [code, setCode] = useState(() => activationCode(location.search, location.hash));
+  const initialActivation = useRef(false);
+  const [activationError, setActivationError] = useState("");
   const [roster, setRoster] = useState<KioskRoster | null>(cachedRoster());
   const [now, setNow] = useState(new Date());
   const [online, setOnline] = useState(navigator.onLine);
@@ -95,11 +103,19 @@ export default function KioskPage() {
   useEffect(() => { if (!done) return; const t = setTimeout(() => setDone(null), 4000); return () => clearTimeout(t); }, [done]);
 
   const activate = async () => {
+    if (!validActivationCode(code.trim().toUpperCase())) return;
+    setActivationError("");
     setBusy(true);
-    try { const r = await kioskCall<{ token: string; name: string }>({ action: "activate", code: code.trim() }); setKioskToken(r.token); setToken(r.token); history.replaceState(null, "", "/kiosk"); toast.success(`${r.name} is ready`); }
-    catch (e) { toast.error(e instanceof Error ? e.message : "Activation failed"); }
+    try { const r = await kioskCall<{ token: string; name: string }>({ action: "activate", code: code.trim() }); localStorage.removeItem(KIOSK_SETUP_KEY); setKioskToken(r.token); setToken(r.token); history.replaceState(null, "", "/kiosk"); toast.success(`${r.name} is ready`); }
+    catch (e) { const message = e instanceof Error ? e.message : "Activation failed"; setActivationError(message); toast.error(message); }
     finally { setBusy(false); }
   };
+
+  useEffect(() => {
+    if (initialActivation.current) return;
+    initialActivation.current = true;
+    if (!token && validActivationCode(code)) void activate();
+  }, []);
 
   const identify = async (body: { employee_id?: string; pin?: string; transcript?: string }, person: KioskPerson | null) => {
     setBusy(true);
@@ -167,7 +183,8 @@ export default function KioskPage() {
       <div className="w-full max-w-md space-y-5 rounded-3xl border bg-card p-8 shadow-xl">
         <div className="flex items-center gap-3"><Clock className="h-10 w-10 text-primary" /><div><h1 className="text-2xl font-bold">Activate this clock</h1><p className="text-sm text-muted-foreground">Enter the code from Clock devices, or scan its QR code.</p></div></div>
         <Input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="e.g. 7F3A92C1" className="h-14 text-center font-mono text-2xl tracking-widest" maxLength={12} />
-        <Button size="lg" className="h-14 w-full text-lg" disabled={busy || code.trim().length < 6} onClick={activate}>Activate</Button>
+        {activationError && <p role="alert" className="text-sm text-destructive">{activationError}</p>}
+        <Button size="lg" className="h-14 w-full text-lg" disabled={busy || !validActivationCode(code.trim().toUpperCase())} onClick={activate}>{busy ? "Activating your clock…" : activationError ? "Try activation again" : "Activate"}</Button>
         <AddToHomeScreen />
       </div>
     </main>
@@ -180,14 +197,16 @@ export default function KioskPage() {
         <div><p className="text-sm text-muted-foreground">{roster?.company}</p><h1 className="text-xl font-bold">{roster?.device.name ?? "Time clock"}</h1></div>
         <div className="text-right"><p className="font-mono text-4xl font-bold tabular-nums text-primary">{now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" })}</p><p className="text-sm text-muted-foreground">{now.toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" })}</p></div>
       </header>
+      <KioskDeviceSetup active={!!token} voiceSupported={!!SR} />
       {(!online || pending > 0) && <div className="mb-4 flex items-center gap-2 rounded-2xl bg-accent/30 p-3 text-sm"><WifiOff className="h-4 w-4" />{!online ? "No internet. Punches are saved on this tablet." : ""} {pending > 0 && `${pending} punch(es) waiting to send.`}</div>}
       {done && <div role="status" className="mb-4 rounded-2xl bg-primary p-5 text-center text-lg font-semibold text-primary-foreground">{done}</div>}
 
       {!picked && !who && (
         <section className="space-y-4">
-          <Button onClick={listen} disabled={listening || busy} className="h-20 w-full rounded-3xl bg-secondary text-xl text-secondary-foreground hover:bg-secondary/90">
+          <Button onClick={listen} disabled={!SR || listening || busy} className="min-h-20 h-auto py-5 whitespace-normal w-full rounded-3xl bg-secondary text-xl text-secondary-foreground hover:bg-secondary/90">
             <Mic className="mr-3 h-7 w-7" />{listening ? "Listening… say your name and “clock in”" : "Hands-free: tap once, then say your full name"}
           </Button>
+          {!SR && <p className="text-sm text-muted-foreground">Voice is unavailable in this browser. Use name and PIN, or open in a voice-supported browser.</p>}
           {heard && <p className="text-center text-sm text-muted-foreground">Heard: “{heard}”</p>}
           <div className="flex flex-wrap gap-2">{depts.map((d) => <Button key={d} variant={d === dept ? "default" : "outline"} className="h-11 rounded-full" onClick={() => setDept(d)}>{d}</Button>)}</div>
           <div className="relative"><Search className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" /><Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Find your name" className="h-12 pl-10 text-lg" /></div>

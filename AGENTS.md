@@ -1,4 +1,5 @@
 # Application rules
+- Shared-clock QR/email/WhatsApp links auto-exchange an admin-issued single-use code without login; keep activation codes out of manifests, install via a dedicated /kiosk start URL, and request device permissions only with consent to preserve restricted clock authority.
 - Multi-company Pay Master assignment is an atomic platform-Super-Admin RPC reusing the protected Pay Master manager tier and company access; employment stays unchanged and modules are capped by the active company, never the home company's enabled set.
 - Summary metrics use the shared SummaryCard control and drill into the same authorized records; dashboard detail links preserve period/filter context without widening workspace access.
 - Dashboard totals come from the authorized company_dashboard_summaries RPC and the payroll employee directory; aggregate latest-period runs per currency, never count platform identities as employees.

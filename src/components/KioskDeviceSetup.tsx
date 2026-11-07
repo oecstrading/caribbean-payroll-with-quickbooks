@@ -18,12 +18,8 @@ export default function KioskDeviceSetup({ active, voiceSupported }: { active: b
     const link = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
     if (!link) return;
     const original = link.href;
-    const url = URL.createObjectURL(new Blob([JSON.stringify({
-      id: "/kiosk", name: "Company Time Clock", short_name: "Time Clock", start_url: "/kiosk", scope: "/", display: "standalone",
-      icons: [{ src: `${location.origin}/pwa-icon-192.png`, sizes: "192x192", type: "image/png" }, { src: `${location.origin}/pwa-icon-512.png`, sizes: "512x512", type: "image/png" }],
-    })], { type: "application/manifest+json" }));
-    link.href = url;
-    return () => { link.href = original; URL.revokeObjectURL(url); };
+    link.href = "/kiosk.webmanifest";
+    return () => { link.href = original; };
   }, []);
 
   const check = async () => {
