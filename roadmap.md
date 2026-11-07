@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] Enable payroll-history summaries and employee payslip drill-downs, plus matching dashboard and attendance detail filters.
+- [ ] Verify signed-in card-to-detail flows, mobile layout and existing access tests.
+
 - [x] Correct dashboard employee, salary, payroll and attendance totals to the selected company's real employee directory.
 - [x] Add an authorized all-companies dashboard for administrators, Pay Masters and super administrators.
 - [x] Verify company counts, financial aggregation and signed-in dashboard/company-switch flows (33 tests passed; Smiley 4, Sonarisa 5 saved folders including Cuthbert's clock-enabled folder; no employee records altered).

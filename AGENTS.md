@@ -1,4 +1,5 @@
 # Application rules
+- Summary metrics use the shared SummaryCard control and drill into the same authorized records; dashboard detail links preserve period/filter context without widening workspace access.
 - Dashboard totals come from the authorized company_dashboard_summaries RPC and the payroll employee directory; aggregate latest-period runs per currency, never count platform identities as employees.
 - Company super-administrator delegation uses a separate protected authority table; platform delegation stays independent. Server-side transactions protect self/last-super-admin removal, tenant scope and retained financial records.
 - Company enabled modules cap every role, including company admins, through shared route checks and has_workspace_access; platform company administration stays independent. Setup/edit checkboxes persist the cap, and production workspaces suppress demo data and simulated accounting posts.
