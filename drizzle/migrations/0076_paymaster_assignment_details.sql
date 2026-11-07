@@ -1,0 +1,3 @@
+CREATE OR REPLACE FUNCTION public.paymaster_assignment_details(_user uuid) RETURNS text[] LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public AS $$ DECLARE modules text[]; BEGIN IF NOT public.is_platform_admin() THEN RAISE EXCEPTION 'Platform Super Admin required'; END IF; SELECT a.modules INTO modules FROM public.user_workspace_access a JOIN public.profiles p ON p.user_id=a.user_id AND p.org_id=a.org_id WHERE a.user_id=_user AND p.deleted_at IS NULL; RETURN coalesce(modules,ARRAY['payroll','reports','quickbooks','training']); END $$;
+REVOKE ALL ON FUNCTION public.paymaster_assignment_details(uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.paymaster_assignment_details(uuid) TO authenticated;

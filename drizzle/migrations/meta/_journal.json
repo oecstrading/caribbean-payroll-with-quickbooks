@@ -526,6 +526,27 @@
       "when": 1794048409162,
       "tag": "0074_company_dashboard_currency_fix",
       "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1794049626632,
+      "tag": "0075_multi_company_paymaster",
+      "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1794049678960,
+      "tag": "0076_paymaster_assignment_details",
+      "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1794049783117,
+      "tag": "0077_paymaster_assignment_candidates",
+      "breakpoints": true
     }
   ]
 }

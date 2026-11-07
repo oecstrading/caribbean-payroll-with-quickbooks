@@ -4184,6 +4184,10 @@ export type Database = {
         }
         Returns: string
       }
+      assign_paymaster_companies: {
+        Args: { _modules: string[]; _orgs: string[]; _user: string }
+        Returns: undefined
+      }
       can_access_applicant_file: { Args: { _path: string }; Returns: boolean }
       can_access_employee_document: {
         Args: { _employee: string; _shared: boolean }
@@ -4334,6 +4338,21 @@ export type Database = {
       }
       my_pay_preview: { Args: { _end: string; _start: string }; Returns: Json }
       my_workspace_access: { Args: never; Returns: Json }
+      paymaster_assignment_candidates: {
+        Args: never
+        Returns: {
+          email: string
+          home_company: string
+          home_org_id: string
+          name: string
+          org_ids: string[]
+          user_id: string
+        }[]
+      }
+      paymaster_assignment_details: {
+        Args: { _user: string }
+        Returns: string[]
+      }
       payroll_period_factor: {
         Args: { _end: string; _pay_type: string; _start: string }
         Returns: number

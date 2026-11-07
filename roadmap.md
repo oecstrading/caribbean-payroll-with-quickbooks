@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Add atomic platform-Super-Admin multi-company Pay Master assignment in User Management and All Companies Dashboard; preserve employment and administrator authority and enforce the active company's module cap.
+- [x] Verify Super Admin saves Loriann's existing Smiley/Sonarisa email-account assignments unchanged, read-back remains Pay Master/non-employee, company-to-payroll entry works, 21 tests pass and build OK. No payroll approved; sign-in as the delegated Pay Master was not exercised.
+
 - [x] Enable payroll-history summaries and employee payslip drill-downs, plus matching dashboard and attendance detail filters and report summary breakdowns.
 - [x] Verify signed-in dashboard-to-period details, four saved employee payslips, individual payslip selection, attendance filter navigation and report columns; mobile has no page overflow, 31 tests passed and build OK. Attendance selection had no live records to exercise; no payroll or clock records changed.
 

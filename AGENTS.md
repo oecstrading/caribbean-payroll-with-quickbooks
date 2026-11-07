@@ -1,4 +1,5 @@
 # Application rules
+- Multi-company Pay Master assignment is an atomic platform-Super-Admin RPC reusing the protected Pay Master manager tier and company access; employment stays unchanged and modules are capped by the active company, never the home company's enabled set.
 - Summary metrics use the shared SummaryCard control and drill into the same authorized records; dashboard detail links preserve period/filter context without widening workspace access.
 - Dashboard totals come from the authorized company_dashboard_summaries RPC and the payroll employee directory; aggregate latest-period runs per currency, never count platform identities as employees.
 - Company super-administrator delegation uses a separate protected authority table; platform delegation stays independent. Server-side transactions protect self/last-super-admin removal, tenant scope and retained financial records.
