@@ -1,3 +1,4 @@
+import { clockDeviceId } from "@/lib/clock-device-id";
 import { useEffect, useState } from "react";
 import AddToHomeScreen from "@/components/AddToHomeScreen";
 import ClockReminders from "@/components/ClockReminders";

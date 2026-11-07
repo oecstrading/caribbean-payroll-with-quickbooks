@@ -1,3 +1,4 @@
+import { clockDeviceId } from "@/lib/clock-device-id";
 import { supabase } from "@/integrations/supabase/client";
 
 // Punches captured without internet wait on the device and sync when the connection returns.
