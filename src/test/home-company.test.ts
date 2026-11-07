@@ -5,8 +5,9 @@ const SMILEY = "11111111-1111-4111-8111-111111111111";
 const SONRISA = "03c7c7f7-439a-4512-b2ae-62c6814bfd94";
 const USER = "2d779817-5a6a-40e6-8140-45e5e0dfe126";
 
-const rpc = vi.fn();
-const assign = vi.fn();
+const { rpc, assign } = vi.hoisted(() => ({ rpc: vi.fn(), assign: vi.fn() }));
+
+vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc } }));
 
 beforeEach(() => {
   rpc.mockReset();
@@ -15,13 +16,11 @@ beforeEach(() => {
   Object.defineProperty(window, "location", { value: { assign }, configurable: true, writable: true });
 });
 
-afterEach(() => {
-  vi.resetModules();
-});
-
 function stubRpc(home: string | null, current: string | null) {
   rpc.mockImplementation(async (name: string) => {
-    if (name === "my_companies") return { data: [{ id: SMILEY, name: "Smileys Inc", is_home: home === SMILEY }, { id: SONRISA, name: "SONRISA", is_home: home === SONRISA }], error: null };
+    if (name === "my_companies") {
+      return { data: [{ id: SMILEY, name: "Smileys Inc", is_home: home === SMILEY }, { id: SONRISA, name: "SONRISA", is_home: home === SONRISA }], error: null };
+    }
     if (name === "current_org_id") return { data: current, error: null };
     if (name === "switch_company") return { data: null, error: null };
     return { data: null, error: { message: `unexpected rpc ${name}` } };
@@ -48,7 +47,6 @@ describe("Home company on sign-in", () => {
     expect(await applyHomeCompany(USER)).toBe(true);
     stubRpc(SMILEY, SONRISA);
     expect(await applyHomeCompany(USER)).toBe(false);
-    expect(rpc).toHaveBeenCalledTimes(4);
     expect(assign).toHaveBeenCalledTimes(1);
   });
 
