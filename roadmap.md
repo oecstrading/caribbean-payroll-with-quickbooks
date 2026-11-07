@@ -1,8 +1,8 @@
 # Roadmap
 
-- [ ] Correct dashboard employee, salary, payroll and attendance totals to the selected company's real employee directory.
-- [ ] Add an authorized all-companies dashboard for administrators, Pay Masters and super administrators.
-- [ ] Verify company counts, financial aggregation and signed-in dashboard/company-switch flows.
+- [x] Correct dashboard employee, salary, payroll and attendance totals to the selected company's real employee directory.
+- [x] Add an authorized all-companies dashboard for administrators, Pay Masters and super administrators.
+- [x] Verify company counts, financial aggregation and signed-in dashboard/company-switch flows (33 tests passed; Smiley 4, Sonarisa 5 saved folders including Cuthbert's clock-enabled folder; no employee records altered).
 
 - [x] Create illustrated full-length user guide and company setup guide covering install/share, punches, disputes, import, AI review and post-approval tasks.
 - [x] Add versioned downloadable PDFs to both Training Hubs and Files; retain older resources and uploads. Published-site availability requires the app update.

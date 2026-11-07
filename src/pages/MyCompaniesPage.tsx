@@ -10,8 +10,6 @@ import PayrollDataReset from "@/components/PayrollDataReset";
 type Overview = CompanySummary;
 type Admin = { user_id: string; name: string; email: string | null; home_company: string | null; org_ids: string[] };
 
-const money = (n: number | null) => n == null ? "—" : `$${Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
 export default function MyCompaniesPage() {
   const [rows, setRows] = useState<Overview[] | null>(null);
   const [error, setError] = useState("");
@@ -50,6 +48,7 @@ export default function MyCompaniesPage() {
   }
 
   if (!rows) return <div className="p-6">Loading companies…</div>;
+  if (error) return <div className="p-6 space-y-4"><h1 className="text-2xl font-display font-bold">All companies dashboard</h1><p role="alert" className="text-destructive">{error}</p><Button variant="outline" disabled={busy} onClick={() => void load()}><RefreshCw />Retry</Button></div>;
   const visible = selected.length ? rows.filter(r => selected.includes(r.id)) : rows;
   const totals = consolidateCompanies(visible);
 
