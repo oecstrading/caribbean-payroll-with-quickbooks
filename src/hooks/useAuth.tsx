@@ -2,6 +2,7 @@ import { useState, useEffect, createContext, useContext } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 import { useQueryClient } from "@tanstack/react-query";
+import { clearHomeCompanyFlag } from "@/lib/home-company";
 
 interface AuthContextType {
   user: User | null;
@@ -43,6 +44,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signOut = async () => {
+    clearHomeCompanyFlag();
     await supabase.auth.signOut();
   };
 

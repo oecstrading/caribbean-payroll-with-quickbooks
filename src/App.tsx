@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { RoleProvider, useRole } from "@/hooks/useRole";
 import { Button } from "@/components/ui/button";
 import { CompanyProvider } from "@/hooks/useCompany";
+import { applyHomeCompany } from "@/lib/home-company";
 import AppLayout from "@/components/AppLayout";
 import DashboardPage from "@/pages/Dashboard";
 import EmployeesPage from "@/pages/EmployeesPage";
@@ -70,7 +71,16 @@ function SlowLoadHint() {
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading, signOut } = useAuth();
   const { role, loading: accessLoading, accessError, refreshAccess } = useRole();
-  if (loading || (user && accessLoading)) {
+  const [homeReady, setHomeReady] = useState(false);
+  useEffect(() => {
+    if (!user) { setHomeReady(false); return; }
+    let cancelled = false;
+    void applyHomeCompany(user.id)
+      .then(switched => { if (!cancelled && !switched) setHomeReady(true); })
+      .catch(() => { if (!cancelled) setHomeReady(true); });
+    return () => { cancelled = true; };
+  }, [user?.id]);
+  if (loading || (user && (accessLoading || !homeReady))) {
     return (
       <div
         className="min-h-screen flex items-center justify-center"

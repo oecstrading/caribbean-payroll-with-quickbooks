@@ -21,3 +21,6 @@
 - [x] Extend the importer to read every sheet: company settings, full HR fields, per-employee pay basis/weekly hours, allowances, deductions/creditors, loans, QuickBooks account codes.
 - [x] Surface the template: Training Hub listing, company setup page download, and a Files copy.
 - [x] Add a coverage test (template fields vs platform fields) and run the test suite; update project notes.
+
+- [x] Make the user's home company the default workspace: fresh sign-in opens it instead of the last company switched to; per-tab marker keeps an in-session switch intact.
+- [x] Verify signed-in start lands on Smileys Inc from a SONRISA starting point (dashboard shows 4 active employees, switcher marks it home); 6 new tests pass; build OK.
