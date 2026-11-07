@@ -34,25 +34,17 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
     setInfo(defaultInfo);
     if (!user) return;
     let cancelled = false;
-    supabase
-      .from("company_settings")
-      .select("*")
-      .limit(1)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data && !cancelled) {
-          setInfo({
-            company_name: data.company_name || defaultInfo.company_name,
-            logo_url: data.logo_url || "",
-            employer_nic_number: data.employer_nic_number || "",
-            tax_id: data.tax_id || "",
-            vat_number: data.vat_number || "",
-            telephone: data.telephone || "",
-            website: data.website || "",
-            address: data.address || "",
-          });
-        }
+    void (async () => {
+      const org = await supabase.rpc('current_org_id');
+      if (org.error || !org.data || cancelled) return;
+      const { data } = await supabase.from('company_settings').select('*').eq('org_id', org.data).maybeSingle();
+      if (data && !cancelled) setInfo({
+        company_name: data.company_name || defaultInfo.company_name,
+        logo_url: data.logo_url || '', employer_nic_number: data.employer_nic_number || '',
+        tax_id: data.tax_id || '', vat_number: data.vat_number || '', telephone: data.telephone || '',
+        website: data.website || '', address: data.address || '',
       });
+    })();
     return () => { cancelled = true; };
   }, [user?.id]);
 

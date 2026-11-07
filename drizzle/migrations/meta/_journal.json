@@ -512,6 +512,20 @@
       "when": 1793967429821,
       "tag": "0072_paid_site_travel_setting",
       "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1794048322829,
+      "tag": "0073_authorized_company_dashboard_summaries",
+      "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1794048409162,
+      "tag": "0074_company_dashboard_currency_fix",
+      "breakpoints": true
     }
   ]
 }

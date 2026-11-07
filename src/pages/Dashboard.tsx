@@ -18,6 +18,7 @@ import {
   CheckCircle,
   XCircle,
   TimerOff,
+  Building2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +34,7 @@ import { Button } from "@/components/ui/button";
 import { WORKSPACE_MODULES, ROUTE_MODULES } from "@/lib/workspace-access";
 import caribbeanHero from "@/assets/caribbean-hero.jpg";
 import PaymasterAlert from "@/components/PaymasterAlert";
+import { loadCompanySummaries, dashboardMoney, type CompanySummary } from '@/lib/company-dashboard';
 
 const fadeUp = {
   initial: { opacity: 0, y: 12 },
@@ -78,23 +80,30 @@ function usePullToRefresh(onRefresh: () => Promise<void>) {
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const { canAccess, isAdminOrManager, demoMode } = useRole();
-  const [liveSummary, setLiveSummary] = useState({ employees: 0, gross: 0, net: 0, onClock: 0 });
+  const { canAccess, isAdminOrManager, isPlatformAdmin, demoMode } = useRole();
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [liveSummary, setLiveSummary] = useState<CompanySummary | null>(null);
+  const [summaryError, setSummaryError] = useState('');
+  const [summaryLoading, setSummaryLoading] = useState(true);
+  const [orgId, setOrgId] = useState('');
   useEffect(() => {
     let active = true;
     const load = async () => {
-      const [p, e, r, shifts] = await Promise.all([
-        supabase.from("profiles").select("user_id").is("deleted_at", null).eq("status", "Active"),
-        supabase.from("employee_records").select("user_id").is("deleted_at", null).eq("status", "Active"),
-        supabase.from("payroll_runs").select("total_gross,total_net").order("created_at", { ascending: false }).limit(1).maybeSingle(),
-        supabase.from("workforce_shifts").select("id").not("clock_in", "is", null).is("clock_out", null).eq("shift_date", new Date().toISOString().slice(0, 10)),
-      ]);
-      if (active) setLiveSummary({ employees: (p.data?.length ?? 0) + (e.data?.length ?? 0), gross: Number(r.data?.total_gross ?? 0), net: Number(r.data?.total_net ?? 0), onClock: shifts.data?.length ?? 0 });
+      setSummaryLoading(true); setSummaryError('');
+      try {
+        const [rows, org] = await Promise.all([loadCompanySummaries(), supabase.rpc('current_org_id')]);
+        if (org.error) throw org.error;
+        if (active) { setLiveSummary(rows[0] ?? null); setOrgId(org.data ?? ''); }
+      } catch { if (active) { setLiveSummary(null); setSummaryError('Company totals could not be loaded. Please refresh.'); } }
+      finally { if (active) setSummaryLoading(false); }
     };
-    void load(); return () => { active = false; };
-  }, [canAccess]);
+    void load();
+    const onFocus = () => { void load(); };
+    window.addEventListener('focus', onFocus);
+    const timer = window.setInterval(onFocus, 60000);
+    return () => { active = false; window.removeEventListener('focus', onFocus); window.clearInterval(timer); };
+  }, [refreshKey, isAdminOrManager, isPlatformAdmin]);
   const homeTarget = canAccess("/payroll") ? "/payroll" : "/portal";
-  const [refreshKey, setRefreshKey] = useState(0);
   const [fieldOps, setFieldOps] = useState({ activeProjects: 0, pendingPayments: 0, pendingAmount: 0, checkedOut: 0, totalEquipment: 0, todayReports: 0, weeklyReports: [] as number[] });
   const [rosterData, setRosterData] = useState<{ name: string; siteName: string; shiftStart: string | null; shiftEnd: string | null; clockedIn: boolean; lateMinutes: number | null }[]>([]);
   const [lateAlerts, setLateAlerts] = useState<{ name: string; siteName: string; shiftStart: string; lateMinutes: number; clockedInAt: string | null }[]>([]);
@@ -110,16 +119,16 @@ export default function DashboardPage() {
       const todayDay = dayNames[today.getDay()];
 
       const [{ count: activeProjects }, { data: payments }, { count: checkedOut }, { count: totalEquipment }, { count: todayReports }, { data: weekReports }, { data: todayAssignments }, { data: allProfiles }, { data: allSites }, { data: todayPunches }] = await Promise.all([
-        supabase.from("projects").select("*", { count: "exact", head: true }).eq("status", "active"),
-        supabase.from("contractor_payments").select("amount").eq("status", "pending"),
-        supabase.from("equipment_checkouts").select("*", { count: "exact", head: true }).is("returned_at", null),
-        supabase.from("equipment").select("*", { count: "exact", head: true }),
-        supabase.from("daily_reports").select("*", { count: "exact", head: true }).eq("report_date", todayStr),
-        supabase.from("daily_reports").select("report_date").gte("report_date", weekAgoStr).lte("report_date", todayStr),
-        supabase.from("guard_assignments").select("user_id, site_id, shift_start, shift_end, days_of_week").eq("is_active", true),
-        supabase.from("profiles").select("user_id, first_name, last_name").eq("status", "Active"),
-        supabase.from("client_sites").select("id, name"),
-        supabase.from("clock_punches").select("user_id, punch_type, punched_at").gte("punched_at", todayStr).lte("punched_at", todayStr + "T23:59:59"),
+        supabase.from("projects").select("*", { count: "exact", head: true }).eq("org_id", orgId).eq("status", "active"),
+        supabase.from("contractor_payments").select("amount").eq("org_id", orgId).eq("status", "pending"),
+        supabase.from("equipment_checkouts").select("*", { count: "exact", head: true }).eq("org_id", orgId).is("returned_at", null),
+        supabase.from("equipment").select("*", { count: "exact", head: true }).eq("org_id", orgId),
+        supabase.from("daily_reports").select("*", { count: "exact", head: true }).eq("org_id", orgId).eq("report_date", todayStr),
+        supabase.from("daily_reports").select("report_date").eq("org_id", orgId).gte("report_date", weekAgoStr).lte("report_date", todayStr),
+        supabase.from("guard_assignments").select("user_id, site_id, shift_start, shift_end, days_of_week").eq("org_id", orgId).eq("is_active", true),
+        supabase.from("profiles").select("user_id, first_name, last_name").eq("org_id", orgId).eq("status", "Active"),
+        supabase.from("client_sites").select("id, name").eq("org_id", orgId),
+        supabase.from("clock_punches").select("user_id, punch_type, punched_at").eq("org_id", orgId).gte("punched_at", todayStr).lte("punched_at", todayStr + "T23:59:59"),
       ]);
 
       // Build 7-day counts array
@@ -193,8 +202,8 @@ export default function DashboardPage() {
         weeklyReports: dayCounts,
       });
     };
-    if (isAdminOrManager && ["/projects", "/contractors", "/equipment", "/daily-reports", "/roster"].some(canAccess)) fetchFieldOps();
-  }, [refreshKey, canAccess, isAdminOrManager]);
+    if (orgId && isAdminOrManager && ["/projects", "/contractors", "/equipment", "/daily-reports", "/roster"].some(canAccess)) fetchFieldOps();
+  }, [refreshKey, canAccess, isAdminOrManager, orgId]);
 
   const handleRefresh = useCallback(async () => {
     await new Promise((r) => setTimeout(r, 800));
@@ -211,13 +220,14 @@ export default function DashboardPage() {
   const onClockToday = sampleAttendance.filter(
     (a) => a.date === "2026-03-06" && a.clockIn && a.status === "Complete"
   ).length;
-  const lateToday = sampleAttendance.filter((a) => a.late).length;
+  const lateToday = demoMode ? sampleAttendance.filter((a) => a.late).length : liveSummary?.late_arrivals ?? 0;
+  const summaryValue = (value: number | null | undefined, money = false) => summaryLoading ? '…' : value == null ? '—' : money ? dashboardMoney(value, liveSummary?.currency ?? 'XCD') : String(value);
 
   const metrics = [
-    { label: "Total Employees", tile: "carib-sea", value: (demoMode ? activeEmployees.length : liveSummary.employees).toString(), icon: Users, color: "text-primary", bgColor: "bg-primary/10", path: "/employees" },
-    { label: "Latest Gross", tile: "carib-palm", value: formatCurrency(demoMode ? totalGross : liveSummary.gross, "$"), icon: DollarSign, color: "text-success", bgColor: "bg-success/10", path: "/payroll" },
-    { label: "On Clock Today", tile: "carib-coral", value: (demoMode ? onClockToday : liveSummary.onClock).toString(), icon: Clock, color: "text-primary", bgColor: "bg-primary/10", path: "/attendance" },
-    { label: "Latest Net Pay", tile: "carib-mango", value: formatCurrency(demoMode ? totalPayroll : liveSummary.net), icon: DollarSign, color: "text-accent-foreground", bgColor: "bg-accent/20", path: "/payroll" },
+    { label: "Total Employees", tile: "carib-sea", value: demoMode ? String(activeEmployees.length) : summaryValue(liveSummary?.employees), icon: Users, color: "text-primary", bgColor: "bg-primary/10", path: canAccess('/employees') ? '/employees' : '/payroll' },
+    { label: "Latest Gross", tile: "carib-palm", value: demoMode ? formatCurrency(totalGross) : summaryValue(liveSummary?.gross, true), icon: DollarSign, color: "text-success", bgColor: "bg-success/10", path: "/payroll" },
+    { label: "On Clock Today", tile: "carib-coral", value: demoMode ? String(onClockToday) : summaryValue(liveSummary?.on_clock), icon: Clock, color: "text-primary", bgColor: "bg-primary/10", path: "/attendance" },
+    { label: "Latest Net Pay", tile: "carib-mango", value: demoMode ? formatCurrency(totalPayroll) : summaryValue(liveSummary?.net, true), icon: DollarSign, color: "text-accent-foreground", bgColor: "bg-accent/20", path: "/payroll" },
   ];
 
   const quickActions = [
@@ -265,6 +275,8 @@ export default function DashboardPage() {
       <section className="space-y-3">
         <h2 className="text-lg font-display font-semibold text-foreground">My workspace</h2>
         <div className="flex flex-wrap gap-3">
+          {(isAdminOrManager || isPlatformAdmin) && <Button variant="default" onClick={() => navigate('/my-companies')}><Building2 />All companies dashboard</Button>}
+          <Button variant="outline" disabled={summaryLoading} onClick={handleRefresh}><RefreshCw className={summaryLoading ? 'animate-spin' : ''} />Refresh totals</Button>
           <Button variant="secondary" onClick={() => navigate("/portal")}><Users />My Portal</Button>
           <Button variant="secondary" onClick={() => navigate("/payslips")}><FileDown />My Payslips</Button>
           {!isAdminOrManager && WORKSPACE_MODULES.filter(module => Object.entries(ROUTE_MODULES).some(([path, id]) => id === module.id && canAccess(path))).map(module => {
@@ -273,6 +285,8 @@ export default function DashboardPage() {
           })}
         </div>
       </section>
+      {!demoMode && liveSummary && <section className="border-y border-border py-3 flex flex-wrap justify-between gap-3"><div><h2 className="font-display font-semibold">{liveSummary.name}</h2><p className="text-sm text-muted-foreground">{liveSummary.active_employees ?? '—'} active employees · Latest approved payroll: {liveSummary.period ?? 'None yet'}</p></div>{liveSummary.monthly_salaries !== null && <div><p className="text-sm text-muted-foreground">Active monthly salary equivalents</p><p className="font-semibold">{dashboardMoney(liveSummary.monthly_salaries, liveSummary.currency)}</p></div>}</section>}
+      {summaryError && <p role="alert" className="text-destructive">{summaryError}</p>}
       {/* Metrics */}
       {canAccess("/attendance") && <><StaffTimeClock />{demoMode && <AttendanceClock />}</>}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -359,7 +373,7 @@ export default function DashboardPage() {
                   <p className="text-xs text-muted-foreground mt-0.5">Review attendance records →</p>
                 </div>
               </div>)}
-              {canAccess("/reports") && (<div
+              {demoMode && canAccess("/reports") && (<div
                 className="flex items-start gap-3 p-3 rounded-lg bg-primary/5 border border-primary/10 cursor-pointer hover:bg-primary/10 transition-colors"
                 onClick={() => navigate("/reports")}
               >
@@ -369,7 +383,7 @@ export default function DashboardPage() {
                   <p className="text-xs text-muted-foreground mt-0.5">Generate C3 report →</p>
                 </div>
               </div>)}
-              {canAccess("/employees") && (<div
+              {demoMode && canAccess("/employees") && (<div
                 className="flex items-start gap-3 p-3 rounded-lg bg-success/5 border border-success/10 cursor-pointer hover:bg-success/10 transition-colors"
                 onClick={() => navigate("/employees")}
               >
@@ -392,8 +406,8 @@ export default function DashboardPage() {
             <CardContent className="space-y-4">
               <div className="space-y-3">
                 {[
-                  { label: "Gross Pay", value: formatCurrency(demoMode ? totalGross : liveSummary.gross), color: "text-foreground" },
-                  { label: "Net Pay", value: formatCurrency(demoMode ? totalPayroll : liveSummary.net), color: "text-success" },
+                  { label: "Gross Pay", value: demoMode ? formatCurrency(totalGross) : summaryValue(liveSummary?.gross, true), color: "text-foreground" },
+                  { label: "Net Pay", value: demoMode ? formatCurrency(totalPayroll) : summaryValue(liveSummary?.net, true), color: "text-success" },
                 ].filter(row => canAccess(row.label === "Gross Pay" || row.label === "Net Pay" ? "/payroll" : "/reports")).map((row) => (
                   <button type="button" key={row.label} onClick={() => navigate(row.label === "Gross Pay" || row.label === "Net Pay" ? "/payroll" : "/reports")} className="w-full flex items-center justify-between py-1.5 px-1 rounded-md border-b border-border/50 last:border-0 hover:bg-muted transition-colors text-left">
                     <span className="text-sm text-muted-foreground">{row.label}</span>

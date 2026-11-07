@@ -1,4 +1,5 @@
 # Application rules
+- Dashboard totals come from the authorized company_dashboard_summaries RPC and the payroll employee directory; aggregate latest-period runs per currency, never count platform identities as employees.
 - Company super-administrator delegation uses a separate protected authority table; platform delegation stays independent. Server-side transactions protect self/last-super-admin removal, tenant scope and retained financial records.
 - Company enabled modules cap every role, including company admins, through shared route checks and has_workspace_access; platform company administration stays independent. Setup/edit checkboxes persist the cap, and production workspaces suppress demo data and simulated accounting posts.
 - Workforce clocks enforce configured identity/methods, server-time punches, bcrypt PINs and assigned-site geofencing; enabled staff get own-clock access without management rights. Missing-punch suggestions require confirmation; opt-in attendance payroll revalidates rates/hours atomically and snapshots its basis. Reuse the company-isolated alert scheduler; never mix simulated timesheets into live pay.

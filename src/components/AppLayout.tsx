@@ -130,7 +130,7 @@ export default function AppLayout() {
     setSearchQuery("");
   }, [location.pathname]);
 
-  const visibleNavItems = [...navItems.filter((item) => canAccess(item.path)), ...(companyCount > 1 || platformAdmin ? [{ path: "/my-companies", label: "My Companies", icon: Building2 }] : []), ...(platformAdmin ? [{ path: "/companies", label: "Companies", icon: Building2 }] : [])];
+  const visibleNavItems = [...navItems.filter((item) => canAccess(item.path)), ...(role === "admin" || role === "manager" || platformAdmin ? [{ path: "/my-companies", label: "All Companies Dashboard", icon: Building2 }] : []), ...(platformAdmin ? [{ path: "/companies", label: "Companies", icon: Building2 }] : [])];
 
   // Search results based on nav items
   const searchResults = useMemo(() => {

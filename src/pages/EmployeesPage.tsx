@@ -35,7 +35,9 @@ export default function EmployeesPage() {
   const [finishingRemoval, setFinishingRemoval] = useState<string | null>(null);
   const fetchEmployees = useCallback(async () => {
     setLoading(true); setError("");
-    const [profiles, records] = await Promise.all([supabase.from("profiles").select("*").eq("is_employee", true).order("first_name"), supabase.from("employee_records").select("*").is("permanently_deleted_at", null).order("first_name")]);
+    const org = await supabase.rpc("current_org_id");
+    if (org.error || !org.data) { setLive([]); setError("Company access could not be loaded. Please retry."); setLoading(false); return; }
+    const [profiles, records] = await Promise.all([supabase.from("profiles").select("*").eq("org_id", org.data).eq("is_employee", true).order("first_name"), supabase.from("employee_records").select("*").eq("org_id", org.data).is("permanently_deleted_at", null).order("first_name")]);
     if (profiles.error || records.error) setError("Employee records could not be loaded. Please try again.");
     else setLive([...(profiles.data || []).map(p => ({ ...profileToFolder(p), accountLinked: true })), ...(records.data || []).map(p => ({ ...profileToFolder(p), accountLinked: false, loginUserId: p.login_user_id }))]);
     const jobs = await supabase.from("employee_removal_jobs").select("employee_id").eq("status", "pending");
