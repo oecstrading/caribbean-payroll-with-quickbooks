@@ -575,6 +575,13 @@
       "when": 1794067237514,
       "tag": "0081_fix_reset_clock_phone_audit",
       "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1794071861572,
+      "tag": "0082_paymaster_employee_login",
+      "breakpoints": true
     }
   ]
 }
