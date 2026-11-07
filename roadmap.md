@@ -1,5 +1,9 @@
 # Roadmap
 
+- [ ] Correct dashboard employee, salary, payroll and attendance totals to the selected company's real employee directory.
+- [ ] Add an authorized all-companies dashboard for administrators, Pay Masters and super administrators.
+- [ ] Verify company counts, financial aggregation and signed-in dashboard/company-switch flows.
+
 - [x] Create illustrated full-length user guide and company setup guide covering install/share, punches, disputes, import, AI review and post-approval tasks.
 - [x] Add versioned downloadable PDFs to both Training Hubs and Files; retain older resources and uploads. Published-site availability requires the app update.
 - [x] Inspect all 36 PDF pages; correct cover spacing and reading-path page numbers; verify both Training downloads and nine relevant tests.
