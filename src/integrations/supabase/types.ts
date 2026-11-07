@@ -3706,6 +3706,8 @@ export type Database = {
       }
       workforce_clock_credentials: {
         Row: {
+          bound_at: string | null
+          bound_device_hash: string | null
           employee_code: string
           employee_id: string
           enabled: boolean
@@ -3715,6 +3717,8 @@ export type Database = {
           pin_hash: string
         }
         Insert: {
+          bound_at?: string | null
+          bound_device_hash?: string | null
           employee_code: string
           employee_id: string
           enabled?: boolean
@@ -3724,6 +3728,8 @@ export type Database = {
           pin_hash: string
         }
         Update: {
+          bound_at?: string | null
+          bound_device_hash?: string | null
           employee_code?: string
           employee_id?: string
           enabled?: boolean
@@ -4196,8 +4202,19 @@ export type Database = {
       can_erase_payroll: { Args: { _org: string }; Returns: boolean }
       can_manage_clock_devices: { Args: { _org: string }; Returns: boolean }
       can_view_company: { Args: { _org: string }; Returns: boolean }
+      claim_clock_device: {
+        Args: { _device_hash: string; _employee: string; _org: string }
+        Returns: boolean
+      }
       claim_user_pin_attempt: { Args: { _user: string }; Returns: boolean }
       client_portal_data: { Args: { _code: string }; Returns: Json }
+      clock_phone_bindings: {
+        Args: never
+        Returns: {
+          bound_at: string
+          employee_id: string
+        }[]
+      }
       companies_overview: {
         Args: never
         Returns: {
@@ -4453,6 +4470,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      reset_clock_phone: { Args: { _employee: string }; Returns: undefined }
       reset_company_simulation: {
         Args: { _enabled: boolean; _start: string }
         Returns: {
