@@ -119,16 +119,16 @@ export default function DashboardPage() {
       const todayDay = dayNames[today.getDay()];
 
       const [{ count: activeProjects }, { data: payments }, { count: checkedOut }, { count: totalEquipment }, { count: todayReports }, { data: weekReports }, { data: todayAssignments }, { data: allProfiles }, { data: allSites }, { data: todayPunches }] = await Promise.all([
-        supabase.from("projects").select("*", { count: "exact", head: true }).eq("status", "active"),
-        supabase.from("contractor_payments").select("amount").eq("status", "pending"),
-        supabase.from("equipment_checkouts").select("*", { count: "exact", head: true }).is("returned_at", null),
-        supabase.from("equipment").select("*", { count: "exact", head: true }),
-        supabase.from("daily_reports").select("*", { count: "exact", head: true }).eq("report_date", todayStr),
-        supabase.from("daily_reports").select("report_date").gte("report_date", weekAgoStr).lte("report_date", todayStr),
-        supabase.from("guard_assignments").select("user_id, site_id, shift_start, shift_end, days_of_week").eq("is_active", true),
-        supabase.from("profiles").select("user_id, first_name, last_name").eq("status", "Active"),
-        supabase.from("client_sites").select("id, name"),
-        supabase.from("clock_punches").select("user_id, punch_type, punched_at").gte("punched_at", todayStr).lte("punched_at", todayStr + "T23:59:59"),
+        supabase.from("projects").select("*", { count: "exact", head: true }).eq("org_id", orgId).eq("status", "active"),
+        supabase.from("contractor_payments").select("amount").eq("org_id", orgId).eq("status", "pending"),
+        supabase.from("equipment_checkouts").select("*", { count: "exact", head: true }).eq("org_id", orgId).is("returned_at", null),
+        supabase.from("equipment").select("*", { count: "exact", head: true }).eq("org_id", orgId),
+        supabase.from("daily_reports").select("*", { count: "exact", head: true }).eq("org_id", orgId).eq("report_date", todayStr),
+        supabase.from("daily_reports").select("report_date").eq("org_id", orgId).gte("report_date", weekAgoStr).lte("report_date", todayStr),
+        supabase.from("guard_assignments").select("user_id, site_id, shift_start, shift_end, days_of_week").eq("org_id", orgId).eq("is_active", true),
+        supabase.from("profiles").select("user_id, first_name, last_name").eq("org_id", orgId).eq("status", "Active"),
+        supabase.from("client_sites").select("id, name").eq("org_id", orgId),
+        supabase.from("clock_punches").select("user_id, punch_type, punched_at").eq("org_id", orgId).gte("punched_at", todayStr).lte("punched_at", todayStr + "T23:59:59"),
       ]);
 
       // Build 7-day counts array

@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { Building2, Users, AlertTriangle, Wallet, ArrowRight, ShieldCheck, Save } from "lucide-react";
+import { Building2, Users, AlertTriangle, Wallet, ArrowRight, ShieldCheck, Save, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { switchCompany } from "@/lib/multi-company";
+import { loadCompanySummaries, consolidateCompanies, dashboardMoney, type CompanySummary } from '@/lib/company-dashboard';
 import PayrollDataReset from "@/components/PayrollDataReset";
 
-type Overview = { id: string; name: string; active_employees: number; last_period: string | null; last_net: number | null; open_alerts: number; pending_runs: number };
+type Overview = CompanySummary;
 type Admin = { user_id: string; name: string; email: string | null; home_company: string | null; org_ids: string[] };
 
 const money = (n: number | null) => n == null ? "—" : `$${Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -20,11 +21,16 @@ export default function MyCompaniesPage() {
   const [saving, setSaving] = useState("");
   const [current, setCurrent] = useState("");
   const [superAdmin, setSuperAdmin] = useState(false);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [busy, setBusy] = useState(false);
 
   async function load() {
-    const [o, p, c] = await Promise.all([supabase.rpc("companies_overview"), supabase.rpc("is_platform_admin"), supabase.rpc("current_org_id")]);
-    if (o.error) { setError(o.error.message); setRows([]); return; }
-    setRows((o.data ?? []) as Overview[]); setCurrent(c.data ?? "");
+    setBusy(true); setError("");
+    let overview: Overview[];
+    try { overview = await loadCompanySummaries(true); }
+    catch { setError("Company totals could not be loaded. Please retry."); setRows([]); setBusy(false); return; }
+    const [p, c] = await Promise.all([supabase.rpc("is_platform_admin"), supabase.rpc("current_org_id")]);
+    setRows(overview); setBusy(false); setCurrent(c.data ?? "");
     if (c.data) { const s = await supabase.rpc("can_erase_payroll", { _org: c.data }); setSuperAdmin(!!s.data); }
     const isPlatform = !p.error && !!p.data; setPlatform(isPlatform);
     if (isPlatform) {
@@ -44,26 +50,33 @@ export default function MyCompaniesPage() {
   }
 
   if (!rows) return <div className="p-6">Loading companies…</div>;
-  const totals = rows.reduce((t, r) => ({ staff: t.staff + Number(r.active_employees), alerts: t.alerts + Number(r.open_alerts), net: t.net + Number(r.last_net ?? 0) }), { staff: 0, alerts: 0, net: 0 });
+  const visible = selected.length ? rows.filter(r => selected.includes(r.id)) : rows;
+  const totals = consolidateCompanies(visible);
 
   return <div className="p-4 md:p-6 space-y-8 max-w-6xl mx-auto">
-    <header className="border-b border-border pb-5">
-      <div className="flex items-center gap-3"><Building2 className="text-primary" /><h1 className="text-2xl font-display font-bold">My companies</h1></div>
-      <p className="text-muted-foreground mt-2">Every company you can manage, side by side. Open one to work inside it.</p>
+    <header className="border-b border-border pb-5 flex flex-wrap items-center justify-between gap-3">
+      <div><div className="flex items-center gap-3"><Building2 className="text-primary" /><h1 className="text-2xl font-display font-bold">All companies dashboard</h1></div><p className="text-muted-foreground mt-2">{visible.length} authorized companies · Latest approved payroll by company</p></div>
+      <Button variant="outline" disabled={busy} onClick={() => void load()}><RefreshCw className={busy ? 'animate-spin' : ''} />Refresh totals</Button>
     </header>
-    {error && <p className="text-destructive">{error}</p>}
-    <section className="grid gap-4 sm:grid-cols-3">
-      <div className="rounded-lg bg-primary/10 border border-primary/30 p-4"><p className="text-sm text-muted-foreground">Companies</p><p className="text-2xl font-bold">{rows.length}</p></div>
-      <div className="rounded-lg bg-success/10 border border-success/30 p-4"><p className="text-sm text-muted-foreground">Active staff</p><p className="text-2xl font-bold">{totals.staff}</p></div>
-      <div className="rounded-lg bg-warning/10 border border-warning/30 p-4"><p className="text-sm text-muted-foreground">Open missing-punch alerts</p><p className="text-2xl font-bold">{totals.alerts}</p></div>
+    {error && <p role="alert" className="text-destructive">{error}</p>}
+    <section className="flex flex-wrap gap-3 items-center border-b border-border pb-4">
+      <Button variant={selected.length ? 'outline' : 'default'} onClick={() => setSelected([])}>All authorized companies</Button>
+      {rows.map(r => <label key={r.id} className="flex items-center gap-2 min-h-11 text-sm"><input type="checkbox" checked={selected.includes(r.id)} onChange={e => setSelected(ids => e.target.checked ? [...ids, r.id] : ids.filter(id => id !== r.id))} />{r.name}</label>)}
     </section>
+    <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {[['Employees', totals.employees, 'carib-sea'], ['Active employees', totals.active, 'carib-palm'], ['On clock today', totals.onClock, 'carib-coral'], ['Open alerts', totals.alerts, 'carib-mango']].map(([label, value, tile]) => <div key={String(label)} className={`carib-tile ${tile} rounded-lg p-4`}><p className="text-sm font-medium">{label}</p><p className="text-2xl font-bold">{value}</p></div>)}
+    </section>
+    {totals.currencies.map(group => <section key={group.currency} className="space-y-3 border-y border-border py-4"><h2 className="font-display font-semibold">{group.currency} financial totals</h2><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{[['Active monthly salary equivalents', group.monthly], ['Latest approved gross', group.gross], ['Latest approved deductions', group.deductions], ['Latest approved net', group.net]].map(([label, amount]) => <div key={String(label)}><p className="text-sm text-muted-foreground">{label}</p><p className="text-lg font-semibold">{dashboardMoney(Number(amount), group.currency)}</p></div>)}</div></section>)}
     <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {rows.map(r => <article key={r.id} className={`border rounded-lg bg-card p-5 border-t-4 space-y-3 ${r.id === current ? "border-t-success border-success/40" : "border-t-primary border-border"}`}>
+      {visible.map(r => <article key={r.id} className={`border rounded-lg bg-card p-5 border-t-4 space-y-3 ${r.id === current ? "border-t-success border-success/40" : "border-t-primary border-border"}`}>
         <div className="flex justify-between gap-2"><h2 className="font-semibold break-words min-w-0">{r.name}</h2>{r.id === current && <span className="text-xs rounded-full bg-success/15 text-success px-2 py-0.5 h-fit">Open now</span>}</div>
         <ul className="text-sm space-y-1.5">
-          <li className="flex items-center gap-2"><Users size={15} className="text-primary" />{r.active_employees} active staff</li>
-          <li className="flex items-center gap-2"><Wallet size={15} className="text-success" />Last payroll: {r.last_period ?? "none yet"} · {money(r.last_net)} net</li>
-          <li className={`flex items-center gap-2 ${Number(r.open_alerts) ? "text-warning" : ""}`}><AlertTriangle size={15} />{r.open_alerts} open alerts</li>
+          <li className="flex items-center gap-2"><Users size={15} className="text-primary" />{r.employees ?? "—"} employees · {r.active_employees ?? "—"} active</li>
+          <li className="flex items-center gap-2"><Wallet size={15} className="text-success" />Last payroll: {r.period ?? "none yet"} · {dashboardMoney(r.net, r.currency)} net</li>
+          <li>Monthly salaries: {dashboardMoney(r.monthly_salaries, r.currency)}</li>
+          <li>Gross: {dashboardMoney(r.gross, r.currency)} · Deductions: {dashboardMoney(r.deductions, r.currency)}</li>
+          <li>{r.on_clock ?? "—"} on clock · {r.pending_runs ?? "—"} pending payroll runs</li>
+          <li className={`flex items-center gap-2 ${Number(r.open_alerts) ? "text-warning" : ""}`}><AlertTriangle size={15} />{r.open_alerts ?? "—"} open alerts</li>
         </ul>
         <Button className="w-full" variant={r.id === current ? "outline" : "default"} onClick={() => switchCompany(r.id).catch(e => toast.error(e.message))}>
           {r.id === current ? "Go to dashboard" : "Open this company"}<ArrowRight size={16} className="ml-2" />
