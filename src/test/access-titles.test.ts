@@ -19,4 +19,15 @@ describe("job roles", () => {
   it("manager starts with no assigned tabs", () => {
     expect(canOpenPath("manager", titleDefaultModules("manager"), "/payroll")).toBe(false);
   });
+  it("an external Pay Master can run payroll in either assigned company's enabled workspace without user administration", () => {
+    const modules = titleDefaultModules("paymaster");
+    for (const company of ["Smiley", "Sonrisa"]) {
+      expect(canOpenPath("manager", modules, "/payroll", ["payroll", "reports", "training"]), company).toBe(true);
+      expect(canOpenPath("manager", modules, "/users", ["payroll", "reports", "training"]), company).toBe(false);
+    }
+    expect(canOpenPath("manager", modules, "/quickbooks", ["payroll", "reports", "training"])).toBe(false);
+  });
+  it("Super Admin retains payroll access without changing to Pay Master", () => {
+    expect(canOpenPath("admin", [], "/payroll", ["payroll"])).toBe(true);
+  });
 });

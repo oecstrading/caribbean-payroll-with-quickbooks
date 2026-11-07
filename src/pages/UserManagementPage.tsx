@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import UserAccountDialog from "@/components/UserAccountDialog";
+import MultiCompanyPaymasterDialog from "@/components/MultiCompanyPaymasterDialog";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -50,6 +51,7 @@ export default function UserManagementPage() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<AppRole | null>(null);
   const [showInvite, setShowInvite] = useState(false);
+  const [showPaymaster, setShowPaymaster] = useState(false);
   const [editUser, setEditUser] = useState<UserWithRole | null>(null);
   const [pinUser, setPinUser] = useState<UserWithRole | null>(null);
   const [pinValue, setPinValue] = useState("");
@@ -179,6 +181,7 @@ export default function UserManagementPage() {
           <p className="text-sm text-muted-foreground mt-1">{users.length} accounts • Platform access & employee links</p>
         </div>
         <div className="flex flex-wrap gap-2"><InstallKit />
+        {isPlatformAdmin && <Button variant="outline" onClick={() => setShowPaymaster(true)}><Shield />Multi-company Pay Master</Button>}
         <Button
           onClick={() => setShowInvite(true)}
           className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
@@ -329,6 +332,7 @@ export default function UserManagementPage() {
       </Card>
 
       <WorkspaceAccessDialog user={accessUser} onClose={() => setAccessUser(null)} onSaved={fetchUsers} />
+      <MultiCompanyPaymasterDialog open={showPaymaster} onClose={() => setShowPaymaster(false)} onSaved={fetchUsers} />
       <Dialog open={!!deleteUser} onOpenChange={open => { if (!open && !deleting) setDeleteUser(null); }}>
         <DialogContent className="sm:max-w-md"><DialogHeader><DialogTitle>Delete account permanently</DialogTitle></DialogHeader>
           <p className="text-sm break-all">{deleteUser?.email}</p>

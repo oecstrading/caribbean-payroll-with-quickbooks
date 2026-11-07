@@ -6,11 +6,15 @@ import { Button } from "@/components/ui/button";
 import { switchCompany } from "@/lib/multi-company";
 import { loadCompanySummaries, consolidateCompanies, dashboardMoney, type CompanySummary } from '@/lib/company-dashboard';
 import PayrollDataReset from "@/components/PayrollDataReset";
+import MultiCompanyPaymasterDialog from "@/components/MultiCompanyPaymasterDialog";
+import { useRole } from "@/hooks/useRole";
 
 type Overview = CompanySummary;
 type Admin = { user_id: string; name: string; email: string | null; home_company: string | null; org_ids: string[] };
 
 export default function MyCompaniesPage() {
+  const { canAccess } = useRole();
+  const [showPaymaster, setShowPaymaster] = useState(false);
   const [rows, setRows] = useState<Overview[] | null>(null);
   const [error, setError] = useState("");
   const [platform, setPlatform] = useState(false);
@@ -80,14 +84,16 @@ export default function MyCompaniesPage() {
         <Button className="w-full" variant={r.id === current ? "outline" : "default"} onClick={() => switchCompany(r.id).catch(e => toast.error(e.message))}>
           {r.id === current ? "Go to dashboard" : "Open this company"}<ArrowRight size={16} className="ml-2" />
         </Button>
+        {canAccess('/payroll') && <Button variant="secondary" className="w-full" onClick={() => switchCompany(r.id, '/payroll').catch(e => toast.error(e.message))}><Wallet size={16} />Manage payroll</Button>}
       </article>)}
     </section>
 
     {(platform || superAdmin) && <PayrollDataReset companies={rows.map(r => ({ id: r.id, name: r.name }))} />}
 
     {platform && <section className="space-y-4">
+      <Button onClick={() => setShowPaymaster(true)}><Users />Assign multi-company Pay Master</Button>
       <div className="flex items-center gap-2"><ShieldCheck className="text-coral" /><h2 className="font-display text-lg font-semibold">Who can see which companies</h2></div>
-      <p className="text-sm text-muted-foreground">Tick the companies each administrator or manager may open. They always keep their own (home) company. You see all companies automatically.</p>
+      <p className="text-sm text-muted-foreground">Tick the companies each administrator, Pay Master or manager may open. They always keep their home company. You see all companies automatically.</p>
       {!admins.length && <p className="text-muted-foreground">No other administrators or managers yet.</p>}
       <div className="space-y-3">{admins.map(a => <div key={a.user_id} className="border border-border rounded-lg p-4 bg-card space-y-3">
         <div><p className="font-medium">{a.name || a.email}</p><p className="text-xs text-muted-foreground">{a.email} · Home: {a.home_company ?? "none"}</p></div>
@@ -97,5 +103,6 @@ export default function MyCompaniesPage() {
         <Button size="sm" disabled={saving === a.user_id} onClick={() => void saveAccess(a.user_id)}><Save size={15} className="mr-2" />{saving === a.user_id ? "Saving…" : "Save access"}</Button>
       </div>)}</div>
     </section>}
+    <MultiCompanyPaymasterDialog open={showPaymaster} onClose={() => setShowPaymaster(false)} onSaved={() => void load()} />
   </div>;
 }
