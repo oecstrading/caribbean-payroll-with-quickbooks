@@ -1,3 +1,4 @@
+import { clockDeviceId } from "@/lib/clock-device-id";
 import { supabase } from "@/integrations/supabase/client";
 
 // Punches captured without internet wait on the device and sync when the connection returns.
@@ -52,7 +53,7 @@ export async function syncPunches(): Promise<{ sent: number; failed: number }> {
     for (const p of list) {
       if (p.error) { failed++; continue; }
       const body: Record<string, unknown> = { action: "punch", mode: p.mode, direction: p.direction, latitude: p.latitude, longitude: p.longitude, captured_at: p.captured_at, offline_id: p.id };
-      if (p.pin) Object.assign(body, { org_id: p.org_id, employee_code: p.employee_code, pin: p.pin });
+      if (p.pin) Object.assign(body, { org_id: p.org_id, employee_code: p.employee_code, pin: p.pin, device_id: clockDeviceId() });
       try {
         const { data, error } = await supabase.functions.invoke("workforce-clock", { body });
         if (error) {

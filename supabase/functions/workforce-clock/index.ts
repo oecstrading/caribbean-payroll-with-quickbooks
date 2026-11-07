@@ -1,7 +1,8 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { z } from "npm:zod@3.25.76";
-const bodySchema = z.object({ action: z.enum(["status","punch"]), org_id: z.string().uuid().optional(), employee_code: z.string().regex(/^[A-Za-z0-9_-]{2,40}$/).optional(), pin: z.string().regex(/^\d{4,6}$/).optional(), direction: z.enum(["clock_in","clock_out","lunch_out","lunch_in"]).optional(), mode: z.enum(["device","voice","pin"]).default("device"), latitude: z.number().finite().min(-90).max(90).optional(), longitude: z.number().finite().min(-180).max(180).optional(), captured_at: z.string().datetime({offset:true}).optional(), offline_id: z.string().uuid().optional() }).strict();
+const bodySchema = z.object({ action: z.enum(["status","punch"]), org_id: z.string().uuid().optional(), employee_code: z.string().regex(/^[A-Za-z0-9_-]{2,40}$/).optional(), pin: z.string().regex(/^\d{4,6}$/).optional(), direction: z.enum(["clock_in","clock_out","lunch_out","lunch_in"]).optional(), mode: z.enum(["device","voice","pin"]).default("device"), latitude: z.number().finite().min(-90).max(90).optional(), longitude: z.number().finite().min(-180).max(180).optional(), captured_at: z.string().datetime({offset:true}).optional(), offline_id: z.string().uuid().optional(), device_id: z.string().uuid().optional() }).strict();
+const sha256 = async (s: string) => Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)))).map(b=>b.toString(16).padStart(2,"0")).join("");
 const reply = (data: unknown, status=200) => new Response(JSON.stringify(data), {status, headers:{...corsHeaders,"Content-Type":"application/json","Cache-Control":"no-store"}});
 Deno.serve(async req => {
  if(req.method==="OPTIONS") return new Response("ok",{headers:corsHeaders});
@@ -16,6 +17,10 @@ Deno.serve(async req => {
    const result=await admin.rpc("workforce_pin_employee",{_org:body.org_id,_code:body.employee_code,_pin:body.pin});
    if(result.error||!result.data) return reply({error:"Employee code or PIN not accepted. Repeated failures temporarily lock the clock."},403);
    employee=result.data; org=body.org_id;
+   if(!body.device_id) return reply({error:"Please update the clock app: open your clock link again on your own phone."},400);
+   const bound=await admin.rpc("claim_clock_device",{_org:org,_employee:employee,_device_hash:await sha256(`${org}:${body.device_id}`)});
+   if(bound.error) return reply({error:"Unable to verify this phone. Please try again."},503);
+   if(!bound.data) return reply({error:"This clock is locked to the employee's own phone. Clock in from your registered phone, or ask your manager to reset your phone."},403);
   } else {
    const authorization=req.headers.get("Authorization"); if(!authorization?.startsWith("Bearer ")) return reply({error:"Sign in or enter your company employee code and PIN"},401);
    const caller=createClient(url,anon,{global:{headers:{Authorization:authorization}}});
