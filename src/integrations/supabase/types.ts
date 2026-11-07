@@ -4206,6 +4206,7 @@ export type Database = {
         }[]
       }
       company_configuration: { Args: never; Returns: Json }
+      company_dashboard_summaries: { Args: { _all?: boolean }; Returns: Json }
       complete_company_setup: {
         Args: { _details: Json; _token: string; _user: string }
         Returns: string
