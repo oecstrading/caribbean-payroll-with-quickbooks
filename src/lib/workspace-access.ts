@@ -24,7 +24,7 @@ export const ACCESS_TITLES: { id: AccessTitle; label: string; hint: string }[] =
   { id: "admin", label: "Administrator", hint: "Every enabled company page plus user management." },
 ];
 export const PAYMASTER_MODULES: WorkspaceModule[] = ["hr", "payroll", "reports", "attendance", "leave", "quickbooks", "training"];
-export const PAYMASTER_DEFAULTS: WorkspaceModule[] = ["payroll", "reports", "quickbooks", "training"];
+export const PAYMASTER_DEFAULTS: WorkspaceModule[] = ["hr", "payroll", "reports", "attendance", "leave", "quickbooks", "training"];
 export const EMPLOYEE_DEFAULTS: WorkspaceModule[] = ["attendance", "training"];
 /** Pages that may be ticked for a job role. */
 export function titleAllowedModules(title: AccessTitle): WorkspaceModule[] {
