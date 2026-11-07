@@ -4338,6 +4338,17 @@ export type Database = {
       }
       my_pay_preview: { Args: { _end: string; _start: string }; Returns: Json }
       my_workspace_access: { Args: never; Returns: Json }
+      paymaster_assignment_candidates: {
+        Args: never
+        Returns: {
+          email: string
+          home_company: string
+          home_org_id: string
+          name: string
+          org_ids: string[]
+          user_id: string
+        }[]
+      }
       paymaster_assignment_details: {
         Args: { _user: string }
         Returns: string[]
