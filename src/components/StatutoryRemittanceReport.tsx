@@ -8,6 +8,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { formatCurrency } from "@/lib/payroll-engine";
 import { levyFor } from "@/lib/statutory-levies";
 import { REMITTANCE_TERMS, termsFor } from "@/lib/remittance-terms";
+import { SummaryCard } from "@/components/SummaryCard";
 
 type Slip = { name: string; month: string; gross: number; paye: number; ee: number; er: number };
 
@@ -47,9 +48,9 @@ export default function StatutoryRemittanceReport() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
         <div className="space-y-1"><Label htmlFor="rem-month">Month</Label><Input id="rem-month" type="month" value={month} onChange={e => setMonth(e.target.value)} /></div>
         <div className="space-y-1"><Label htmlFor="rem-country">Jurisdiction</Label><NativeSelect id="rem-country" value={code} onChange={e => setCode(e.target.value)}>{Object.entries(REMITTANCE_TERMS).map(([k, v]) => <option key={k} value={k}>{v.name}</option>)}</NativeSelect></div>
-        <div className="rounded-xl bg-primary/10 p-3"><p className="text-xs text-muted-foreground">Grand total due to government</p><p className="text-xl font-bold font-display text-primary">{formatCurrency(remit)}</p></div>
+        <SummaryCard label="Grand total due to government" value={formatCurrency(remit)} icon={Landmark} onClick={()=>document.getElementById("remittance-details")?.scrollIntoView({behavior:"smooth",block:"start"})} />
       </div>
-      <div className="overflow-x-auto"><table className="w-full text-sm">
+      <div id="remittance-details" className="overflow-x-auto"><table className="w-full text-sm">
         <thead><tr className="border-b border-border text-muted-foreground"><th className="text-left py-2 px-2">Employee</th>{heads.map(h => <th key={h} className="text-right px-2 whitespace-nowrap">{h}</th>)}</tr></thead>
         <tbody>{!rows.length ? <tr><td colSpan={7} className="py-6 text-center text-muted-foreground">No approved payslips for this month.</td></tr> : rows.map(r => <tr key={r.name} className="border-b border-border/50">
           <td className="py-2 px-2">{r.name}</td>{[r.gross, r.paye, r.ee, r.er, r.levy, r.paye + r.ee + r.er + r.levy].map((v, i) => <td key={i} className={`px-2 text-right tabular-nums ${i === 5 ? "font-semibold" : ""}`}>{formatCurrency(v)}</td>)}</tr>)}</tbody>

@@ -9,6 +9,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { formatCurrency } from "@/lib/payroll-engine";
 import { registerRow, type RegisterRow } from "@/lib/statutory-levies";
 import { toast } from "sonner";
+import { SummaryCard } from "@/components/SummaryCard";
 
 type Line = RegisterRow & { id: string; name: string; department: string; status: string; start: string; end: string; period: string };
 
@@ -19,6 +20,7 @@ export default function PayrollRegisterReport() {
   const [to, setTo] = useState("");
   const [dept, setDept] = useState("all");
   const [status, setStatus] = useState("all");
+  const [detail, setDetail] = useState("");
 
   useEffect(() => { void (async () => {
     const cols = "id,user_id,payroll_run_id,period,gross_pay,paye,employee_nic,employer_nic,total_deductions,net_pay,department_snapshot,employee_name_snapshot";
@@ -52,14 +54,17 @@ export default function PayrollRegisterReport() {
     { label: "Employer liabilities", value: employer, icon: Building2, tone: "bg-secondary text-secondary-foreground", note: `NIS/NIB ${formatCurrency(t.eNis)} · levies ${formatCurrency(t.eLevy)}` },
     { label: "Total net pay", value: t.net, icon: Banknote, tone: "bg-primary/10 text-primary", note: "Paid to employees" },
   ];
-  const heads = ["Employee", "Department", "Period", "Gross", "PAYE", "NIS/NIB (EE)", "Statutory levies", "Other deductions", "Net pay"];
+  const heads = ["Employee", "Department", "Period", "Gross", "PAYE", "NIS/NIB (EE)", "Statutory levies", "Other deductions", "Net pay", "Employer NIS/NIB", "Employer levies", "Cash requirement"];
 
+  const visibleColumns = detail === "Employer liabilities" ? [0,1,2,9,10]
+    : detail === "Employee deductions" ? [0,1,2,4,5,6,7]
+    : detail === "Total gross" ? [0,1,2,3]
+    : detail === "Total net pay" ? [0,1,2,8]
+    : detail === "Total cash requirement" ? [0,1,2,3,9,10,11] : heads.map((_,i)=>i);
   return <Card>
     <CardHeader><CardTitle className="font-display">Payroll Register & Summary</CardTitle><p className="text-sm text-muted-foreground">From approved payslips. Levies use each payroll's jurisdiction rules (OECS islands have none beyond NIS/NIC and PAYE).</p></CardHeader>
     <CardContent className="space-y-5">
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">{cards.map(c => <div key={c.label} className="rounded-xl border border-border p-4 space-y-2">
-        <div className={`inline-flex p-2 rounded-lg ${c.tone}`}><c.icon size={18} /></div>
-        <p className="text-xs text-muted-foreground">{c.label}</p><p className="text-lg font-bold font-display">{formatCurrency(c.value)}</p><p className="text-xs text-muted-foreground">{c.note}</p></div>)}</div>
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">{cards.map(c => <SummaryCard key={c.label} label={c.label} value={formatCurrency(c.value)} icon={c.icon} active={detail===c.label} onClick={()=>{setDetail(c.label);document.getElementById("register-details")?.scrollIntoView({behavior:"smooth",block:"start"});}} />)}</div>
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 items-end">
         <div className="space-y-1"><Label htmlFor="reg-from">From</Label><Input id="reg-from" type="date" value={from} onChange={e => setFrom(e.target.value)} /></div>
         <div className="space-y-1"><Label htmlFor="reg-to">To</Label><Input id="reg-to" type="date" value={to} onChange={e => setTo(e.target.value)} /></div>
@@ -67,12 +72,13 @@ export default function PayrollRegisterReport() {
         <div className="space-y-1"><Label htmlFor="reg-status">Employee status</Label><NativeSelect id="reg-status" value={status} onChange={e => setStatus(e.target.value)}><option value="all">All statuses</option>{statuses.map(s => <option key={s} value={s}>{s}</option>)}</NativeSelect></div>
         <Button variant="outline" className="min-h-11" onClick={() => toast.info("CSV export is coming soon.")}><Download size={16} className="mr-2" />Export to CSV</Button>
       </div>
+      <div id="register-details" className="flex items-center justify-between gap-3"><h3 className="font-semibold">{detail ? `${detail} breakdown` : "Payroll details"} · {rows.length} payslips</h3>{detail && <Button variant="ghost" onClick={()=>setDetail("")}>Show all columns</Button>}</div>
       <div className="overflow-x-auto"><table className="w-full text-sm">
-        <thead><tr className="border-b border-border text-left text-muted-foreground">{heads.map((h, i) => <th key={h} className={`py-2 px-2 whitespace-nowrap ${i > 2 ? "text-right" : ""}`}>{h}</th>)}</tr></thead>
-        <tbody>{loading ? <tr><td colSpan={9} className="py-6 text-center text-muted-foreground">Loading payslips…</td></tr> : !rows.length ? <tr><td colSpan={9} className="py-6 text-center text-muted-foreground">No approved payslips match these filters.</td></tr> : rows.map(r => <tr key={r.id} className="border-b border-border/50">
+        <thead><tr className="border-b border-border text-left text-muted-foreground">{heads.map((h, i) => visibleColumns.includes(i) && <th key={h} className={`py-2 px-2 whitespace-nowrap ${i > 2 ? "text-right" : ""}`}>{h}</th>)}</tr></thead>
+        <tbody>{loading ? <tr><td colSpan={12} className="py-6 text-center text-muted-foreground">Loading payslips…</td></tr> : !rows.length ? <tr><td colSpan={12} className="py-6 text-center text-muted-foreground">No approved payslips match these filters.</td></tr> : rows.map(r => <tr key={r.id} className="border-b border-border/50">
           <td className="py-2 px-2">{r.name}</td><td className="px-2">{r.department}</td><td className="px-2 whitespace-nowrap">{r.period}</td>
-          {[r.gross, r.paye, r.nis, r.levy, r.other, r.net].map((v, i) => <td key={i} className={`px-2 text-right tabular-nums ${i === 5 ? "font-semibold" : ""}`}>{formatCurrency(v)}</td>)}</tr>)}</tbody>
-        {!!rows.length && <tfoot><tr className="font-semibold border-t-2 border-border"><td className="py-2 px-2" colSpan={3}>Totals</td>{[t.gross, t.paye, t.nis, t.levy, t.other, t.net].map((v, i) => <td key={i} className="px-2 text-right tabular-nums">{formatCurrency(v)}</td>)}</tr></tfoot>}
+          {[r.gross, r.paye, r.nis, r.levy, r.other, r.net, r.employerNis, r.employerLevy, r.gross+r.employerNis+r.employerLevy].map((v, i) => visibleColumns.includes(i+3) && <td key={i} className={`px-2 text-right tabular-nums ${i === 5 ? "font-semibold" : ""}`}>{formatCurrency(v)}</td>)}</tr>)}</tbody>
+        {!!rows.length && <tfoot><tr className="font-semibold border-t-2 border-border"><td className="py-2 px-2" colSpan={3}>Totals</td>{[t.gross, t.paye, t.nis, t.levy, t.other, t.net, t.eNis, t.eLevy, t.gross+employer].map((v, i) => visibleColumns.includes(i+3) && <td key={i} className="px-2 text-right tabular-nums">{formatCurrency(v)}</td>)}</tr></tfoot>}
       </table></div>
     </CardContent>
   </Card>;

@@ -9,6 +9,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/payroll-engine";
 import { downloadCSV, downloadPDF } from "@/lib/export-utils";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { SummaryCard } from "@/components/SummaryCard";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useSearchParams } from "react-router-dom";
 
 interface PayrollRun {
   id: string;
@@ -47,6 +51,43 @@ export default function PayrollHistoryPage() {
   const [expandedRun, setExpandedRun] = useState<string | null>(null);
   const [payslips, setPayslips] = useState<Record<string, Payslip[]>>({});
   const [loadingPayslips, setLoadingPayslips] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [detailRows, setDetailRows] = useState<(Payslip & { runPeriod: string })[]>([]);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState("");
+  const [selectedSlip, setSelectedSlip] = useState<string | null>(null);
+  const metric = searchParams.get("detail");
+  const period = searchParams.get("period");
+  const visibleRuns = period ? runs.filter(r => r.period === period) : runs;
+
+  useEffect(() => {
+    if (!metric || metric === "runs" || loading) return;
+    let active = true;
+    setDetailLoading(true); setDetailError(""); setDetailRows([]);
+    const selected = period ? runs.filter(r => r.period === period) : runs;
+    const load = async () => {
+      try {
+        const groups = await Promise.all(selected.map(async run => {
+          const [linked, unlinked] = await Promise.all([
+            supabase.from("payslips").select("*").eq("payroll_run_id", run.id),
+            supabase.from("employee_payslips").select("*").eq("payroll_run_id", run.id),
+          ]);
+          if (linked.error || unlinked.error) throw linked.error || unlinked.error;
+          return [...(linked.data ?? []), ...(unlinked.data ?? [])].map(s => ({ ...s, runPeriod: run.period }));
+        }));
+        if (active) setDetailRows(groups.flat());
+      } catch { if (active) setDetailError("Unable to load payroll details. Close and try again."); }
+      finally { if (active) setDetailLoading(false); }
+    };
+    void load();
+    return () => { active = false; };
+  }, [metric, period, loading, runs]);
+  const openDetail = (detail: string) => {
+    setSelectedSlip(null);
+    const next = new URLSearchParams(searchParams); next.set("detail", detail); setSearchParams(next);
+    if (detail === "runs") document.getElementById("payroll-runs")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+  const closeDetail = () => { const next = new URLSearchParams(searchParams); next.delete("detail"); setSearchParams(next); };
 
   useEffect(() => {
     supabase
@@ -88,7 +129,7 @@ export default function PayrollHistoryPage() {
     return <Badge variant={s.variant} className="text-xs">{s.label}</Badge>;
   };
 
-  const totals = runs.reduce(
+  const totals = visibleRuns.reduce(
     (acc, r) => ({
       gross: acc.gross + Number(r.total_gross),
       deductions: acc.deductions + Number(r.total_deductions),
@@ -101,7 +142,7 @@ export default function PayrollHistoryPage() {
   const exportRunsCSV = () => {
     if (runs.length === 0) { toast.error("No data to export"); return; }
     const headers = ["Period", "Run Date", "Status", "Employees", "Gross", "Deductions", "Net"];
-    const rows = runs.map((r) => [
+    const rows = visibleRuns.map((r) => [
       r.period, r.run_date, r.status, r.employee_count,
       Number(r.total_gross).toFixed(2), Number(r.total_deductions).toFixed(2), Number(r.total_net).toFixed(2),
     ]);
@@ -112,7 +153,7 @@ export default function PayrollHistoryPage() {
   const exportRunsPDF = () => {
     if (runs.length === 0) { toast.error("No data to export"); return; }
     const headers = ["Period", "Run Date", "Status", "Employees", "Gross (XCD)", "Deductions (XCD)", "Net (XCD)"];
-    const rows = runs.map((r) => [
+    const rows = visibleRuns.map((r) => [
       r.period, r.run_date, r.status, r.employee_count,
       Number(r.total_gross).toFixed(2), Number(r.total_deductions).toFixed(2), Number(r.total_net).toFixed(2),
     ]);
@@ -179,29 +220,20 @@ export default function PayrollHistoryPage() {
       </div>
 
       {/* Summary Cards */}
+      {period && <div className="flex flex-wrap items-center gap-3"><Badge variant="secondary">Pay period: {period}</Badge><Button variant="ghost" onClick={() => setSearchParams({})}>Show all periods</Button></div>}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         {[
-          { label: "Total Runs", value: runs.length, icon: History, color: "text-primary" },
-          { label: "Total Gross Paid", value: formatCurrency(totals.gross), icon: DollarSign, color: "text-foreground" },
-          { label: "Total Deductions", value: formatCurrency(totals.deductions), icon: FileText, color: "text-destructive" },
-          { label: "Total Net Paid", value: formatCurrency(totals.net), icon: DollarSign, color: "text-success" },
+          { label: "Total Runs", detail: "runs", value: visibleRuns.length, icon: History, color: "text-primary" },
+          { label: "Total Gross Paid", detail: "gross", value: formatCurrency(totals.gross), icon: DollarSign, color: "text-foreground" },
+          { label: "Total Deductions", detail: "deductions", value: formatCurrency(totals.deductions), icon: FileText, color: "text-destructive" },
+          { label: "Total Net Paid", detail: "net", value: formatCurrency(totals.net), icon: DollarSign, color: "text-success" },
         ].map((card) => (
-          <Card key={card.label} className="shadow-card border-border/60">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">{card.label}</p>
-                  <p className={`text-xl font-display font-bold mt-1 ${card.color}`}>{card.value}</p>
-                </div>
-                <card.icon size={20} className="text-muted-foreground/40" />
-              </div>
-            </CardContent>
-          </Card>
+          <SummaryCard key={card.label} {...card} valueClassName={card.color} active={metric === card.detail} onClick={() => openDetail(card.detail)} />
         ))}
       </div>
 
       {/* Runs Table */}
-      <Card className="shadow-card border-border/60 overflow-hidden">
+      <Card id="payroll-runs" className="shadow-card border-border/60 overflow-hidden">
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-display flex items-center gap-2">
             <History size={16} />
@@ -211,7 +243,7 @@ export default function PayrollHistoryPage() {
         <div className="overflow-x-auto">
           {loading ? (
             <div className="p-8 text-center text-muted-foreground text-sm">Loading payroll history...</div>
-          ) : runs.length === 0 ? (
+          ) : visibleRuns.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground text-sm">
               No payroll runs found. Process your first payroll to see history here.
             </div>
@@ -230,13 +262,15 @@ export default function PayrollHistoryPage() {
                 </tr>
               </thead>
               <tbody>
-                {runs.map((run, i) => (
+                {visibleRuns.map((run, i) => (
                   <React.Fragment key={run.id}>
                     <motion.tr
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: i * 0.03 }}
                       onClick={() => toggleRun(run.id)}
+                      tabIndex={0} role="button" aria-label={`View payroll run ${run.period}`} aria-expanded={expandedRun === run.id}
+                      onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); void toggleRun(run.id); } }}
                       className="border-b border-border/50 hover:bg-secondary/30 transition-colors cursor-pointer"
                     >
                       <td className="py-3 px-4">
@@ -308,7 +342,7 @@ export default function PayrollHistoryPage() {
                                           </div>
                                           <div>
                                             <p className="font-medium text-foreground text-xs">
-                                              {slip.profile ? `${slip.profile.first_name} ${slip.profile.last_name}` : slip.user_id.slice(0, 8)}
+                                              <Button variant="link" className="h-auto p-0 text-left whitespace-normal" onClick={() => { openDetail("employees"); setSelectedSlip(slip.id); }}>{slip.employee_name_snapshot || (slip.profile ? `${slip.profile.first_name} ${slip.profile.last_name}` : "Employee")}</Button>
                                             </p>
                                             {slip.profile?.department && (
                                               <p className="text-[10px] text-muted-foreground">{slip.profile.department}</p>
@@ -340,6 +374,17 @@ export default function PayrollHistoryPage() {
           )}
         </div>
       </Card>
+      <Dialog open={Boolean(metric && metric !== "runs")} onOpenChange={open => { if (!open) closeDetail(); }}>
+        <DialogContent className="max-w-6xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>{metric === "gross" ? "Gross pay breakdown" : metric === "deductions" ? "Deductions breakdown" : metric === "net" ? "Net pay breakdown" : "Employee payslip details"}</DialogTitle></DialogHeader>
+          {detailLoading ? <p role="status">Loading payroll details…</p> : detailError ? <p role="alert" className="text-destructive">{detailError}</p> : <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b border-border text-left">
+            {["Employee / period", "Basic", "Overtime", "Other earnings", "Gross", "NIC", "PAYE", "Other deductions", "Deductions", "Net"].map(label => <th key={label} className="p-3 whitespace-nowrap">{label}</th>)}
+          </tr></thead><tbody>{detailRows.filter(s => !selectedSlip || s.id === selectedSlip).map(s => <tr key={s.id} className="border-b border-border">
+            <td className="p-3 min-w-40"><p className="font-medium">{s.employee_name_snapshot || "Employee"}</p><p className="text-xs text-muted-foreground">{s.department_snapshot || "Unassigned"} · {s.runPeriod}</p><p className="text-xs text-muted-foreground">{s.currency_code || "XCD"}</p></td>
+            {[s.basic_pay, s.overtime_pay, Number(s.gross_pay) - Number(s.basic_pay) - Number(s.overtime_pay), s.gross_pay, s.employee_nic, s.paye, Number(s.total_deductions) - Number(s.employee_nic) - Number(s.paye), s.total_deductions, s.net_pay].map((value, i) => <td key={i} className={`p-3 text-right font-mono whitespace-nowrap ${i === 8 ? "text-success" : i >= 4 ? "text-destructive" : "text-foreground"}`}>{formatCurrency(Number(value))}</td>)}
+          </tr>)}</tbody></table>{!detailRows.length && <p className="py-6 text-muted-foreground">No saved payslips for these runs.</p>}</div>}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

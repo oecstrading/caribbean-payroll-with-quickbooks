@@ -1,3 +1,4 @@
+import { SummaryCard } from "@/components/SummaryCard";
 import { motion } from "framer-motion";
 import {
   Users,
@@ -223,11 +224,13 @@ export default function DashboardPage() {
   const lateToday = demoMode ? sampleAttendance.filter((a) => a.late).length : liveSummary?.late_arrivals ?? 0;
   const summaryValue = (value: number | null | undefined, money = false) => summaryLoading ? '…' : value == null ? '—' : money ? dashboardMoney(value, liveSummary?.currency ?? 'XCD') : String(value);
 
+  const historyPath = (detail: string) => `/payroll-history?detail=${detail}${liveSummary?.period ? `&period=${encodeURIComponent(liveSummary.period)}` : ""}`;
+  const todayAttendance = `/attendance?filter=on-clock&date=${new Intl.DateTimeFormat("en-CA", { timeZone: "America/St_Lucia" }).format(new Date())}`;
   const metrics = [
     { label: "Total Employees", tile: "carib-sea", value: demoMode ? String(activeEmployees.length) : summaryValue(liveSummary?.employees), icon: Users, color: "text-primary", bgColor: "bg-primary/10", path: canAccess('/employees') ? '/employees' : '/payroll' },
-    { label: "Latest Gross", tile: "carib-palm", value: demoMode ? formatCurrency(totalGross) : summaryValue(liveSummary?.gross, true), icon: DollarSign, color: "text-success", bgColor: "bg-success/10", path: "/payroll" },
-    { label: "On Clock Today", tile: "carib-coral", value: demoMode ? String(onClockToday) : summaryValue(liveSummary?.on_clock), icon: Clock, color: "text-primary", bgColor: "bg-primary/10", path: "/attendance" },
-    { label: "Latest Net Pay", tile: "carib-mango", value: demoMode ? formatCurrency(totalPayroll) : summaryValue(liveSummary?.net, true), icon: DollarSign, color: "text-accent-foreground", bgColor: "bg-accent/20", path: "/payroll" },
+    { label: "Latest Gross", tile: "carib-palm", value: demoMode ? formatCurrency(totalGross) : summaryValue(liveSummary?.gross, true), icon: DollarSign, color: "text-success", bgColor: "bg-success/10", path: historyPath("gross") },
+    { label: "On Clock Today", tile: "carib-coral", value: demoMode ? String(onClockToday) : summaryValue(liveSummary?.on_clock), icon: Clock, color: "text-primary", bgColor: "bg-primary/10", path: todayAttendance },
+    { label: "Latest Net Pay", tile: "carib-mango", value: demoMode ? formatCurrency(totalPayroll) : summaryValue(liveSummary?.net, true), icon: DollarSign, color: "text-accent-foreground", bgColor: "bg-accent/20", path: historyPath("net") },
   ];
 
   const quickActions = [
@@ -290,24 +293,9 @@ export default function DashboardPage() {
       {/* Metrics */}
       {canAccess("/attendance") && <><StaffTimeClock />{demoMode && <AttendanceClock />}</>}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {metrics.filter(metric => canAccess(metric.path)).map((metric, i) => (
+        {metrics.filter(metric => canAccess(metric.path.split("?")[0])).map((metric, i) => (
           <motion.div key={metric.label} {...fadeUp} transition={{ delay: 0.05 * (i + 1) }}>
-            <Card
-              className={`carib-tile ${(metric as any).tile} border-0 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all cursor-pointer group`}
-              onClick={() => navigate(metric.path)}
-            >
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide opacity-90">{metric.label}</p>
-                    <p className="text-2xl font-display font-bold mt-1">{metric.value}</p>
-                  </div>
-                  <div className="relative z-10 p-2.5 rounded-lg bg-background/20 group-hover:scale-110 transition-transform">
-                    <metric.icon size={20} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <SummaryCard label={metric.label} value={metric.value} icon={metric.icon} onClick={() => navigate(metric.path)} className={`carib-tile ${metric.tile} border-0 shadow-lg hover:shadow-xl`} />
           </motion.div>
         ))}
       </div>
@@ -365,7 +353,7 @@ export default function DashboardPage() {
               )}
               {canAccess("/attendance") && (<div
                 className="flex items-start gap-3 p-3 rounded-lg bg-warning/10 border border-warning/20 cursor-pointer hover:bg-warning/15 transition-colors"
-                onClick={() => navigate("/attendance")}
+                onClick={() => navigate("/attendance?filter=late")}
               >
                 <AlertTriangle size={16} className="text-warning mt-0.5 flex-shrink-0" />
                 <div>
@@ -401,7 +389,7 @@ export default function DashboardPage() {
         {canAccess("/payroll") && <motion.div {...fadeUp} transition={{ delay: 0.35 }}>
           <Card className="carib-band shadow-card border-border/60 hover:shadow-lg transition-shadow">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-display"><button type="button" onClick={() => navigate("/payroll")} className="hover:underline">Latest Payroll →</button></CardTitle>
+              <CardTitle className="text-base font-display"><button type="button" onClick={() => navigate(historyPath("runs"))} className="hover:underline">Latest Payroll →</button></CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-3">
@@ -409,14 +397,14 @@ export default function DashboardPage() {
                   { label: "Gross Pay", value: demoMode ? formatCurrency(totalGross) : summaryValue(liveSummary?.gross, true), color: "text-foreground" },
                   { label: "Net Pay", value: demoMode ? formatCurrency(totalPayroll) : summaryValue(liveSummary?.net, true), color: "text-success" },
                 ].filter(row => canAccess(row.label === "Gross Pay" || row.label === "Net Pay" ? "/payroll" : "/reports")).map((row) => (
-                  <button type="button" key={row.label} onClick={() => navigate(row.label === "Gross Pay" || row.label === "Net Pay" ? "/payroll" : "/reports")} className="w-full flex items-center justify-between py-1.5 px-1 rounded-md border-b border-border/50 last:border-0 hover:bg-muted transition-colors text-left">
+                  <button type="button" key={row.label} onClick={() => navigate(historyPath(row.label === "Gross Pay" ? "gross" : "net"))} className="w-full flex items-center justify-between py-1.5 px-1 rounded-md border-b border-border/50 last:border-0 hover:bg-muted transition-colors text-left">
                     <span className="text-sm text-muted-foreground">{row.label}</span>
                     <span className={`text-sm font-semibold ${row.color}`}>{row.value}</span>
                   </button>
                 ))}
               </div>
               <button
-                onClick={() => navigate("/payroll")}
+                onClick={() => navigate(historyPath("runs"))}
                 className="w-full text-center text-sm text-primary font-medium hover:underline"
               >
                 View full payroll →
