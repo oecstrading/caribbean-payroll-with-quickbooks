@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { QRCodeCanvas } from "qrcode.react";
-import { Camera, Plus, RefreshCw, Tablet, Trash2 } from "lucide-react";
+import { Camera, Copy, Mail, MessageCircle, Plus, RefreshCw, Tablet, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { PUBLISHED_URL } from "@/lib/staff-clock-link";
+import { kioskActivationLink } from "@/lib/kiosk-setup";
 
 type Device = { id: string; name: string; department: string | null; site_id: string | null; activated_at: string | null; last_seen_at: string | null; revoked_at: string | null };
 type Shot = { id: string; punched_at: string; direction: string; mode: string; photo_path: string | null; employee_id: string; url?: string; name?: string; device?: string };
@@ -62,7 +63,8 @@ export default function ClockDevicesPage() {
     const { error } = await supabase.rpc("set_selfie_policy", { _policy: v });
     error ? toast.error(error.message) : (setPolicy(v), toast.success("Selfie setting saved"));
   };
-  const link = issued ? `${PUBLISHED_URL}/kiosk?code=${issued.code}` : "";
+  const link = issued ? kioskActivationLink(issued.code) : "";
+  const invitation = issued ? `Set up ${issued.name} on the company tablet: ${link}\nOpen the link to activate automatically, then allow camera, microphone and location and add it to the home screen. This single-use link expires at ${new Date(issued.expires_at).toLocaleTimeString()}. Use only on the intended company clock device.` : "";
   const status = (d: Device) => d.revoked_at ? { t: "Switched off", c: "bg-destructive/15 text-destructive" } : d.activated_at ? (d.last_seen_at && Date.now() - new Date(d.last_seen_at).getTime() < 10 * 60000 ? { t: "Online", c: "bg-primary/15 text-primary" } : { t: "Offline", c: "bg-accent/30 text-accent-foreground" }) : { t: "Waiting for activation", c: "bg-muted text-muted-foreground" };
 
   return (
@@ -123,10 +125,16 @@ export default function ClockDevicesPage() {
         <DialogContent>
           <DialogHeader><DialogTitle>Activate “{issued?.name}”</DialogTitle></DialogHeader>
           <div className="space-y-3 text-center">
-            <p className="text-sm text-muted-foreground">On the tablet, scan this QR code, or open {PUBLISHED_URL}/kiosk and type the code. It expires at {issued && new Date(issued.expires_at).toLocaleTimeString()}.</p>
+            <p className="text-sm text-muted-foreground">Scan or open the link on the company tablet. Activation starts automatically; no login or code entry needed. Expires at {issued && new Date(issued.expires_at).toLocaleTimeString()}.</p>
             {issued && <QRCodeCanvas value={link} size={220} includeMargin className="mx-auto" />}
             <p className="font-mono text-3xl font-bold tracking-widest">{issued?.code}</p>
-            <p className="text-xs text-muted-foreground">Then tap “Add app to my home screen” on the tablet so it opens straight to the clock.</p>
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button variant="outline" onClick={() => void navigator.clipboard.writeText(link).then(() => toast.success("Activation link copied"), () => toast.error("Unable to copy. Use email or WhatsApp."))}><Copy size={16} className="mr-2" />Copy link</Button>
+              <Button variant="outline" asChild><a href={`https://wa.me/?text=${encodeURIComponent(invitation)}`} target="_blank" rel="noopener noreferrer"><MessageCircle size={16} className="mr-2" />WhatsApp</a></Button>
+              <Button variant="outline" asChild><a href={`mailto:?subject=${encodeURIComponent(`Activate ${issued?.name ?? "company clock"}`)}&body=${encodeURIComponent(invitation)}`}><Mail size={16} className="mr-2" />Email</a></Button>
+            </div>
+            <p className="text-xs text-muted-foreground">One link activates one device. Send it to whoever sets up that tablet, not the whole staff. For personal phones, use employee clock invitations.</p>
+            <p className="text-xs text-muted-foreground">Camera, microphone and home-screen installation need the device owner’s approval. Manual fallback: {PUBLISHED_URL}/kiosk.</p>
           </div>
         </DialogContent>
       </Dialog>

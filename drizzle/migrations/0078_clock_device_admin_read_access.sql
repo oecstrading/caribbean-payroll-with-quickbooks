@@ -1,0 +1,4 @@
+CREATE OR REPLACE FUNCTION public.can_manage_clock_devices(_org uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$ SELECT auth.uid() IS NOT NULL AND _org = public.current_org_id() AND public.can_view_company(_org) AND (public.has_role(auth.uid(), 'admin'::public.app_role) OR EXISTS(SELECT 1 FROM public.platform_administrators WHERE user_id=auth.uid()) OR EXISTS(SELECT 1 FROM public.company_super_administrators WHERE user_id=auth.uid() AND org_id=_org)); $$;
+REVOKE ALL ON FUNCTION public.can_manage_clock_devices(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.can_manage_clock_devices(uuid) TO authenticated, service_role;
+ALTER POLICY "Company admins view clock devices" ON public.clock_devices USING (public.can_manage_clock_devices(org_id));

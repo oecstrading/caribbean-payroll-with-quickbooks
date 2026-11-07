@@ -4194,6 +4194,7 @@ export type Database = {
         Returns: boolean
       }
       can_erase_payroll: { Args: { _org: string }; Returns: boolean }
+      can_manage_clock_devices: { Args: { _org: string }; Returns: boolean }
       can_view_company: { Args: { _org: string }; Returns: boolean }
       claim_user_pin_attempt: { Args: { _user: string }; Returns: boolean }
       client_portal_data: { Args: { _code: string }; Returns: Json }

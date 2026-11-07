@@ -35,8 +35,10 @@ Deno.serve(async (req) => {
       if (!d || !d.activation_expires_at || new Date(d.activation_expires_at) < new Date()) return reply({ error: "This activation code is wrong or expired. Ask your administrator for a new one." }, 403);
       const raw = new Uint8Array(32); crypto.getRandomValues(raw);
       const token = Array.from(raw).map((x) => x.toString(16).padStart(2, "0")).join("");
-      const up = await db.from("clock_devices").update({ token_hash: await sha(token), activation_hash: null, activation_expires_at: null, activated_at: new Date().toISOString(), revoked_at: null, last_seen_at: new Date().toISOString() }).eq("id", d.id);
+      // Compare-and-consume: concurrent scans cannot replace the winning tablet's token.
+      const up = await db.from("clock_devices").update({ token_hash: await sha(token), activation_hash: null, activation_expires_at: null, activated_at: new Date().toISOString(), revoked_at: null, last_seen_at: new Date().toISOString() }).eq("id", d.id).eq("activation_hash", await sha(b.code.toUpperCase())).gt("activation_expires_at", new Date().toISOString()).select("id").maybeSingle();
       if (up.error) return reply({ error: "Activation failed" }, 500);
+      if (!up.data) return reply({ error: "This activation link has already been used or expired. Ask your administrator for a new one." }, 403);
       return reply({ token, name: d.name });
     }
 
