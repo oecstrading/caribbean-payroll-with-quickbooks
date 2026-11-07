@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { RoleProvider, useRole } from "@/hooks/useRole";
 import { Button } from "@/components/ui/button";
 import { CompanyProvider } from "@/hooks/useCompany";
+import { applyHomeCompany } from "@/lib/home-company";
 import AppLayout from "@/components/AppLayout";
 import DashboardPage from "@/pages/Dashboard";
 import EmployeesPage from "@/pages/EmployeesPage";

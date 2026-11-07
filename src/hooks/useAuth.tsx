@@ -43,6 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signOut = async () => {
+    clearHomeCompanyFlag();
     await supabase.auth.signOut();
   };
 
