@@ -7,7 +7,7 @@ afterEach(() => { vi.restoreAllMocks(); localStorage.clear(); });
 it("retries denied camera access and stops camera/microphone streams after setup", async () => {
   const stop = vi.fn();
   const media = vi.fn().mockRejectedValueOnce(new Error("Denied")).mockResolvedValue({ getTracks: () => [{ stop }] });
-  vi.spyOn(navigator, "mediaDevices", "get").mockReturnValue({ getUserMedia: media } as unknown as MediaDevices);
+  Object.defineProperty(navigator, "mediaDevices", { configurable: true, value: { getUserMedia: media } });
   Object.defineProperty(navigator, "geolocation", { configurable: true, value: { getCurrentPosition: (success: () => void) => success() } });
   const view = render(<KioskDeviceSetup active voiceSupported />);
   fireEvent.click(view.getByRole("button", { name: "Set up camera, voice & location" }));
