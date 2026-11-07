@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatCurrency } from "@/lib/payroll-engine";
 import { splitHours, isLate, dailyCost, type ShiftIn } from "@/lib/attendance-audit";
+import { SummaryCard } from "@/components/SummaryCard";
 
 type Emp = { id: string; name: string; salary: number; std: number; users: string[] };
 type Shift = ShiftIn & { id: string; employee_id: string };
@@ -78,8 +79,8 @@ export default function AttendanceAuditReport() {
       <CardHeader><CardTitle className="font-display flex items-center gap-2"><UserX size={20} className="text-destructive" />Absentee & Leave Summary</CardTitle>
         <p className="text-sm text-muted-foreground">Scheduled days with no clock-in. Approved leave makes an absence excused. Cost = monthly salary ÷ 22 working days per missed day.</p></CardHeader>
       <CardContent className="space-y-3">
-        <div className="rounded-xl bg-destructive/10 p-3 inline-block"><p className="text-xs text-muted-foreground">Economic cost of absence this cycle</p><p className="text-xl font-bold font-display text-destructive">{formatCurrency(totalCost)}</p></div>
-        {!summary.length ? <p className="text-sm text-muted-foreground">No absences or late arrivals in this pay cycle.</p> : <div className="overflow-x-auto"><table className="w-full text-sm">
+        <SummaryCard label="Economic cost of absence this cycle" value={formatCurrency(totalCost)} icon={UserX} valueClassName="text-destructive" onClick={()=>document.getElementById("absence-details")?.scrollIntoView({behavior:"smooth",block:"start"})} />
+        <div id="absence-details">{!summary.length ? <p className="text-sm text-muted-foreground">No absences or late arrivals in this pay cycle.</p> : <div className="overflow-x-auto"><table className="w-full text-sm">
           <thead><tr className="border-b border-border text-muted-foreground text-left">{["Employee", "Days absent", "Unexcused", "Sick leave", "Late arrivals", "Cost of absence"].map((h, i) => <th key={h} className={`py-2 px-2 ${i ? "text-right" : ""}`}>{h}</th>)}</tr></thead>
           <tbody>{summary.map(r => <tr key={r.emp.id} className="border-b border-border/50">
             <td className="py-2 px-2">{r.emp.name}</td>
@@ -88,7 +89,7 @@ export default function AttendanceAuditReport() {
             <td className="px-2 text-right">{r.sick ? <Badge variant="secondary">{r.sick}</Badge> : 0}</td>
             <td className="px-2 text-right">{r.late ? <Badge className="bg-accent text-accent-foreground">{r.late}</Badge> : 0}</td>
             <td className="px-2 text-right tabular-nums">{formatCurrency(r.absent * dailyCost(r.emp.salary))}</td></tr>)}</tbody>
-        </table></div>}
+        </table></div>}</div>
       </CardContent>
     </Card>
   </div>;
