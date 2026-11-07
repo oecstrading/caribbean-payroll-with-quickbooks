@@ -55,6 +55,7 @@ export default function PayrollHistoryPage() {
   const [detailRows, setDetailRows] = useState<(Payslip & { runPeriod: string })[]>([]);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState("");
+  const [selectedSlip, setSelectedSlip] = useState<string | null>(null);
   const metric = searchParams.get("detail");
   const period = searchParams.get("period");
   const visibleRuns = period ? runs.filter(r => r.period === period) : runs;
@@ -82,6 +83,7 @@ export default function PayrollHistoryPage() {
     return () => { active = false; };
   }, [metric, period, loading, runs]);
   const openDetail = (detail: string) => {
+    setSelectedSlip(null);
     const next = new URLSearchParams(searchParams); next.set("detail", detail); setSearchParams(next);
     if (detail === "runs") document.getElementById("payroll-runs")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
@@ -140,7 +142,7 @@ export default function PayrollHistoryPage() {
   const exportRunsCSV = () => {
     if (runs.length === 0) { toast.error("No data to export"); return; }
     const headers = ["Period", "Run Date", "Status", "Employees", "Gross", "Deductions", "Net"];
-    const rows = runs.map((r) => [
+    const rows = visibleRuns.map((r) => [
       r.period, r.run_date, r.status, r.employee_count,
       Number(r.total_gross).toFixed(2), Number(r.total_deductions).toFixed(2), Number(r.total_net).toFixed(2),
     ]);
@@ -151,7 +153,7 @@ export default function PayrollHistoryPage() {
   const exportRunsPDF = () => {
     if (runs.length === 0) { toast.error("No data to export"); return; }
     const headers = ["Period", "Run Date", "Status", "Employees", "Gross (XCD)", "Deductions (XCD)", "Net (XCD)"];
-    const rows = runs.map((r) => [
+    const rows = visibleRuns.map((r) => [
       r.period, r.run_date, r.status, r.employee_count,
       Number(r.total_gross).toFixed(2), Number(r.total_deductions).toFixed(2), Number(r.total_net).toFixed(2),
     ]);
@@ -340,7 +342,7 @@ export default function PayrollHistoryPage() {
                                           </div>
                                           <div>
                                             <p className="font-medium text-foreground text-xs">
-                                              <Button variant="link" className="h-auto p-0 text-left whitespace-normal" onClick={() => openDetail("employees")}>{slip.employee_name_snapshot || (slip.profile ? `${slip.profile.first_name} ${slip.profile.last_name}` : "Employee")}</Button>
+                                              <Button variant="link" className="h-auto p-0 text-left whitespace-normal" onClick={() => { openDetail("employees"); setSelectedSlip(slip.id); }}>{slip.employee_name_snapshot || (slip.profile ? `${slip.profile.first_name} ${slip.profile.last_name}` : "Employee")}</Button>
                                             </p>
                                             {slip.profile?.department && (
                                               <p className="text-[10px] text-muted-foreground">{slip.profile.department}</p>
@@ -377,7 +379,7 @@ export default function PayrollHistoryPage() {
           <DialogHeader><DialogTitle>{metric === "gross" ? "Gross pay breakdown" : metric === "deductions" ? "Deductions breakdown" : metric === "net" ? "Net pay breakdown" : "Employee payslip details"}</DialogTitle></DialogHeader>
           {detailLoading ? <p role="status">Loading payroll details…</p> : detailError ? <p role="alert" className="text-destructive">{detailError}</p> : <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b border-border text-left">
             {["Employee / period", "Basic", "Overtime", "Other earnings", "Gross", "NIC", "PAYE", "Other deductions", "Deductions", "Net"].map(label => <th key={label} className="p-3 whitespace-nowrap">{label}</th>)}
-          </tr></thead><tbody>{detailRows.map(s => <tr key={s.id} className="border-b border-border">
+          </tr></thead><tbody>{detailRows.filter(s => !selectedSlip || s.id === selectedSlip).map(s => <tr key={s.id} className="border-b border-border">
             <td className="p-3 min-w-40"><p className="font-medium">{s.employee_name_snapshot || "Employee"}</p><p className="text-xs text-muted-foreground">{s.department_snapshot || "Unassigned"} · {s.runPeriod}</p><p className="text-xs text-muted-foreground">{s.currency_code || "XCD"}</p></td>
             {[s.basic_pay, s.overtime_pay, Number(s.gross_pay) - Number(s.basic_pay) - Number(s.overtime_pay), s.gross_pay, s.employee_nic, s.paye, Number(s.total_deductions) - Number(s.employee_nic) - Number(s.paye), s.total_deductions, s.net_pay].map((value, i) => <td key={i} className={`p-3 text-right font-mono whitespace-nowrap ${i === 8 ? "text-success" : i >= 4 ? "text-destructive" : "text-foreground"}`}>{formatCurrency(Number(value))}</td>)}
           </tr>)}</tbody></table>{!detailRows.length && <p className="py-6 text-muted-foreground">No saved payslips for these runs.</p>}</div>}
