@@ -1,7 +1,7 @@
 # Roadmap
 
-- [ ] Streamline shared-clock QR/email/WhatsApp activation, device permission setup and home-screen entry; retain administrator-issued single-use activation.
-- [ ] Verify automatic activation, permission retry, selfie capture readiness and tablet/mobile layout; report device installation limitations.
+- [x] Streamline shared-clock QR/email/WhatsApp activation, device permission setup and dedicated home-screen clock entry; retain administrator-issued single-use activation and prevent concurrent redemption.
+- [x] Verify real automatic activation, device permissions, admin sharing and mobile layout; temporary clock switched off, no staff punches made. Browser/OS installation and physical-device voice/selfies remain unverified.
 
 - [x] Add atomic platform-Super-Admin multi-company Pay Master assignment in User Management and All Companies Dashboard; preserve employment and administrator authority and enforce the active company's module cap.
 - [x] Verify Super Admin saves Loriann's existing Smiley/Sonarisa email-account assignments unchanged, read-back remains Pay Master/non-employee, company-to-payroll entry works, 21 tests pass and build OK. No payroll approved; sign-in as the delegated Pay Master was not exercised.
