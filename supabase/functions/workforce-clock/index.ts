@@ -39,6 +39,8 @@ Deno.serve(async req => {
   const methods=schedule.data.allowed_methods;
   const identityMethod=body.pin?"pin":"account";
   if(!methods.includes(identityMethod)||body.mode==="voice"&&!methods.includes("voice")) return reply({error:"This clock method is not enabled by your administrator"},403);
+  // Authenticated contact is a heartbeat only; a closed phone app is never treated as an offline failure.
+  await admin.from("workforce_clock_credentials").update({last_seen_at:new Date().toISOString()}).eq("org_id",org).eq("employee_id",employee);
   if(body.action==="status") {
    const [sh,sc]=await Promise.all([admin.from("workforce_shifts").select("clock_in,clock_out,lunch_out,lunch_in").eq("org_id",org).eq("employee_id",employee).not("clock_in","is",null).is("clock_out",null).order("clock_in",{ascending:false}).limit(1).maybeSingle(),admin.from("workforce_schedules").select("site_id,shift_start,shift_end,days_of_week").eq("org_id",org).eq("employee_id",employee).eq("enabled",true).maybeSingle()]);
    if(sh.error||sc.error) return reply({error:"Unable to read clock status"},500);

@@ -31,6 +31,9 @@ Deno.serve(async (req) => {
     // Share the existing scheduled attendance check; do not introduce another polling job.
     const { error: workforceError } = await adminClient.rpc("reconcile_workforce_attendance", { _org: callerOrg });
     if (workforceError) throw workforceError;
+    // The existing five-minute attendance schedule also checks clock health; no extra polling job.
+    const { error: clockHealthError } = await adminClient.rpc("scan_clock_health", { _org: callerOrg });
+    if (clockHealthError) throw clockHealthError;
     const now = new Date();
     const todayStr = now.toISOString().split("T")[0];
     const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
