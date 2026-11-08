@@ -4262,6 +4262,7 @@ export type Database = {
         Args: { _modules: string[]; _orgs: string[]; _user: string }
         Returns: undefined
       }
+      bulk_issue_clock_codes: { Args: { _ids: string[] }; Returns: Json }
       can_access_applicant_file: { Args: { _path: string }; Returns: boolean }
       can_access_employee_document: {
         Args: { _employee: string; _shared: boolean }
@@ -4406,6 +4407,7 @@ export type Database = {
         Args: { _actor: string; _employee: string; _user: string }
         Returns: undefined
       }
+      list_activatable_clocks: { Args: never; Returns: Json }
       multi_company_admins: {
         Args: never
         Returns: {

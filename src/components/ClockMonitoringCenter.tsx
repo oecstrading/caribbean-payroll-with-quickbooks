@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useRole } from "@/hooks/useRole";
 import { SummaryCard } from "@/components/SummaryCard";
+import BulkClockActivation from "@/components/BulkClockActivation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -220,6 +221,8 @@ export default function ClockMonitoringCenter() {
           <SummaryCard label="Staff on clock" value={working} icon={Smartphone} active={filter === "working"} onClick={() => chooseFilter("working")} className="border-sidebar-border bg-sidebar-accent text-sidebar-accent-foreground" />
           <SummaryCard label="Needs attention" value={attention} icon={ShieldAlert} active={filter === "attention"} onClick={() => chooseFilter("attention")} className="border-sidebar-border bg-sidebar-accent text-sidebar-accent-foreground" valueClassName={attention || incidents.length ? "text-sidebar-primary" : "text-success"} />
         </div>
+
+        <BulkClockActivation />
 
         {clocks.filter(clockNeedsAttention).length > 0 && (
           <div className="space-y-3 rounded-2xl border border-sidebar-primary/30 bg-sidebar-primary/10 p-4">
