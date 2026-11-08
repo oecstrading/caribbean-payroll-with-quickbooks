@@ -4,6 +4,9 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { generateResponse, GatewayError } from "npm:@lovable.dev/ai-gateway@0.1.6";
+import { z } from "npm:zod@3.25.76";
+
+const requestBody = z.object({ monitoring: z.boolean().optional() }).passthrough();
 
 const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 const MAX_ORGS_PER_RUN = 10;
@@ -28,13 +31,14 @@ async function processOrg(admin: ReturnType<typeof createClient>, orgId: string,
     const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
     const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0));
     const payDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), settings.pay_day));
-    const [profiles, records, runs, alerts, shifts, loans] = await Promise.all([
+    const [profiles, records, runs, alerts, shifts, loans, clockIncidents] = await Promise.all([
       admin.from("profiles").select("id, monthly_salary, nic_number, tan_number, status, department").eq("is_employee", true).eq("org_id", orgId).is("deleted_at", null),
       admin.from("employee_records").select("id, monthly_salary, nic_number, tan_number, status, department").eq("org_id", orgId).is("deleted_at", null).is("permanently_deleted_at", null),
       admin.from("payroll_runs").select("id, total_gross, period_start, period_end, created_at").eq("org_id", orgId).order("created_at", { ascending: false }).limit(12),
       admin.from("workforce_alerts").select("id", { count: "exact", head: true }).eq("org_id", orgId).is("resolved_at", null),
-      admin.from("workforce_shifts").select("id", { count: "exact", head: true }).eq("org_id", orgId).gte("shift_date", iso(start)).neq("review_status", "approved"),
+      admin.from("workforce_shifts").select("id", { count: "exact", head: true }).eq("org_id", orgId).gte("shift_date", iso(start)).eq("review_status", "pending"),
       admin.from("employee_loans").select("id, monthly_repayment, balance").eq("org_id", orgId).eq("is_active", true),
+      admin.from("clock_incidents").select("id", { count: "exact", head: true }).eq("org_id", orgId).neq("status", "resolved"),
     ]);
     const staff = [...(profiles.data ?? []), ...(records.data ?? [])].filter(e => (e.status ?? "active") === "active");
     const gross = staff.reduce((s, e) => s + Number(e.monthly_salary ?? 0), 0);
@@ -46,6 +50,7 @@ async function processOrg(admin: ReturnType<typeof createClient>, orgId: string,
     const missingIds = staff.filter(e => !e.nic_number || !e.tan_number).length;
     const zeroPay = staff.filter(e => !Number(e.monthly_salary)).length;
     const missing = alerts.count ?? 0, pending = shifts.count ?? 0;
+    const clockIssues = clockIncidents.count ?? 0;
 
     const flags: Flag[] = [];
     if (changePct !== null && Math.abs(changePct) >= 10) flags.push({ severity: Math.abs(changePct) >= 25 ? "high" : "medium", title: `Payroll cost ${changePct > 0 ? "up" : "down"} ${Math.abs(changePct)}%`, detail: `Projected gross differs from the last saved run (${lastGross?.toFixed(2)} XCD).` });
@@ -53,7 +58,9 @@ async function processOrg(admin: ReturnType<typeof createClient>, orgId: string,
     if (pending) flags.push({ severity: "medium", title: `${pending} shift${pending === 1 ? "" : "s"} awaiting review`, detail: "Approve worked hours on the Attendance page so they count toward pay." });
     if (missingIds) flags.push({ severity: "medium", title: `${missingIds} employee${missingIds === 1 ? "" : "s"} missing NIC or tax number`, detail: "Statutory reports need these numbers." });
     if (zeroPay) flags.push({ severity: "high", title: `${zeroPay} employee${zeroPay === 1 ? "" : "s"} with no pay rate`, detail: "They would be paid nothing this period." });
+    if (clockIssues) flags.push({ severity: "high", title: `${clockIssues} active clock incident${clockIssues === 1 ? "" : "s"}`, detail: "Check tablet heartbeats and offline-punch reviews in the Attendance Monitoring Center before relying on those hours." });
     const suggestions = [
+      ...(clockIssues ? [{ action: "Open the Clock Monitoring Center", path: "/attendance?clock_view=attention" }] : []),
       ...(missing ? [{ action: "Resolve missing punches", path: "/attendance" }] : []),
       ...(pending ? [{ action: "Approve worked hours", path: "/attendance" }] : []),
       ...(missingIds || zeroPay ? [{ action: "Complete employee details", path: "/employees" }] : []),
@@ -65,7 +72,7 @@ async function processOrg(admin: ReturnType<typeof createClient>, orgId: string,
       const res = await generateResponse({
         model: "openai/gpt-6-astra",
         instructions: "You are the AI Paymaster for a Caribbean (OECS) payroll service. Write a short plain-language briefing (max 140 words, no tables) for the company admin about this period's draft payroll: the cost forecast versus last period, the issues to fix, and what to do next. Amounts are XCD. You cannot approve or pay payroll; always end by asking the admin to review and approve on the Payroll page. Never invent figures beyond those supplied.",
-        input: JSON.stringify({ periodStart: iso(start), periodEnd: iso(end), payDate: iso(payDate), employees: staff.length, projectedGross: gross, lastGross, changePct, missingPunches: missing, pendingShifts: pending, activeLoans: loans.data?.length ?? 0, loanRepayments: loanTotal, missingStatutoryIds: missingIds, zeroPay, alreadyApproved: !!covering }),
+        input: JSON.stringify({ periodStart: iso(start), periodEnd: iso(end), payDate: iso(payDate), employees: staff.length, projectedGross: gross, lastGross, changePct, missingPunches: missing, pendingShifts: pending, activeClockIncidents: clockIssues, activeLoans: loans.data?.length ?? 0, loanRepayments: loanTotal, missingStatutoryIds: missingIds, zeroPay, alreadyApproved: !!covering }),
       });
       summary = res.output.flatMap(i => i.type === "message" ? i.content.flatMap(p => p.type === "output_text" ? [p.text] : []) : []).join("\n") || null;
     } catch (e) {
@@ -100,16 +107,30 @@ Deno.serve(async req => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   try {
+    const parsedBody = requestBody.safeParse(await req.json().catch(() => ({})));
+    if (!parsedBody.success) return json({ error: "Invalid monitoring request" }, 400);
     const authorization = req.headers.get("Authorization");
     const token = authorization?.startsWith("Bearer ") ? authorization.slice(7) : null;
     const { data: auth } = token ? await admin.auth.getUser(token) : { data: { user: null } };
     if (auth?.user) {
-      // Manual "Run now" by a payroll manager for their own company
       const user = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: authorization! } } });
-      const [{ data: orgId }, { data: access }, { data: staff }] = await Promise.all([
-        user.rpc("current_org_id"), user.rpc("has_workspace_access", { _user_id: auth.user.id, _module: "payroll" }), user.rpc("is_admin_or_manager", { _user_id: auth.user.id }),
+      const [{ data: orgId }, { data: payrollAccess }, { data: attendanceAccess }, { data: staff }] = await Promise.all([
+        user.rpc("current_org_id"),
+        user.rpc("has_workspace_access", { _user_id: auth.user.id, _module: "payroll" }),
+        user.rpc("has_workspace_access", { _user_id: auth.user.id, _module: "attendance" }),
+        user.rpc("is_admin_or_manager", { _user_id: auth.user.id }),
       ]);
-      if (!orgId || !access || !staff) return json({ error: "Payroll manager access required." }, 403);
+      if (parsedBody.data.monitoring) {
+        if (!orgId || !attendanceAccess || !staff) return json({ error: "Attendance manager access required." }, 403);
+        const { data: monitoring, error } = await admin.rpc("scan_clock_health", { _org: orgId });
+        if (error) {
+          console.error("clock health scan", JSON.stringify(error));
+          return json({ error: "Clock health check unavailable. No payroll was changed." }, 500);
+        }
+        return json({ monitoring });
+      }
+      // Manual "Run now" by a payroll manager for their own company
+      if (!orgId || !payrollAccess || !staff) return json({ error: "Payroll manager access required." }, 403);
       return json(await processOrg(admin, orgId as string, true));
     }
     // Scheduled monitoring: bounded batch, each org rate-limited to once per 6h

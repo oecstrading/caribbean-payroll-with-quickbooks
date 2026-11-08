@@ -10,6 +10,7 @@ import AttendanceCSVImport from "@/components/AttendanceCSVImport";
 import AttendanceClock from "@/components/AttendanceClock";
 import StaffTimeClock from "@/components/StaffTimeClock";
 import WorkforceManagement from "@/components/WorkforceManagement";
+import ClockMonitoringCenter from "@/components/ClockMonitoringCenter";
 import { useRole } from "@/hooks/useRole";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,6 +58,8 @@ export default function AttendancePage() {
         </div>
         {demoMode && <AttendanceCSVImport onImport={handleImport} />}
       </div>
+
+      <ClockMonitoringCenter />
 
       {/* Date Selector */}
       <StaffTimeClock companyId={companyId} />
