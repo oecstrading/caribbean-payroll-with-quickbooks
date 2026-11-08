@@ -16,7 +16,7 @@ export function whatsappNumber(phone: string | null) {
 }
 
 export function inviteMessage(name: string, link: string, hasPin: boolean) {
-  return `Hi ${name.split(" ")[0]}! 👋 This is YOUR personal time clock.\n\n1️⃣ Open this link on your OWN phone: ${link}\n2️⃣ Tap "Add app to my home screen"\n3️⃣ Enter your PIN${hasPin ? "" : " (your manager will give it to you)"}, allow location, and tap Clock in.\n\n☕ Use Lunch out / Lunch in for breaks and End shift to clock out. Your code is already filled in, and "My dashboard" shows your hours and pay.\n\n🔒 Your clock locks to the first phone you use. It will not work on anyone else's phone — never share your link or PIN. New phone? Ask your manager to reset it.`;
+  return `Hi ${name.split(" ")[0]}! 👋 This is YOUR personal time clock.\n\n1️⃣ Open this link on your OWN phone: ${link}\n2️⃣ Tap "Add app to my home screen"\n3️⃣ Enter your PIN${hasPin ? "" : " (your manager will give it to you)"}, allow location, and tap Clock in.\n\n☕ Use Lunch out / Lunch in for breaks and End shift to clock out. Your code is already filled in, and "My dashboard" shows your hours and pay.\n\n🔒 Your clock locks to the first phone you use, and that phone can only ever clock for you. It will not work on anyone else's phone, and nobody can clock you in from theirs. A selfie is optional. Never share your link or PIN. New phone? Ask your manager to reset it.`;
 }
 
 export function StaffInviteCenter({ org }: { org: string }) {
@@ -59,7 +59,7 @@ export function StaffInviteCenter({ org }: { org: string }) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Send each employee their personal app link</DialogTitle></DialogHeader>
-        <p className="text-sm text-muted-foreground">Each link and QR code is unique to one employee and opens their clock with code filled in: clock in, lunch out/in and end shift, with location on every punch. To stop buddy punching, the clock locks to the first phone that uses it — a co-worker's phone is refused even with the right PIN. Use "Reset phone" if someone changes phones.</p>
+        <p className="text-sm text-muted-foreground">Each link and QR code is unique to one employee and opens their clock with code filled in: clock in, lunch out/in and end shift, with location on every punch. To stop buddy punching, the clock locks to the first phone that uses it — a co-worker's phone is refused even with the right PIN, and one phone can never clock for two employees. Selfies are optional. Use "Reset phone" if someone changes phones.</p>
         {!staff ? <p>Loading staff…</p> : !staff.length ? <p className="text-muted-foreground">No active employees yet.</p> :
           <ul className="space-y-2">{staff.map(s => {
             const msg = inviteMessage(s.name, link(s), s.pin); const wa = whatsappNumber(s.phone);
