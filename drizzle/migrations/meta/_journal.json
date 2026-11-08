@@ -610,6 +610,13 @@
       "when": 1794153635221,
       "tag": "0086_selfie_delete_via_storage_api",
       "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "7",
+      "when": 1794154192498,
+      "tag": "0087_attendance_respects_go_live",
+      "breakpoints": true
     }
   ]
 }
