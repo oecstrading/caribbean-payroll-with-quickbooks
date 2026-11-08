@@ -482,6 +482,71 @@ export type Database = {
           },
         ]
       }
+      clock_incidents: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          clock_id: string
+          clock_type: string
+          created_at: string
+          detail: string
+          first_detected_at: string
+          id: string
+          kind: string
+          last_detected_at: string
+          org_id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          status: string
+          title: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          clock_id: string
+          clock_type: string
+          created_at?: string
+          detail: string
+          first_detected_at?: string
+          id?: string
+          kind: string
+          last_detected_at?: string
+          org_id: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity: string
+          status?: string
+          title: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          clock_id?: string
+          clock_type?: string
+          created_at?: string
+          detail?: string
+          first_detected_at?: string
+          id?: string
+          kind?: string
+          last_detected_at?: string
+          org_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clock_incidents_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clock_punches: {
         Row: {
           address_label: string | null
@@ -3712,6 +3777,7 @@ export type Database = {
           employee_id: string
           enabled: boolean
           failed_attempts: number
+          last_seen_at: string | null
           locked_until: string | null
           org_id: string
           pin_hash: string
@@ -3723,6 +3789,7 @@ export type Database = {
           employee_id: string
           enabled?: boolean
           failed_attempts?: number
+          last_seen_at?: string | null
           locked_until?: string | null
           org_id: string
           pin_hash: string
@@ -3734,6 +3801,7 @@ export type Database = {
           employee_id?: string
           enabled?: boolean
           failed_attempts?: number
+          last_seen_at?: string | null
           locked_until?: string | null
           org_id?: string
           pin_hash?: string
@@ -4208,6 +4276,7 @@ export type Database = {
       }
       claim_user_pin_attempt: { Args: { _user: string }; Returns: boolean }
       client_portal_data: { Args: { _code: string }; Returns: Json }
+      clock_monitoring: { Args: never; Returns: Json }
       clock_phone_bindings: {
         Args: never
         Returns: {
@@ -4489,6 +4558,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      review_clock_incident: {
+        Args: { _action: string; _id: string }
+        Returns: undefined
+      }
       review_staff_pay_request: {
         Args: { _approve: boolean; _id: string; _note: string }
         Returns: undefined
@@ -4513,6 +4586,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      scan_clock_health: { Args: { _org?: string }; Returns: Json }
       set_administrator_authority: {
         Args: { _company: boolean; _platform: boolean; _user: string }
         Returns: undefined
