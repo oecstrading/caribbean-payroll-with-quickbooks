@@ -123,7 +123,10 @@ Deno.serve(async req => {
       if (parsedBody.data.monitoring) {
         if (!orgId || !attendanceAccess || !staff) return json({ error: "Attendance manager access required." }, 403);
         const { data: monitoring, error } = await admin.rpc("scan_clock_health", { _org: orgId });
-        if (error) return json({ error: "Clock health check unavailable. No payroll was changed." }, 500);
+        if (error) {
+          console.error("clock health scan", JSON.stringify(error));
+          return json({ error: "Clock health check unavailable. No payroll was changed." }, 500);
+        }
         return json({ monitoring });
       }
       // Manual "Run now" by a payroll manager for their own company
