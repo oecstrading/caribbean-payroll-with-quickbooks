@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useRole } from "@/hooks/useRole";
 import { SummaryCard } from "@/components/SummaryCard";
 import BulkClockActivation from "@/components/BulkClockActivation";
+import BulkEmployeeClockActivation from "@/components/BulkEmployeeClockActivation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -223,6 +224,7 @@ export default function ClockMonitoringCenter() {
         </div>
 
         <BulkClockActivation />
+        <BulkEmployeeClockActivation />
 
         {clocks.filter(clockNeedsAttention).length > 0 && (
           <div className="space-y-3 rounded-2xl border border-sidebar-primary/30 bg-sidebar-primary/10 p-4">
