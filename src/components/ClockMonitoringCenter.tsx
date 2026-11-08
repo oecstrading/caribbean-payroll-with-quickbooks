@@ -31,7 +31,8 @@ const timeAgo = (value: string | null) => {
   if (minutes < 60) return `${minutes} min ago`;
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return `${hours}h ${minutes % 60}m ago`;
-  return `${Math.floor(hours / 24)} days ago`;
+  const days = Math.floor(hours / 24);
+  return `${days} day${days === 1 ? "" : "s"} ago`;
 };
 
 const toneClasses = {
@@ -200,7 +201,7 @@ export default function ClockMonitoringCenter() {
           <SummaryCard label="All clocks" value={clocks.length} icon={Clock3} active={filter === "all"} onClick={() => chooseFilter("all")} className="border-sidebar-border bg-sidebar-accent text-sidebar-accent-foreground" />
           <SummaryCard label="Shared tablets online" value={`${sharedOnline} / ${shared.length}`} icon={Wifi} active={filter === "shared"} onClick={() => chooseFilter("shared")} className="border-sidebar-border bg-sidebar-accent text-sidebar-accent-foreground" />
           <SummaryCard label="Staff on clock" value={working} icon={Smartphone} active={filter === "working"} onClick={() => chooseFilter("working")} className="border-sidebar-border bg-sidebar-accent text-sidebar-accent-foreground" />
-          <SummaryCard label="Needs attention" value={attention + incidents.filter((incident) => incident.status === "open").length} icon={ShieldAlert} active={filter === "attention"} onClick={() => chooseFilter("attention")} className="border-sidebar-border bg-sidebar-accent text-sidebar-accent-foreground" valueClassName={attention || incidents.length ? "text-sidebar-primary" : "text-success"} />
+          <SummaryCard label="Needs attention" value={attention} icon={ShieldAlert} active={filter === "attention"} onClick={() => chooseFilter("attention")} className="border-sidebar-border bg-sidebar-accent text-sidebar-accent-foreground" valueClassName={attention || incidents.length ? "text-sidebar-primary" : "text-success"} />
         </div>
 
         {incidents.length > 0 && (

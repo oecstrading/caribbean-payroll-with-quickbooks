@@ -48,7 +48,7 @@ export default function WorkforceAlerts() {
   return (
     <div className="flex flex-wrap gap-2">
       {missingCount > 0 && <Button variant="outline" className="border-destructive/40 text-destructive" onClick={() => navigate("/attendance?filter=missing")}><BellRing size={16} />{missingCount} missing-punch alert{missingCount === 1 ? "" : "s"}</Button>}
-      {clockCount > 0 && <Button variant="outline" className="border-warning/50 bg-warning/10 text-warning-foreground" onClick={() => navigate("/attendance?clock_view=attention")}><MonitorOff size={16} />{clockCount} clock alert{clockCount === 1 ? "" : "s"}</Button>}
+      {clockCount > 0 && <Button variant="outline" className="border-warning/50 bg-warning/10 text-warning" onClick={() => navigate("/attendance?clock_view=attention")}><MonitorOff size={16} />{clockCount} clock alert{clockCount === 1 ? "" : "s"}</Button>}
     </div>
   );
 }
