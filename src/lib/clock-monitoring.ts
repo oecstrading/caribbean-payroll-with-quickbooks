@@ -85,6 +85,35 @@ export function clockStatusTone(clock: MonitoredClock): "success" | "warning" | 
   return "muted";
 }
 
+export type ClockFixAction = "switch_off_tablet" | "reset_phone" | "review_punches" | "open_tablets";
+export type ClockExplanation = { why: string; fix: string; actions: ClockFixAction[] };
+
+/** Plain-language AI Paymaster explanation of why a clock needs attention and how to resolve it. */
+export function explainClock(clock: MonitoredClock, sinceLabel: string): ClockExplanation | null {
+  if (clock.status === "offline") {
+    return {
+      why: `“${clock.name}” is an activated shared tablet, but it has not contacted the platform since ${sinceLabel}. Staff cannot reliably clock in on it, and any punches it holds are not syncing.`,
+      fix: "If the tablet is in use, open the clock on it and check its power and internet — it turns green automatically once it reconnects. If it was only a test or is no longer used, switch it off so it stops raising alerts.",
+      actions: ["switch_off_tablet", "open_tablets"],
+    };
+  }
+  if (clock.status === "locked") {
+    return {
+      why: `${clock.name}'s personal clock is locked to one phone, and a different phone or browser tried to punch.`,
+      fix: "If the employee changed phones or browsers, reset the phone lock. Their next punch will register the new phone.",
+      actions: ["reset_phone"],
+    };
+  }
+  if (clock.status === "sync_review") {
+    return {
+      why: `${clock.name} has punches recorded while offline. They are kept out of payroll until a manager confirms them.`,
+      fix: "Review the offline punches and approve or correct them.",
+      actions: ["review_punches"],
+    };
+  }
+  return null;
+}
+
 export function clockLocationLabel(clock: MonitoredClock): string {
   if (clock.site_name) return clock.site_name;
   return clock.latitude != null && clock.longitude != null ? "Last punch location" : "No location reported";
