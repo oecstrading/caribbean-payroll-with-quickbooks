@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Bot, Check, CheckCircle2, Clock3, CloudCog, ExternalLink, Eye, MapPin, RefreshCw, ShieldAlert, Smartphone, Tablet, Wifi, WifiOff } from "lucide-react";
-import { CircleMarker, MapContainer, Popup, TileLayer, useMap } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
