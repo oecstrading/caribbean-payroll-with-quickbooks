@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Bot, Check, CheckCircle2, Clock3, CloudCog, ExternalLink, Eye, MapPin, RefreshCw, ShieldAlert, Smartphone, Tablet, Wifi, WifiOff } from "lucide-react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -9,7 +9,6 @@ import { useRole } from "@/hooks/useRole";
 import { SummaryCard } from "@/components/SummaryCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { NativeSelect } from "@/components/ui/native-select";
 import { cn } from "@/lib/utils";
 import {
@@ -126,7 +125,6 @@ export default function ClockMonitoringCenter() {
   const visible = useMemo(() => filterMonitoredClocks(clocks, filter).filter((clock) => siteFilter === "all" || clock.site_name === siteFilter), [clocks, filter, siteFilter]);
   const located = visible.filter((clock) => clock.latitude != null && clock.longitude != null);
   const selected = clocks.find((clock) => `${clock.type}:${clock.id}` === selectedId) ?? located[0];
-  const firstLocation = located[0];
   const working = clocks.filter(clockIsWorking).length;
   const shared = clocks.filter((clock) => clock.type === "shared");
   const sharedOnline = shared.filter((clock) => clock.status === "online").length;
@@ -245,11 +243,7 @@ export default function ClockMonitoringCenter() {
 
           <div className="overflow-hidden rounded-2xl border border-sidebar-border bg-sidebar-accent">
             <div className="border-b border-sidebar-border p-3"><h3 className="flex items-center gap-2 font-semibold"><MapPin className="h-5 w-5 text-sidebar-primary" />Clock locations</h3><p className="text-xs text-sidebar-foreground/60">Assigned site or latest punch location. Select a clock to focus the map.</p></div>
-            {located.length ? <MapContainer center={[firstLocation?.latitude ?? 13.9094, firstLocation?.longitude ?? -60.9789]} zoom={11} scrollWheelZoom={false} className="h-[360px] w-full">
-              <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-              <MapFocus clock={selected} />
-              {located.map((clock) => <CircleMarker key={`${clock.type}:${clock.id}`} center={[clock.latitude!, clock.longitude!]} radius={clockNeedsAttention(clock) ? 12 : 10} pathOptions={{ color: clockNeedsAttention(clock) ? "hsl(var(--destructive))" : "hsl(var(--primary))", fillColor: clockNeedsAttention(clock) ? "hsl(var(--destructive))" : "hsl(var(--primary))", fillOpacity: 0.85, weight: 3 }} eventHandlers={{ click: () => setSelectedId(`${clock.type}:${clock.id}`) }}><Popup><strong>{clock.name}</strong><br />{CLOCK_STATUS_LABELS[clock.status]}<br />{clockLocationLabel(clock)}<br />{timeAgo(clock.last_seen_at)}</Popup></CircleMarker>)}
-            </MapContainer> : <div className="flex h-[300px] items-center justify-center p-8 text-center text-sm text-sidebar-foreground/60">No mapped clocks in this view. Add a work site or record a located punch to see positions here.</div>}
+            {located.length ? <ClockMap clocks={located} selected={selected} onSelect={setSelectedId} /> : <div className="flex h-[300px] items-center justify-center p-8 text-center text-sm text-sidebar-foreground/60">No mapped clocks in this view. Add a work site or record a located punch to see positions here.</div>}
             {selected && <div className="border-t border-sidebar-border p-3 text-sm"><p className="font-semibold">{selected.name}</p><p className="text-sidebar-foreground/70">{CLOCK_STATUS_LABELS[selected.status]} · {clockLocationLabel(selected)}</p>{selected.latitude != null && selected.longitude != null && <a className="mt-1 inline-flex items-center gap-1 text-sidebar-primary underline" href={`https://www.openstreetmap.org/?mlat=${selected.latitude}&mlon=${selected.longitude}#map=17/${selected.latitude}/${selected.longitude}`} target="_blank" rel="noreferrer">Open map <ExternalLink className="h-3 w-3" /></a>}</div>}
           </div>
         </div>
