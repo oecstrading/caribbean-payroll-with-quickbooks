@@ -17,6 +17,7 @@ import {
   clockLocationLabel,
   clockNeedsAttention,
   clockStatusTone,
+  explainClock,
   filterMonitoredClocks,
   type ClockFilter,
   type ClockIncident,
@@ -161,6 +162,22 @@ export default function ClockMonitoringCenter() {
     }
   };
 
+  const fixClock = async (clock: MonitoredClock, action: "switch_off_tablet" | "reset_phone") => {
+    const question = action === "switch_off_tablet"
+      ? `Switch off “${clock.name}”? It will stop accepting punches and stop raising alerts. You can add it again later.`
+      : `Reset the phone lock for ${clock.name}? Their next punch will register the phone they use.`;
+    if (!window.confirm(question)) return;
+    const { error: fixError } = action === "switch_off_tablet"
+      ? await supabase.rpc("revoke_clock_device", { _id: clock.id })
+      : await supabase.rpc("reset_clock_phone", { _employee: clock.id });
+    if (fixError) return void toast.error(fixError.message);
+    for (const incident of incidents.filter((i) => i.clock_id === clock.id)) {
+      await supabase.rpc("review_clock_incident", { _id: incident.id, _action: "resolve" });
+    }
+    toast.success(action === "switch_off_tablet" ? "Tablet switched off. Alert cleared." : "Phone lock reset.");
+    await load(true);
+  };
+
   const openOfflineReview = () => {
     const updated = new URLSearchParams(params);
     updated.set("filter", "review");
@@ -203,6 +220,29 @@ export default function ClockMonitoringCenter() {
           <SummaryCard label="Staff on clock" value={working} icon={Smartphone} active={filter === "working"} onClick={() => chooseFilter("working")} className="border-sidebar-border bg-sidebar-accent text-sidebar-accent-foreground" />
           <SummaryCard label="Needs attention" value={attention} icon={ShieldAlert} active={filter === "attention"} onClick={() => chooseFilter("attention")} className="border-sidebar-border bg-sidebar-accent text-sidebar-accent-foreground" valueClassName={attention || incidents.length ? "text-sidebar-primary" : "text-success"} />
         </div>
+
+        {clocks.filter(clockNeedsAttention).length > 0 && (
+          <div className="space-y-3 rounded-2xl border border-sidebar-primary/30 bg-sidebar-primary/10 p-4">
+            <h3 className="flex items-center gap-2 font-semibold"><Bot className="h-5 w-5 text-sidebar-primary" />AI Paymaster explains what needs attention</h3>
+            {clocks.filter(clockNeedsAttention).map((clock) => {
+              const ex = explainClock(clock, clock.last_seen_at ? `${new Date(clock.last_seen_at).toLocaleString()} (${timeAgo(clock.last_seen_at)})` : "it was set up");
+              if (!ex) return null;
+              return (
+                <article key={`ex-${clock.type}:${clock.id}`} className="rounded-xl border border-sidebar-border bg-sidebar-accent p-3 text-sm">
+                  <p className="font-semibold">{clock.name} · {CLOCK_STATUS_LABELS[clock.status]}</p>
+                  <p className="mt-1 text-sidebar-foreground/80"><strong>Why:</strong> {ex.why}</p>
+                  <p className="mt-1 text-sidebar-foreground/80"><strong>How to fix:</strong> {ex.fix}</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {ex.actions.includes("switch_off_tablet") && isAdmin && <Button size="sm" onClick={() => void fixClock(clock, "switch_off_tablet")}><WifiOff className="mr-1 h-4 w-4" />Switch off this tablet</Button>}
+                    {ex.actions.includes("open_tablets") && isAdmin && <Button size="sm" variant="outline" className="border-sidebar-border bg-sidebar text-sidebar-foreground" onClick={() => navigate("/clock-devices")}><Tablet className="mr-1 h-4 w-4" />Open tablet setup</Button>}
+                    {ex.actions.includes("reset_phone") && <Button size="sm" onClick={() => void fixClock(clock, "reset_phone")}><Smartphone className="mr-1 h-4 w-4" />Reset phone lock</Button>}
+                    {ex.actions.includes("review_punches") && <Button size="sm" onClick={openOfflineReview}><Eye className="mr-1 h-4 w-4" />Review punches</Button>}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
 
         {incidents.length > 0 && (
           <div className="space-y-3 rounded-2xl border border-warning/30 bg-warning/10 p-4">

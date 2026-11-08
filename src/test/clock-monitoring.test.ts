@@ -35,3 +35,14 @@ describe("clock monitoring status rules", () => {
     expect(filterMonitoredClocks(clocks, "working").map((c) => c.id)).toEqual(["personal-clocked_in"]);
   });
 });
+
+import { explainClock as explain } from "@/lib/clock-monitoring";
+describe("explainClock", () => {
+  const base = { id: "1", type: "shared", name: "Demo", department: null, site_id: null, site_name: null, latitude: null, longitude: null, last_seen_at: null, last_activity_at: null, current_activity: null, punches_today: 0 } as const;
+  it("offers switch-off for an offline tablet", () => {
+    expect(explain({ ...base, status: "offline" }, "yesterday")?.actions).toContain("switch_off_tablet");
+  });
+  it("has no explanation for a healthy clock", () => {
+    expect(explain({ ...base, status: "online" }, "now")).toBeNull();
+  });
+});
