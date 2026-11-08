@@ -1,11 +1,32 @@
 // A random, permanent ID for this phone/browser. The server locks each employee's
 // personal PIN clock to the first phone that uses it, so a PIN shared with a
 // co-worker cannot be used from another phone (anti buddy-punching).
+// The ID is kept in both localStorage and a long-lived cookie so that clearing one
+// (or the installed home-screen app vs. the browser) does not make the phone look new.
 const KEY = "staff-clock-device-id";
-export function clockDeviceId(): string {
+const VALID = /^[0-9a-f-]{36}$/;
+
+function readCookie(): string | null {
   try {
-    let id = localStorage.getItem(KEY);
-    if (!id || !/^[0-9a-f-]{36}$/.test(id)) { id = crypto.randomUUID(); localStorage.setItem(KEY, id); }
-    return id;
-  } catch { return crypto.randomUUID(); }
+    const m = document.cookie.match(new RegExp(`(?:^|; )${KEY}=([^;]+)`));
+    return m && VALID.test(m[1]) ? m[1] : null;
+  } catch { return null; }
+}
+function writeCookie(id: string) {
+  try { document.cookie = `${KEY}=${id}; path=/; max-age=${60 * 60 * 24 * 365 * 5}; SameSite=Lax; Secure`; } catch { /* ignore */ }
+}
+
+export function clockDeviceId(): string {
+  let id: string | null = null;
+  try { const v = localStorage.getItem(KEY); if (v && VALID.test(v)) id = v; } catch { /* ignore */ }
+  if (!id) id = readCookie();
+  if (!id) id = crypto.randomUUID();
+  try { localStorage.setItem(KEY, id); } catch { /* ignore */ }
+  writeCookie(id);
+  return id;
+}
+
+/** WhatsApp/Facebook/Instagram open links in their own mini-browser, which looks like a different phone. */
+export function isInAppBrowser(ua: string = typeof navigator !== "undefined" ? navigator.userAgent : ""): boolean {
+  return /WhatsApp|FBAN|FBAV|FB_IAB|Instagram|Line\/|Snapchat|; wv\)/i.test(ua);
 }
