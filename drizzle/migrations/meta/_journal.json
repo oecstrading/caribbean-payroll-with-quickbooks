@@ -589,6 +589,13 @@
       "when": 1794151134368,
       "tag": "0083_attendance_clock_monitoring",
       "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1794151682255,
+      "tag": "0084_fix_clock_health_scan_alias",
+      "breakpoints": true
     }
   ]
 }
