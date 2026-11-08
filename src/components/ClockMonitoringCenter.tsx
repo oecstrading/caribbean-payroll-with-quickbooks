@@ -42,12 +42,42 @@ const toneClasses = {
   muted: "border-border bg-muted text-muted-foreground",
 };
 
-function MapFocus({ clock }: { clock?: MonitoredClock }) {
-  const map = useMap();
+function ClockMap({ clocks, selected, onSelect }: { clocks: MonitoredClock[]; selected?: MonitoredClock; onSelect: (key: string) => void }) {
+  const container = useRef<HTMLDivElement>(null);
+  const map = useRef<L.Map | null>(null);
+  const markers = useRef<L.LayerGroup | null>(null);
+  const first = clocks[0];
+
   useEffect(() => {
-    if (clock?.latitude != null && clock.longitude != null) map.setView([clock.latitude, clock.longitude], 15, { animate: true });
-  }, [clock, map]);
-  return null;
+    if (!container.current || map.current) return;
+    map.current = L.map(container.current, { scrollWheelZoom: false }).setView([first?.latitude ?? 13.9094, first?.longitude ?? -60.9789], 11);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(map.current);
+    markers.current = L.layerGroup().addTo(map.current);
+    window.setTimeout(() => map.current?.invalidateSize(), 0);
+    return () => { map.current?.remove(); map.current = null; markers.current = null; };
+  }, []);
+
+  useEffect(() => {
+    if (!map.current || !markers.current) return;
+    markers.current.clearLayers();
+    for (const clock of clocks) {
+      if (clock.latitude == null || clock.longitude == null) continue;
+      const color = clockNeedsAttention(clock) ? "hsl(var(--destructive))" : "hsl(var(--primary))";
+      const marker = L.circleMarker([clock.latitude, clock.longitude], { radius: clockNeedsAttention(clock) ? 12 : 10, color, fillColor: color, fillOpacity: 0.85, weight: 3 });
+      const popup = document.createElement("div");
+      const name = document.createElement("strong");
+      name.textContent = clock.name;
+      const detail = document.createElement("div");
+      detail.textContent = `${CLOCK_STATUS_LABELS[clock.status]} · ${clockLocationLabel(clock)} · ${timeAgo(clock.last_seen_at)}`;
+      popup.append(name, detail);
+      marker.bindPopup(popup).on("click", () => onSelect(`${clock.type}:${clock.id}`));
+      markers.current.addLayer(marker);
+    }
+    if (selected?.latitude != null && selected.longitude != null) map.current.setView([selected.latitude, selected.longitude], 15, { animate: true });
+    else if (first?.latitude != null && first.longitude != null) map.current.setView([first.latitude, first.longitude], 11);
+  }, [clocks, selected, first, onSelect]);
+
+  return <div ref={container} className="h-[360px] w-full" aria-label="Map of reported clock locations" />;
 }
 
 export default function ClockMonitoringCenter() {
