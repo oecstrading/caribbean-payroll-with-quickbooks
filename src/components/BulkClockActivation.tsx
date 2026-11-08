@@ -50,7 +50,7 @@ export default function BulkClockActivation() {
   };
 
   const companyName = (org: string) => clocks.find((c) => c.org_id === org)?.company ?? "";
-  const message = (i: Issued) => `Set up ${i.name} (${companyName(i.org_id)}) on the company tablet: ${kioskActivationLink(i.code)}\nOpen the link to activate automatically, allow camera, microphone and location, then add it to the home screen. Single-use link, expires ${new Date(i.expires_at).toLocaleTimeString()}.`;
+  const message = (i: Issued) => `Set up ${i.name} (${companyName(i.org_id)}) on the company tablet: ${kioskActivationLink(i.code)}\nOpen the link to activate automatically, allow camera, microphone and location, then add it to the home screen. This tablet becomes a unique company clock: staff punch with their own PIN, a selfie is optional, and the link stops working after one use. Single-use link, expires ${new Date(i.expires_at).toLocaleTimeString()}.`;
   const allMessages = issued.map(message).join("\n\n");
 
   return (

@@ -20,7 +20,7 @@ Deno.serve(async req => {
    if(!body.device_id) return reply({error:"Please update the clock app: open your clock link again on your own phone."},400);
    const bound=await admin.rpc("claim_clock_device",{_org:org,_employee:employee,_device_hash:await sha256(`${org}:${body.device_id}`)});
    if(bound.error) return reply({error:"Unable to verify this phone. Please try again."},503);
-   if(!bound.data) return reply({error:"This clock is locked to the employee's own phone. Clock in from your registered phone, or ask your manager to reset your phone."},403);
+   if(!bound.data) return reply({error:"This clock only works on the employee's own registered phone, and each phone can belong to only one employee. Use your own phone, or ask your manager to reset your phone."},403);
   } else {
    const authorization=req.headers.get("Authorization"); if(!authorization?.startsWith("Bearer ")) return reply({error:"Sign in or enter your company employee code and PIN"},401);
    const caller=createClient(url,anon,{global:{headers:{Authorization:authorization}}});

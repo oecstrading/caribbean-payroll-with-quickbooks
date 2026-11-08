@@ -45,7 +45,7 @@ export default function BulkEmployeeClockActivation() {
     setSent(chosen); setPicked(new Set()); void load();
   };
 
-  const msg = (e: Emp) => `Hi ${e.name.split(" ")[0]}! Your ${e.company} time clock is ready: ${staffClockLink(e.org_id, e.code ?? undefined)}\nOpen it on your OWN phone in Chrome or Safari, tap "Add app to my home screen", enter your PIN, allow location and tap Clock in. Never share your link or PIN.`;
+  const msg = (e: Emp) => `Hi ${e.name.split(" ")[0]}! Your ${e.company} time clock is ready: ${staffClockLink(e.org_id, e.code ?? undefined)}\nOpen it on your OWN phone in Chrome or Safari, tap "Add app to my home screen", enter your PIN, allow location and tap Clock in. Your clock locks to your phone only, and your phone can only clock for you. A selfie is optional. Never share your link or PIN.`;
   const all = sent.map(msg).join("\n\n");
 
   return (
