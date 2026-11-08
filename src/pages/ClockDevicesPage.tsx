@@ -65,8 +65,14 @@ export default function ClockDevicesPage() {
   };
   const deleteSelfie = async (s: Shot) => {
     if (!confirm(`Delete the selfie for ${s.name ?? "this employee"} at ${fmt(s.punched_at)}? The punch record stays; only the photo is removed.`)) return;
-    const { error } = await supabase.rpc("delete_punch_selfie", { _punch_id: s.id });
-    error ? toast.error(error.message) : (toast.success("Selfie deleted"), void load());
+    const { data: path, error } = await supabase.rpc("clear_punch_selfie" as never, { _punch_id: s.id } as never);
+    if (error) return void toast.error((error as { message: string }).message);
+    if (path) {
+      const { error: rmError } = await supabase.storage.from("clock-selfies").remove([path as unknown as string]);
+      if (rmError) toast.warning("Photo hidden from the punch, but the stored file could not be removed: " + rmError.message);
+    }
+    toast.success("Selfie deleted");
+    void load();
   };
   const link = issued ? kioskActivationLink(issued.code) : "";
   const invitation = issued ? `Set up ${issued.name} on the company tablet: ${link}\nOpen the link to activate automatically, then allow camera, microphone and location and add it to the home screen. This single-use link expires at ${new Date(issued.expires_at).toLocaleTimeString()}. Use only on the intended company clock device.` : "";
