@@ -36,7 +36,7 @@ async function processOrg(admin: ReturnType<typeof createClient>, orgId: string,
       admin.from("employee_records").select("id, monthly_salary, nic_number, tan_number, status, department").eq("org_id", orgId).is("deleted_at", null).is("permanently_deleted_at", null),
       admin.from("payroll_runs").select("id, total_gross, period_start, period_end, created_at").eq("org_id", orgId).order("created_at", { ascending: false }).limit(12),
       admin.from("workforce_alerts").select("id", { count: "exact", head: true }).eq("org_id", orgId).is("resolved_at", null),
-      admin.from("workforce_shifts").select("id", { count: "exact", head: true }).eq("org_id", orgId).gte("shift_date", iso(start)).neq("review_status", "approved"),
+      admin.from("workforce_shifts").select("id", { count: "exact", head: true }).eq("org_id", orgId).gte("shift_date", iso(start)).eq("review_status", "pending"),
       admin.from("employee_loans").select("id, monthly_repayment, balance").eq("org_id", orgId).eq("is_active", true),
       admin.from("clock_incidents").select("id", { count: "exact", head: true }).eq("org_id", orgId).neq("status", "resolved"),
     ]);
@@ -107,16 +107,27 @@ Deno.serve(async req => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   try {
+    const parsedBody = requestBody.safeParse(await req.json().catch(() => ({})));
+    if (!parsedBody.success) return json({ error: "Invalid monitoring request" }, 400);
     const authorization = req.headers.get("Authorization");
     const token = authorization?.startsWith("Bearer ") ? authorization.slice(7) : null;
     const { data: auth } = token ? await admin.auth.getUser(token) : { data: { user: null } };
     if (auth?.user) {
-      // Manual "Run now" by a payroll manager for their own company
       const user = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: authorization! } } });
-      const [{ data: orgId }, { data: access }, { data: staff }] = await Promise.all([
-        user.rpc("current_org_id"), user.rpc("has_workspace_access", { _user_id: auth.user.id, _module: "payroll" }), user.rpc("is_admin_or_manager", { _user_id: auth.user.id }),
+      const [{ data: orgId }, { data: payrollAccess }, { data: attendanceAccess }, { data: staff }] = await Promise.all([
+        user.rpc("current_org_id"),
+        user.rpc("has_workspace_access", { _user_id: auth.user.id, _module: "payroll" }),
+        user.rpc("has_workspace_access", { _user_id: auth.user.id, _module: "attendance" }),
+        user.rpc("is_admin_or_manager", { _user_id: auth.user.id }),
       ]);
-      if (!orgId || !access || !staff) return json({ error: "Payroll manager access required." }, 403);
+      if (parsedBody.data.monitoring) {
+        if (!orgId || !attendanceAccess || !staff) return json({ error: "Attendance manager access required." }, 403);
+        const { data: monitoring, error } = await admin.rpc("scan_clock_health", { _org: orgId });
+        if (error) return json({ error: "Clock health check unavailable. No payroll was changed." }, 500);
+        return json({ monitoring });
+      }
+      // Manual "Run now" by a payroll manager for their own company
+      if (!orgId || !payrollAccess || !staff) return json({ error: "Payroll manager access required." }, 403);
       return json(await processOrg(admin, orgId as string, true));
     }
     // Scheduled monitoring: bounded batch, each org rate-limited to once per 6h
