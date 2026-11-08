@@ -1,5 +1,10 @@
 # Roadmap
 
+- [ ] Add an Attendance Monitoring Center showing authorized personal/shared clocks, locations, live activity, connectivity and actionable health details.
+- [ ] Detect clock failures and sync gaps, notify Pay Masters/admins, and let them acknowledge/resolve incidents without changing punches or payroll.
+- [ ] Extend AI Paymaster with proactive clock-health checks and recommended next steps while preserving human review and tenant isolation.
+- [ ] Verify access rules, alert lifecycle, live dashboard interactions, tests and build; report any physical-device or notification-delivery limits.
+
 - [x] Streamline shared-clock QR/email/WhatsApp activation, device permission setup and dedicated home-screen clock entry; retain administrator-issued single-use activation and prevent concurrent redemption.
 - [x] Verify real automatic activation, device permissions, admin sharing and mobile layout; temporary clock switched off, no staff punches made. Browser/OS installation and physical-device voice/selfies remain unverified.
 
