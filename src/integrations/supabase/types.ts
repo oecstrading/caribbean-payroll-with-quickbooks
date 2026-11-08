@@ -4275,6 +4275,7 @@ export type Database = {
         Returns: boolean
       }
       claim_user_pin_attempt: { Args: { _user: string }; Returns: boolean }
+      clear_punch_selfie: { Args: { _punch_id: string }; Returns: string }
       client_portal_data: { Args: { _code: string }; Returns: Json }
       clock_monitoring: { Args: never; Returns: Json }
       clock_phone_bindings: {

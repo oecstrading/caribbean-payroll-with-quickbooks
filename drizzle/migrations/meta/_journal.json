@@ -603,6 +603,13 @@
       "when": 1794151850631,
       "tag": "0085_fix_clock_incident_audit",
       "breakpoints": true
+    },
+    {
+      "idx": 86,
+      "version": "7",
+      "when": 1794153635221,
+      "tag": "0086_selfie_delete_via_storage_api",
+      "breakpoints": true
     }
   ]
 }
