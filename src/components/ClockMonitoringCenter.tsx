@@ -55,7 +55,7 @@ function ClockMap({ clocks, selected, onSelect }: { clocks: MonitoredClock[]; se
     markers.current = L.layerGroup().addTo(map.current);
     window.setTimeout(() => map.current?.invalidateSize(), 0);
     return () => { map.current?.remove(); map.current = null; markers.current = null; };
-  }, []);
+  }, [first?.latitude, first?.longitude]);
 
   useEffect(() => {
     if (!map.current || !markers.current) return;
