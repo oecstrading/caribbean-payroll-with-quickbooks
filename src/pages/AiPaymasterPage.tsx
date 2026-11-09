@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useRole } from "@/hooks/useRole";
 import { usePaymasterDraft } from "@/components/PaymasterAlert";
+import { PayrollForecast } from "@/components/PayrollForecast";
 
 const money = (n: number | null | undefined) => n == null ? "—" : `XCD ${Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 type Flag = { severity: string; title: string; detail: string };
@@ -108,6 +109,7 @@ export default function AiPaymasterPage() {
           </CardContent>
         </Card>
       )}
+      <PayrollForecast />
     </div>
   );
 }
