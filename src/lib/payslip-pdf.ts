@@ -149,7 +149,7 @@ export interface RebuiltSlip {
   differences: { field: string; slip: number; platform: number; reason: string }[];
 }
 
-export function rebuildSlip(slip: ParsedSlip, opts: { basis: NicBasis; paye: PayeRule; jurisdiction?: string }): RebuiltSlip {
+export function rebuildSlip(slip: ParsedSlip, opts: { basis: NicBasis; paye: PayeRule; jurisdiction?: string; nicExempt?: boolean; payeExempt?: boolean }): RebuiltSlip {
   const cfg = getConfigByJurisdiction(opts.jurisdiction || "LC");
   const factor = slipFactor(slip.periodStart, slip.periodEnd);
   const lineChecks = slip.earnings.map(e => ({ label: e.label, slip: e.current, platform: e.hours !== null && e.rate !== null ? money(e.hours * e.rate) : e.current }));
@@ -157,10 +157,10 @@ export function rebuildSlip(slip: ParsedSlip, opts: { basis: NicBasis; paye: Pay
   const overtime = money(slip.earnings.reduce((s, e, i) => s + (e.kind === "overtime" ? lineChecks[i].platform : 0), 0));
   const base = slip.earnings.reduce((s, e, i) => s + (opts.basis === "gross" || (opts.basis === "gross_less_bonus" && e.kind !== "bonus") || (opts.basis === "basic_only" && e.kind === "basic") ? lineChecks[i].platform : 0), 0);
   const cap = cfg.nic.maxContribution * factor;
-  const nicEE = money(Math.min(base * cfg.nic.employeeRate, cap));
-  const nicER = money(Math.min(base * cfg.nic.employerRate, cap));
-  let paye = slip.taxes;
-  if (opts.paye === "calculated") {
+  const nicEE = opts.nicExempt ? 0 : money(Math.min(base * cfg.nic.employeeRate, cap));
+  const nicER = opts.nicExempt ? 0 : money(Math.min(base * cfg.nic.employerRate, cap));
+  let paye = opts.payeExempt ? 0 : slip.taxes;
+  if (opts.paye === "calculated" && !opts.payeExempt) {
     const scaled = { ...cfg, nic: { ...cfg.nic, maxContribution: cap }, paye: { annualAllowance: cfg.paye.annualAllowance * factor, brackets: cfg.paye.brackets.map(b => ({ ...b, min: b.min * factor, max: b.max * factor })) } };
     paye = calculatePayroll(gross, scaled).paye;
   }
@@ -171,9 +171,9 @@ export function rebuildSlip(slip: ParsedSlip, opts: { basis: NicBasis; paye: Pay
   lineChecks.forEach(l => { if (Math.abs(l.slip - l.platform) > 0.01) differences.push({ field: l.label, slip: l.slip, platform: l.platform, reason: "Hours × rate works out differently from the amount printed on the slip." }); });
   const add = (field: string, a: number, b: number, reason: string) => { if (Math.abs(a - b) > 0.01) differences.push({ field, slip: a, platform: b, reason }); };
   add("Gross pay", slip.gross, gross, "Follows from the earnings lines above.");
-  add("NIC (employee)", slip.nicEE, nicEE, `Platform charges ${cfg.nic.employeeRate * 100}% on ${NIC_BASIS_LABELS[opts.basis].toLowerCase()}, capped at ${cap.toFixed(2)} for this period.`);
+  add("NIC (employee)", slip.nicEE, nicEE, opts.nicExempt ? "Employee is marked exempt from NIC, so the platform charges none." : `Platform charges ${cfg.nic.employeeRate * 100}% on ${NIC_BASIS_LABELS[opts.basis].toLowerCase()}, capped at ${cap.toFixed(2)} for this period.`);
   if (slip.nicER !== null) add("NIC (employer)", slip.nicER, nicER, "Employer share uses the same earnings and ceiling.");
-  add("PAYE / income tax", slip.taxes, paye, "The slip withholds a different income tax from the platform's tax bands.");
+  add("PAYE / income tax", slip.taxes, paye, opts.payeExempt ? "Employee is marked exempt from PAYE, so the platform withholds none." : "The slip withholds a different income tax from the platform's tax bands.");
   add("Net pay", slip.net, net, "Follows from the differences above.");
   return { slip, gross, basic: money(gross - overtime), overtime, nicEE, nicER, paye, other, totalDeductions, net, lineChecks, differences };
 }
