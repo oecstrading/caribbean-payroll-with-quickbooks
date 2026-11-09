@@ -40,6 +40,8 @@ interface EmployeeAddition {
   frequency: string;
   is_active: boolean;
   period: string | null;
+  start_date: string | null;
+  end_date: string | null;
   notes: string;
 }
 
@@ -107,12 +109,12 @@ export default function DeductionsPage() {
 
   // Deduction form
   const [showDeductionForm, setShowDeductionForm] = useState(false);
-  const [deductionForm, setDeductionForm] = useState({ user_id: "", creditor_id: "", amount: 0, frequency: "monthly", notes: "" });
+  const [deductionForm, setDeductionForm] = useState({ user_id: "", creditor_id: "", amount: 0, frequency: "monthly", notes: "", start_date: "", end_date: "" });
   const [savingDeduction, setSavingDeduction] = useState(false);
 
   // Addition form
   const [showAdditionForm, setShowAdditionForm] = useState(false);
-  const [additionForm, setAdditionForm] = useState({ user_id: "", addition_type: "bonus", description: "", amount: 0, frequency: "one-time", notes: "" });
+  const [additionForm, setAdditionForm] = useState({ user_id: "", addition_type: "bonus", description: "", amount: 0, frequency: "one-time", notes: "", start_date: "", end_date: "" });
   const [savingAddition, setSavingAddition] = useState(false);
 
   const fetchData = async () => {
@@ -166,11 +168,11 @@ export default function DeductionsPage() {
     }
     setSavingDeduction(true);
     try {
-      const { error } = await supabase.from("employee_deductions").insert(deductionForm);
+      const { error } = await supabase.from("employee_deductions").insert({ ...deductionForm, start_date: deductionForm.start_date || null, end_date: deductionForm.end_date || null });
       if (error) throw error;
       toast.success("Deduction added");
       setShowDeductionForm(false);
-      setDeductionForm({ user_id: "", creditor_id: "", amount: 0, frequency: "monthly", notes: "" });
+      setDeductionForm({ user_id: "", creditor_id: "", amount: 0, frequency: "monthly", notes: "", start_date: "", end_date: "" });
       fetchData();
     } catch (err: any) { toast.error(err.message); }
     finally { setSavingDeduction(false); }
@@ -196,11 +198,13 @@ export default function DeductionsPage() {
         amount: additionForm.amount,
         frequency: additionForm.frequency,
         notes: additionForm.notes,
+        start_date: additionForm.start_date || null,
+        end_date: additionForm.end_date || null,
       } as any);
       if (error) throw error;
       toast.success("Addition added");
       setShowAdditionForm(false);
-      setAdditionForm({ user_id: "", addition_type: "bonus", description: "", amount: 0, frequency: "one-time", notes: "" });
+      setAdditionForm({ user_id: "", addition_type: "bonus", description: "", amount: 0, frequency: "one-time", notes: "", start_date: "", end_date: "" });
       fetchData();
     } catch (err: any) { toast.error(err.message); }
     finally { setSavingAddition(false); }
@@ -212,10 +216,16 @@ export default function DeductionsPage() {
     else { toast.success("Addition removed"); fetchData(); }
   };
 
+  const handleToggleDeduction = async (id: string, isActive: boolean) => {
+    const { error } = await supabase.from("employee_deductions").update({ is_active: !isActive }).eq("id", id);
+    if (error) toast.error(error.message);
+    else { toast.success(isActive ? "Deduction stopped" : "Deduction restarted"); fetchData(); }
+  };
+
   const handleToggleAddition = async (id: string, isActive: boolean) => {
     const { error } = await supabase.from("employee_additions").update({ is_active: !isActive }).eq("id", id);
     if (error) toast.error(error.message);
-    else { toast.success(isActive ? "Addition deactivated" : "Addition activated"); fetchData(); }
+    else { toast.success(isActive ? "Addition stopped" : "Addition restarted"); fetchData(); }
   };
 
   const csvFileRef = useRef<HTMLInputElement>(null);
@@ -423,7 +433,7 @@ export default function DeductionsPage() {
         <div className="space-y-4">
           <div className="flex justify-end">
             <button
-              onClick={() => { setDeductionForm({ user_id: "", creditor_id: "", amount: 0, frequency: "monthly", notes: "" }); setShowDeductionForm(true); }}
+              onClick={() => { setDeductionForm({ user_id: "", creditor_id: "", amount: 0, frequency: "monthly", notes: "", start_date: "", end_date: "" }); setShowDeductionForm(true); }}
               className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
             >
               <Plus size={16} />
@@ -441,14 +451,15 @@ export default function DeductionsPage() {
                     <th className="text-right py-3 px-4 font-medium text-muted-foreground">Amount</th>
                     <th className="text-left py-3 px-4 font-medium text-muted-foreground">Frequency</th>
                     <th className="text-left py-3 px-4 font-medium text-muted-foreground">Notes</th>
+                    <th className="text-left py-3 px-4 font-medium text-muted-foreground">Status</th>
                     <th className="text-right py-3 px-4 font-medium text-muted-foreground">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {loading ? (
-                    <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">Loading...</td></tr>
+                    <tr><td colSpan={7} className="py-8 text-center text-muted-foreground">Loading...</td></tr>
                   ) : deductions.length === 0 ? (
-                    <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">No deductions configured</td></tr>
+                    <tr><td colSpan={7} className="py-8 text-center text-muted-foreground">No deductions configured</td></tr>
                   ) : (
                     deductions.map((d) => {
                       const profile = profiles.find(p => p.user_id === d.user_id);
@@ -464,9 +475,14 @@ export default function DeductionsPage() {
                           <td className="py-3 px-4 text-foreground">{creditor?.name || "—"}</td>
                           <td className="py-3 px-4 text-right font-mono font-semibold text-destructive">${Number(d.amount).toFixed(2)}</td>
                           <td className="py-3 px-4">
-                            <Badge variant="secondary" className="text-[10px]">{d.frequency}</Badge>
+                            <Badge variant="secondary" className="text-[10px]">{d.frequency}</Badge><p className="text-[10px] text-muted-foreground mt-1">{d.start_date || d.end_date ? `${d.start_date || "now"} → ${d.end_date || "no end"}` : "No end date"}</p>
                           </td>
                           <td className="py-3 px-4 text-xs text-muted-foreground max-w-[150px] truncate">{d.notes || "—"}</td>
+                          <td className="py-3 px-4">
+                            <button onClick={() => handleToggleDeduction(d.id, d.is_active)} className={`text-xs px-2 py-1 rounded-full font-medium transition-colors ${d.is_active ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>
+                              {d.is_active ? "Active · Stop" : "Stopped · Restart"}
+                            </button>
+                          </td>
                           <td className="py-3 px-4 text-right">
                             <button onClick={() => handleDeleteDeduction(d.id)} className="p-1.5 rounded-md hover:bg-secondary transition-colors">
                               <Trash2 size={14} className="text-destructive" />
@@ -510,7 +526,7 @@ export default function DeductionsPage() {
               {importing ? "Importing..." : "Import CSV"}
             </button>
             <button
-              onClick={() => { setAdditionForm({ user_id: "", addition_type: "bonus", description: "", amount: 0, frequency: "one-time", notes: "" }); setShowAdditionForm(true); }}
+              onClick={() => { setAdditionForm({ user_id: "", addition_type: "bonus", description: "", amount: 0, frequency: "one-time", notes: "", start_date: "", end_date: "" }); setShowAdditionForm(true); }}
               className="flex items-center gap-2 px-4 py-2.5 bg-success text-success-foreground rounded-lg text-sm font-medium hover:bg-success/90 transition-colors"
             >
               <Plus size={16} />
@@ -556,7 +572,7 @@ export default function DeductionsPage() {
                           <td className="py-3 px-4 text-foreground text-xs">{a.description || "—"}</td>
                           <td className="py-3 px-4 text-right font-mono font-semibold text-success">+${Number(a.amount).toFixed(2)}</td>
                           <td className="py-3 px-4">
-                            <Badge variant="secondary" className="text-[10px]">{a.frequency}</Badge>
+                            <Badge variant="secondary" className="text-[10px]">{a.frequency}</Badge><p className="text-[10px] text-muted-foreground mt-1">{a.start_date || a.end_date ? `${a.start_date || "now"} → ${a.end_date || "no end"}` : "No end date"}</p>
                           </td>
                           <td className="py-3 px-4">
                             <button
@@ -565,7 +581,7 @@ export default function DeductionsPage() {
                                 a.is_active ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"
                               }`}
                             >
-                              {a.is_active ? "Active" : "Inactive"}
+                              {a.is_active ? "Active · Stop" : "Stopped · Restart"}
                             </button>
                           </td>
                           <td className="py-3 px-4 text-right">
@@ -650,12 +666,24 @@ export default function DeductionsPage() {
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Frequency</label>
               <select value={deductionForm.frequency} onChange={(e) => setDeductionForm({ ...deductionForm, frequency: e.target.value })} className={inputClass}>
-                <option value="monthly">Monthly</option>
-                <option value="bi-weekly">Bi-Weekly</option>
-                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly (Recurring)</option>
+                <option value="semi-monthly">Semi-Monthly (Recurring)</option>
+                <option value="bi-weekly">Bi-Weekly (Recurring)</option>
+                <option value="weekly">Weekly (Recurring)</option>
                 <option value="one-time">One-Time</option>
               </select>
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Starts</label>
+                <input type="date" value={deductionForm.start_date} onChange={(e) => setDeductionForm({ ...deductionForm, start_date: e.target.value })} className={inputClass} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Ends (optional)</label>
+                <input type="date" value={deductionForm.end_date} onChange={(e) => setDeductionForm({ ...deductionForm, end_date: e.target.value })} className={inputClass} />
+              </div>
+            </div>
+            <p className="text-[11px] text-muted-foreground -mt-2">Recurring lines repeat every payroll inside these dates. Leave "Ends" blank to keep going until you stop it.</p>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Notes (optional)</label>
               <input value={deductionForm.notes} onChange={(e) => setDeductionForm({ ...deductionForm, notes: e.target.value })} placeholder="e.g. Loan repayment" className={inputClass} />
@@ -703,10 +731,22 @@ export default function DeductionsPage() {
               <select value={additionForm.frequency} onChange={(e) => setAdditionForm({ ...additionForm, frequency: e.target.value })} className={inputClass}>
                 <option value="one-time">One-Time</option>
                 <option value="monthly">Monthly (Recurring)</option>
-                <option value="bi-weekly">Bi-Weekly</option>
-                <option value="weekly">Weekly</option>
+                <option value="semi-monthly">Semi-Monthly (Recurring)</option>
+                <option value="bi-weekly">Bi-Weekly (Recurring)</option>
+                <option value="weekly">Weekly (Recurring)</option>
               </select>
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Starts</label>
+                <input type="date" value={additionForm.start_date} onChange={(e) => setAdditionForm({ ...additionForm, start_date: e.target.value })} className={inputClass} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Ends (optional)</label>
+                <input type="date" value={additionForm.end_date} onChange={(e) => setAdditionForm({ ...additionForm, end_date: e.target.value })} className={inputClass} />
+              </div>
+            </div>
+            <p className="text-[11px] text-muted-foreground -mt-2">Recurring lines repeat every payroll inside these dates. Leave "Ends" blank to keep going until you stop it.</p>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Notes (optional)</label>
               <input value={additionForm.notes} onChange={(e) => setAdditionForm({ ...additionForm, notes: e.target.value })} placeholder="e.g. Approved by HR Manager" className={inputClass} />

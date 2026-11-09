@@ -112,6 +112,7 @@ export default function PayrollPage() {
       }
       for (const a of additions.data || []) {
         if (a.period && a.period !== startMonth) continue;
+        if ((a.start_date && a.start_date > range.end) || (a.end_date && a.end_date < range.start)) continue;
         (am[a.user_id] ||= []).push({ type: a.addition_type, description: a.description || a.addition_type, amount: Number(a.amount), key: `a:${a.id}` });
         if (isRecurringFrequency(a.frequency)) rec.push({ key: `a:${a.id}`, userId: a.user_id, kind: "addition", name: a.description || a.addition_type.replace("_", " "), amount: Number(a.amount), frequency: a.frequency });
       }

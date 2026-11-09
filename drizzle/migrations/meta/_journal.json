@@ -652,6 +652,13 @@
       "when": 1794238500494,
       "tag": "0092_payslip_import_before_go_live",
       "breakpoints": true
+    },
+    {
+      "idx": 93,
+      "version": "7",
+      "when": 1794245017511,
+      "tag": "0093_addition_time_frame",
+      "breakpoints": true
     }
   ]
 }
