@@ -1180,12 +1180,14 @@ export type Database = {
           amount: number
           created_at: string
           description: string | null
+          end_date: string | null
           frequency: string
           id: string
           is_active: boolean
           notes: string | null
           org_id: string | null
           period: string | null
+          start_date: string | null
           updated_at: string
           user_id: string
         }
@@ -1194,12 +1196,14 @@ export type Database = {
           amount?: number
           created_at?: string
           description?: string | null
+          end_date?: string | null
           frequency?: string
           id?: string
           is_active?: boolean
           notes?: string | null
           org_id?: string | null
           period?: string | null
+          start_date?: string | null
           updated_at?: string
           user_id: string
         }
@@ -1208,12 +1212,14 @@ export type Database = {
           amount?: number
           created_at?: string
           description?: string | null
+          end_date?: string | null
           frequency?: string
           id?: string
           is_active?: boolean
           notes?: string | null
           org_id?: string | null
           period?: string | null
+          start_date?: string | null
           updated_at?: string
           user_id?: string
         }
