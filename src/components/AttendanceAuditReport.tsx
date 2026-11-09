@@ -31,7 +31,13 @@ export default function AttendanceAuditReport() {
       supabase.from("workforce_shifts").select("id,employee_id,shift_date,scheduled_start,clock_in,clock_out,break_minutes,approved_hours").gte("shift_date", from).lte("shift_date", to).order("shift_date"),
       supabase.from("leave_requests").select("user_id,leave_type,start_date,end_date,status").lte("start_date", to).gte("end_date", from),
     ]);
-    setEmps(new Map((e.data ?? []).map(r => [r.id, { id: r.id, name: `${r.first_name ?? ""} ${r.last_name ?? ""}`.trim() || "Employee", salary: Number(r.monthly_salary) || 0, std: Number(r.std_hours_per_day) || 8, users: [r.user_id, r.login_user_id].filter(Boolean) as string[] }])));
+    const map = new Map<string, Emp>();
+    for (const r of e.data ?? []) {
+      const emp: Emp = { id: r.id, name: `${r.first_name ?? ""} ${r.last_name ?? ""}`.trim() || "Employee", salary: Number(r.monthly_salary) || 0, std: Number(r.std_hours_per_day) || 8, users: [r.user_id, r.login_user_id].filter(Boolean) as string[] };
+      map.set(r.id, emp);
+      for (const u of emp.users) if (!map.has(u)) map.set(u, emp);
+    }
+    setEmps(map);
     setShifts((s.data ?? []) as Shift[]); setLeave((l.data ?? []) as Leave[]); setLoading(false);
   })(); }, [from, to]);
 
