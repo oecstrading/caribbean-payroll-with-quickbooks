@@ -102,7 +102,7 @@ function parseOne(lines: Line[]): ParsedSlip | null {
   for (let i = aIdx + 1; aIdx >= 0 && i < nIdx; i++) {
     const l = lines[i]; if (!l[0] || NUM.test(l[0].text)) continue;
     const v = sectionCurrent(lines[aIdx], l); if (v === null) continue;
-    if (/^N\.?I\.?C\.?\s*\(EE\)|national insurance/i.test(l[0].text)) slip.nicEE = money(slip.nicEE + Math.abs(v));
+    if (/^N\.?\s*I\.?\s*C\.?\s*[-(]?\s*(EE|employee)\b|national insurance/i.test(l[0].text)) slip.nicEE = money(slip.nicEE + Math.abs(v));
     else slip.otherDeductions.push({ label: l[0].text, current: money(Math.abs(v)) });
   }
   slip.totalAdjustments = money(slip.nicEE + slip.otherDeductions.reduce((s, d) => s + d.current, 0));
