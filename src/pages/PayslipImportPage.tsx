@@ -20,6 +20,7 @@ export default function PayslipImportPage() {
   const [learned, setLearned] = useState<{ basis: NicBasis; matches: number } | null>(null);
   const [paye, setPaye] = useState<PayeRule | "">("");
   const [matches, setMatches] = useState<Record<number, string>>({});
+  const [exempt, setExempt] = useState<Record<number, { nic: boolean; paye: boolean }>>({});
   const [confirmed, setConfirmed] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savedRun, setSavedRun] = useState("");
@@ -50,7 +51,7 @@ export default function PayslipImportPage() {
     setCreating(false);
   };
 
-  const reset = () => { setFileName(""); setSlips([]); setLearned(null); setPaye(""); setMatches({}); setConfirmed(false); setSavedRun(""); };
+  const reset = () => { setFileName(""); setSlips([]); setLearned(null); setPaye(""); setMatches({}); setExempt({}); setConfirmed(false); setSavedRun(""); };
 
   const upload = async (file: File) => {
     reset(); setReading(true);
@@ -60,6 +61,8 @@ export default function PayslipImportPage() {
       setFileName(file.name); setSlips(found);
       const l = learnNicBasis(found); setLearned(l); setBasis(l.basis);
       setPaye(found.every(s => s.taxes === 0) ? "" : "as_slips");
+      // Slips that withheld no NIC on pay are pre-marked exempt; the admin confirms below.
+      setExempt(Object.fromEntries(found.map((s, i) => [i, { nic: s.nicEE === 0 && s.gross > 0, paye: false }])));
     } catch (e) { toast.error(e instanceof Error ? e.message : "Couldn't read this PDF"); }
     setReading(false);
   };
@@ -70,7 +73,10 @@ export default function PayslipImportPage() {
     setMatches(next);
   }, [slips, people]);
 
-  const rebuilt = useMemo(() => paye ? slips.map(s => rebuildSlip(s, { basis, paye })) : [], [slips, basis, paye]);
+  const rebuilt = useMemo(() => paye ? slips.map((s, i) => rebuildSlip(s, { basis, paye, nicExempt: exempt[i]?.nic, payeExempt: exempt[i]?.paye })) : [], [slips, basis, paye, exempt]);
+  const allExempt = (k: "nic" | "paye") => slips.length > 0 && slips.every((_, i) => exempt[i]?.[k]);
+  const setAllExempt = (k: "nic" | "paye", v: boolean) => setExempt(e => Object.fromEntries(slips.map((_, i) => [i, { nic: e[i]?.nic ?? false, paye: e[i]?.paye ?? false, [k]: v }])));
+  const toggleExempt = (i: number, k: "nic" | "paye", v: boolean) => setExempt(e => ({ ...e, [i]: { nic: e[i]?.nic ?? false, paye: e[i]?.paye ?? false, [k]: v } }));
   const exact = rebuilt.filter(r => r.differences.length === 0).length;
   const total = (k: "gross" | "net") => rebuilt.reduce((s, r) => s + r[k], 0);
   const slipTotal = (k: "gross" | "net") => slips.reduce((s, r) => s + r[k], 0);
@@ -122,6 +128,19 @@ export default function PayslipImportPage() {
               <Button variant={paye === "as_slips" ? "default" : "outline"} className="min-h-11" onClick={() => setPaye("as_slips")}>Keep what the slips withheld</Button>
               <Button variant={paye === "calculated" ? "default" : "outline"} className="min-h-11" onClick={() => setPaye("calculated")}>Apply Saint Lucia PAYE</Button>
             </div>
+          </div>
+          <div className="space-y-2">
+            <p className="font-medium">Exempt from NIC or PAYE?</p>
+            <p className="text-xs text-muted-foreground">Tick anyone who doesn't pay NIC or PAYE (for example over pension age, or a tax exemption). Slips showing no NIC were ticked for you; please confirm.</p>
+            <div className="flex flex-wrap gap-4 rounded-xl border p-3">
+              <label className="flex min-h-11 items-center gap-2 font-medium"><input type="checkbox" className="h-5 w-5" checked={allExempt("nic")} onChange={e => setAllExempt("nic", e.target.checked)} />Exempt all employees from NIC</label>
+              <label className="flex min-h-11 items-center gap-2 font-medium"><input type="checkbox" className="h-5 w-5" checked={allExempt("paye")} onChange={e => setAllExempt("paye", e.target.checked)} />Exempt all employees from PAYE</label>
+            </div>
+            {slips.map((s, i) => <div key={i} className="flex flex-wrap items-center gap-4">
+              <span className="w-44 font-medium">{s.name}</span>
+              <label className="flex min-h-11 items-center gap-2"><input type="checkbox" className="h-5 w-5" checked={!!exempt[i]?.nic} onChange={e => toggleExempt(i, "nic", e.target.checked)} />No NIC</label>
+              <label className="flex min-h-11 items-center gap-2"><input type="checkbox" className="h-5 w-5" checked={!!exempt[i]?.paye} onChange={e => toggleExempt(i, "paye", e.target.checked)} />No PAYE</label>
+            </div>)}
           </div>
           <div className="space-y-1">
             <p className="font-medium">Who is each slip for?</p>
