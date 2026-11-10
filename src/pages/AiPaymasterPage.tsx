@@ -20,7 +20,8 @@ export default function AiPaymasterPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { toast } = useToast();
-  const { isAdmin } = useRole();
+  const { isAdminOrManager, canAccess } = useRole();
+  const isAdmin = isAdminOrManager && canAccess("/ai-paymaster");
   const { data: draft, isLoading } = usePaymasterDraft();
   const [running, setRunning] = useState(false);
   const { data: settings } = useQuery({
