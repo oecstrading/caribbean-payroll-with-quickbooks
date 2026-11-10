@@ -446,7 +446,7 @@ export default function DeductionsPage() {
         <div className="space-y-4">
           <div className="flex justify-end">
             <button
-              onClick={() => { setDeductionForm({ user_id: "", creditor_id: "", amount: 0, frequency: "monthly", notes: "", start_date: "", end_date: "" }); setShowDeductionForm(true); }}
+              onClick={() => { setEditingDeductionId(null); setDeductionForm({ user_id: "", creditor_id: "", amount: 0, frequency: "monthly", notes: "", start_date: "", end_date: "" }); setShowDeductionForm(true); }}
               className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
             >
               <Plus size={16} />
@@ -542,7 +542,7 @@ export default function DeductionsPage() {
               {importing ? "Importing..." : "Import CSV"}
             </button>
             <button
-              onClick={() => { setAdditionForm({ user_id: "", addition_type: "bonus", description: "", amount: 0, frequency: "one-time", notes: "", start_date: "", end_date: "" }); setShowAdditionForm(true); }}
+              onClick={() => { setEditingAdditionId(null); setAdditionForm({ user_id: "", addition_type: "bonus", description: "", amount: 0, frequency: "one-time", notes: "", start_date: "", end_date: "" }); setShowAdditionForm(true); }}
               className="flex items-center gap-2 px-4 py-2.5 bg-success text-success-foreground rounded-lg text-sm font-medium hover:bg-success/90 transition-colors"
             >
               <Plus size={16} />

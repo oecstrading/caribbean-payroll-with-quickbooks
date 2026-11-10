@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Pause, Play, Pencil } from "lucide-react";
+import { Plus, Pause, Play, Pencil, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,7 @@ export default function EmployeeLoans() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [editing, setEditing] = useState<Loan | null>(null);
-  const [edit, setEdit] = useState({ amount: "", frequency: "monthly" });
+  const [edit, setEdit] = useState({ amount: "", frequency: "monthly", creditor: "", original: "", balance: "", notes: "" });
   const load = async () => {
     const [l, r, e, c, a] = await Promise.all([
       supabase.from("employee_loans").select("*").order("created_at", { ascending: false }),
@@ -52,13 +52,21 @@ export default function EmployeeLoans() {
   };
   const saveEdit = async () => {
     if (!editing) return;
-    const amount = Number(edit.amount);
-    if (!(amount > 0) || amount > editing.original_amount) { toast.error("Enter a repayment above 0 and no more than the original loan."); return; }
+    const amount = Number(edit.amount), original = Number(edit.original), balance = Number(edit.balance);
+    if (!edit.creditor || !(original > 0) || !(balance >= 0) || balance > original || !(amount > 0) || amount > original) { toast.error("Check the amounts: balance and repayment can't be more than the original loan."); return; }
     setBusy(true);
-    const { error } = await supabase.rpc("update_employee_loan_repayment", { _loan: editing.id, _amount: amount, _frequency: edit.frequency });
+    const { error } = await supabase.rpc("edit_employee_loan", { _loan: editing.id, _creditor: edit.creditor, _original: original, _balance: balance, _amount: amount, _frequency: edit.frequency, _notes: edit.notes });
     setBusy(false);
     if (error) { toast.error(error.message); return; }
-    setEditing(null); toast.success("Repayment updated"); await load();
+    setEditing(null); toast.success("Loan updated"); await load();
+  };
+  const remove = async (loan: Loan) => {
+    if (repayments.some(r => r.loan_id === loan.id)) { toast.error("This loan was already taken from a payroll, so it is kept for your records. Pause it instead."); return; }
+    if (!confirm(`Delete this loan for ${employeeName(loan.user_id)}? This can't be undone.`)) return;
+    setBusy(true);
+    const { error } = await supabase.rpc("delete_employee_loan", { _loan: loan.id });
+    setBusy(false);
+    if (error) toast.error(error.message); else { toast.success("Loan deleted"); await load(); }
   };
   const toggle = async (loan: Loan) => {
     setBusy(true);
@@ -72,7 +80,7 @@ export default function EmployeeLoans() {
     {error && <p role="alert" className="text-destructive">{error}</p>}
     <div className="overflow-x-auto border-y border-border"><table className="w-full text-sm"><thead className="bg-secondary text-muted-foreground"><tr>{["Employee", "Creditor", "Original (XCD)", "Balance (XCD)", "Repayment", "Frequency", "Status", ""].map((h, i) => <th key={i} className="p-3 text-left whitespace-nowrap">{h}</th>)}</tr></thead><tbody>
       {!loans.length && <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">No employee loans</td></tr>}
-      {loans.map(l => <tr key={l.id} className="border-t border-border"><td className="p-3">{employeeName(l.user_id)}</td><td className="p-3">{creditors.find(c => c.id === l.creditor_id)?.name || "Creditor"}</td><td className="p-3 font-mono">{formatCurrency(l.original_amount)}</td><td className="p-3 font-mono">{formatCurrency(l.balance)}</td><td className="p-3 font-mono">{formatCurrency(l.repayment_amount ?? l.monthly_repayment)}</td><td className="p-3">{freqLabel(l.repayment_frequency)}</td><td className="p-3">{l.balance === 0 ? "Repaid" : l.is_active ? "Active" : "Paused"}</td><td className="p-3 whitespace-nowrap"><Button variant="ghost" size="icon" title="Change repayment" aria-label="Change repayment" disabled={busy || l.balance === 0} onClick={() => { setEditing(l); setEdit({ amount: String(l.repayment_amount ?? l.monthly_repayment), frequency: l.repayment_frequency || "monthly" }); }}><Pencil size={16} /></Button><Button variant="ghost" size="icon" title={l.is_active ? "Pause repayments" : "Resume repayments"} aria-label={l.is_active ? "Pause repayments" : "Resume repayments"} disabled={busy || l.balance === 0 || archived.some(a => a.user_id === l.user_id)} onClick={() => toggle(l)}>{l.is_active ? <Pause size={16} /> : <Play size={16} />}</Button></td></tr>)}
+      {loans.map(l => <tr key={l.id} className="border-t border-border"><td className="p-3">{employeeName(l.user_id)}</td><td className="p-3">{creditors.find(c => c.id === l.creditor_id)?.name || "Creditor"}</td><td className="p-3 font-mono">{formatCurrency(l.original_amount)}</td><td className="p-3 font-mono">{formatCurrency(l.balance)}</td><td className="p-3 font-mono">{formatCurrency(l.repayment_amount ?? l.monthly_repayment)}</td><td className="p-3">{freqLabel(l.repayment_frequency)}</td><td className="p-3">{l.balance === 0 ? "Repaid" : l.is_active ? "Active" : "Paused"}</td><td className="p-3 whitespace-nowrap"><Button variant="ghost" size="icon" title="Edit loan" aria-label="Edit loan" disabled={busy} onClick={() => { setEditing(l); setEdit({ amount: String(l.repayment_amount ?? l.monthly_repayment), frequency: l.repayment_frequency || "monthly", creditor: l.creditor_id, original: String(l.original_amount), balance: String(l.balance), notes: l.notes || "" }); }}><Pencil size={16} /></Button><Button variant="ghost" size="icon" title={l.is_active ? "Pause repayments" : "Resume repayments"} aria-label={l.is_active ? "Pause repayments" : "Resume repayments"} disabled={busy || l.balance === 0 || archived.some(a => a.user_id === l.user_id)} onClick={() => toggle(l)}>{l.is_active ? <Pause size={16} /> : <Play size={16} />}</Button><Button variant="ghost" size="icon" title="Delete loan" aria-label="Delete loan" disabled={busy} onClick={() => remove(l)}><Trash2 size={16} className="text-destructive" /></Button></td></tr>)}
     </tbody></table></div>
     <h3 className="font-semibold">Payroll deduction history</h3>
     <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr><th className="p-3 text-left">Date</th><th className="p-3 text-left">Employee</th><th className="p-3 text-left">Amount (XCD)</th><th className="p-3 text-left">Payroll reference</th></tr></thead><tbody>{repayments.map(r => <tr key={r.id} className="border-t border-border"><td className="p-3">{new Date(r.created_at).toLocaleDateString()}</td><td className="p-3">{employeeName(r.user_id)}</td><td className="p-3 font-mono">{formatCurrency(r.amount)}</td><td className="p-3 font-mono">{r.payroll_run_id.slice(0, 8)}</td></tr>)}{!repayments.length && <tr><td colSpan={4} className="p-4 text-muted-foreground">No payroll deductions recorded</td></tr>}</tbody></table></div>
@@ -83,11 +91,15 @@ export default function EmployeeLoans() {
       <div><Label htmlFor="loan-frequency">Repayment frequency</Label><NativeSelect id="loan-frequency" value={form.frequency} onChange={e => setForm({ ...form, frequency: e.target.value })}>{LOAN_FREQUENCIES.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}</NativeSelect>{Number(form.monthly) > 0 && <p className="mt-1 text-xs text-muted-foreground">About {formatCurrency(loanMonthlyEquivalent(Number(form.monthly), form.frequency))} a month, taken from each payroll.</p>}</div>
       <div><Label htmlFor="loan-notes">Notes</Label><Input id="loan-notes" maxLength={500} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} /></div><Button type="submit" disabled={busy}>{busy ? "Saving…" : "Save loan"}</Button>
     </form></DialogContent></Dialog>
-    <Dialog open={!!editing} onOpenChange={o => !o && setEditing(null)}><DialogContent><DialogHeader><DialogTitle>Change loan repayment</DialogTitle></DialogHeader><form className="space-y-3" onSubmit={e => { e.preventDefault(); void saveEdit(); }}>
+    <Dialog open={!!editing} onOpenChange={o => !o && setEditing(null)}><DialogContent><DialogHeader><DialogTitle>Edit loan</DialogTitle></DialogHeader><form className="space-y-3" onSubmit={e => { e.preventDefault(); void saveEdit(); }}>
+      <div><Label htmlFor="edit-creditor">Creditor</Label><NativeSelect id="edit-creditor" required value={edit.creditor} onChange={e => setEdit({ ...edit, creditor: e.target.value })}>{creditors.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</NativeSelect></div>
+      <div><Label htmlFor="edit-original">Original amount (XCD)</Label><Input id="edit-original" required type="number" min={0.01} step="0.01" value={edit.original} onChange={e => setEdit({ ...edit, original: e.target.value })} /></div>
+      <div><Label htmlFor="edit-balance">Current balance (XCD)</Label><Input id="edit-balance" required type="number" min={0} step="0.01" value={edit.balance} onChange={e => setEdit({ ...edit, balance: e.target.value })} /></div>
       <div><Label htmlFor="edit-amount">Repayment per pay period (XCD)</Label><Input id="edit-amount" required type="number" min={0.01} step="0.01" value={edit.amount} onChange={e => setEdit({ ...edit, amount: e.target.value })} /></div>
       <div><Label htmlFor="edit-frequency">Repayment frequency</Label><NativeSelect id="edit-frequency" value={edit.frequency} onChange={e => setEdit({ ...edit, frequency: e.target.value })}>{LOAN_FREQUENCIES.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}</NativeSelect></div>
+      <div><Label htmlFor="edit-notes">Notes</Label><Input id="edit-notes" maxLength={500} value={edit.notes} onChange={e => setEdit({ ...edit, notes: e.target.value })} /></div>
       <p className="text-xs text-muted-foreground">To stop repayments, use the pause button on the loan.</p>
-      <Button type="submit" disabled={busy}>{busy ? "Saving…" : "Save repayment"}</Button>
+      <Button type="submit" disabled={busy}>{busy ? "Saving…" : "Save loan"}</Button>
     </form></DialogContent></Dialog>
   </section>;
 }
