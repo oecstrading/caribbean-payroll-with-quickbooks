@@ -4375,7 +4375,20 @@ export type Database = {
       }
       current_org_id: { Args: never; Returns: string }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
+      delete_employee_loan: { Args: { _loan: string }; Returns: undefined }
       delete_punch_selfie: { Args: { _punch_id: string }; Returns: boolean }
+      edit_employee_loan: {
+        Args: {
+          _amount: number
+          _balance: number
+          _creditor: string
+          _frequency: string
+          _loan: string
+          _notes?: string
+          _original: number
+        }
+        Returns: undefined
+      }
       employee_clock_configuration: {
         Args: { _employee: string }
         Returns: Json

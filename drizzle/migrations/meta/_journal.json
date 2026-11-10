@@ -673,6 +673,13 @@
       "when": 1794322505168,
       "tag": "0095_loan_repayment_frequency",
       "breakpoints": true
+    },
+    {
+      "idx": 96,
+      "version": "7",
+      "when": 1794323007605,
+      "tag": "0096_loan_edit_and_delete",
+      "breakpoints": true
     }
   ]
 }
