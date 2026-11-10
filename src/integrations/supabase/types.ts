@@ -1401,6 +1401,8 @@ export type Database = {
           notes: string
           org_id: string
           original_amount: number
+          repayment_amount: number | null
+          repayment_frequency: string
           user_id: string
         }
         Insert: {
@@ -1413,6 +1415,8 @@ export type Database = {
           notes?: string
           org_id?: string
           original_amount: number
+          repayment_amount?: number | null
+          repayment_frequency?: string
           user_id: string
         }
         Update: {
@@ -1425,6 +1429,8 @@ export type Database = {
           notes?: string
           org_id?: string
           original_amount?: number
+          repayment_amount?: number | null
+          repayment_frequency?: string
           user_id?: string
         }
         Relationships: [
@@ -4349,6 +4355,7 @@ export type Database = {
           _balance: number
           _creditor: string
           _employee: string
+          _frequency?: string
           _monthly: number
           _notes?: string
           _original: number
@@ -4416,6 +4423,10 @@ export type Database = {
       }
       list_activatable_clocks: { Args: never; Returns: Json }
       list_activatable_employee_clocks: { Args: never; Returns: Json }
+      loan_monthly_equivalent: {
+        Args: { _amount: number; _frequency: string }
+        Returns: number
+      }
       multi_company_admins: {
         Args: never
         Returns: {
@@ -4645,6 +4656,10 @@ export type Database = {
         Returns: string
       }
       switch_company: { Args: { _org: string }; Returns: undefined }
+      update_employee_loan_repayment: {
+        Args: { _amount: number; _frequency: string; _loan: string }
+        Returns: undefined
+      }
       update_platform_company: {
         Args: { _actor: string; _details: Json; _org: string }
         Returns: undefined

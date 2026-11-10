@@ -9,6 +9,7 @@ import { useRole } from "@/hooks/useRole";
 import { toast } from "sonner";
 import EmployeeLoans from "@/components/EmployeeLoans";
 import { Button } from "@/components/ui/button";
+import { NativeSelect } from "@/components/ui/native-select";
 
 interface Creditor {
   id: string;
@@ -616,9 +617,9 @@ export default function DeductionsPage() {
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Type</label>
-              <select value={creditorForm.type} onChange={(e) => setCreditorForm({ ...creditorForm, type: e.target.value })} className={inputClass}>
+              <NativeSelect value={creditorForm.type} onChange={(e) => setCreditorForm({ ...creditorForm, type: e.target.value })} className={inputClass}>
                 {creditorTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-              </select>
+              </NativeSelect>
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Account Number</label>
@@ -647,17 +648,17 @@ export default function DeductionsPage() {
           <div className="space-y-4 mt-2">
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Employee</label>
-              <select value={deductionForm.user_id} onChange={(e) => setDeductionForm({ ...deductionForm, user_id: e.target.value })} className={inputClass}>
+              <NativeSelect value={deductionForm.user_id} onChange={(e) => setDeductionForm({ ...deductionForm, user_id: e.target.value })} className={inputClass}>
                 <option value="">Select employee...</option>
                 {profiles.map(p => <option key={p.user_id} value={p.user_id}>{p.first_name} {p.last_name} — {p.email}</option>)}
-              </select>
+              </NativeSelect>
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Creditor</label>
-              <select value={deductionForm.creditor_id} onChange={(e) => setDeductionForm({ ...deductionForm, creditor_id: e.target.value })} className={inputClass}>
+              <NativeSelect value={deductionForm.creditor_id} onChange={(e) => setDeductionForm({ ...deductionForm, creditor_id: e.target.value })} className={inputClass}>
                 <option value="">Select creditor...</option>
                 {creditors.filter(c => c.is_active).map(c => <option key={c.id} value={c.id}>{c.name} ({creditorTypes.find(t => t.value === c.type)?.label})</option>)}
-              </select>
+              </NativeSelect>
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Amount (XCD)</label>
@@ -665,13 +666,13 @@ export default function DeductionsPage() {
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Frequency</label>
-              <select value={deductionForm.frequency} onChange={(e) => setDeductionForm({ ...deductionForm, frequency: e.target.value })} className={inputClass}>
+              <NativeSelect value={deductionForm.frequency} onChange={(e) => setDeductionForm({ ...deductionForm, frequency: e.target.value })} className={inputClass}>
                 <option value="monthly">Monthly (Recurring)</option>
                 <option value="semi-monthly">Semi-Monthly (Recurring)</option>
                 <option value="bi-weekly">Bi-Weekly (Recurring)</option>
                 <option value="weekly">Weekly (Recurring)</option>
                 <option value="one-time">One-Time</option>
-              </select>
+              </NativeSelect>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
@@ -707,16 +708,16 @@ export default function DeductionsPage() {
           <div className="space-y-4 mt-2">
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Employee</label>
-              <select value={additionForm.user_id} onChange={(e) => setAdditionForm({ ...additionForm, user_id: e.target.value })} className={inputClass}>
+              <NativeSelect value={additionForm.user_id} onChange={(e) => setAdditionForm({ ...additionForm, user_id: e.target.value })} className={inputClass}>
                 <option value="">Select employee...</option>
                 {profiles.map(p => <option key={p.user_id} value={p.user_id}>{p.first_name} {p.last_name} — {p.email}</option>)}
-              </select>
+              </NativeSelect>
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Type</label>
-              <select value={additionForm.addition_type} onChange={(e) => setAdditionForm({ ...additionForm, addition_type: e.target.value })} className={inputClass}>
+              <NativeSelect value={additionForm.addition_type} onChange={(e) => setAdditionForm({ ...additionForm, addition_type: e.target.value })} className={inputClass}>
                 {additionTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-              </select>
+              </NativeSelect>
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Description</label>
@@ -728,13 +729,13 @@ export default function DeductionsPage() {
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Frequency</label>
-              <select value={additionForm.frequency} onChange={(e) => setAdditionForm({ ...additionForm, frequency: e.target.value })} className={inputClass}>
+              <NativeSelect value={additionForm.frequency} onChange={(e) => setAdditionForm({ ...additionForm, frequency: e.target.value })} className={inputClass}>
                 <option value="one-time">One-Time</option>
                 <option value="monthly">Monthly (Recurring)</option>
                 <option value="semi-monthly">Semi-Monthly (Recurring)</option>
                 <option value="bi-weekly">Bi-Weekly (Recurring)</option>
                 <option value="weekly">Weekly (Recurring)</option>
-              </select>
+              </NativeSelect>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">

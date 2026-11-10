@@ -666,6 +666,13 @@
       "when": 1794315493793,
       "tag": "0094_paymaster_full_payroll_access",
       "breakpoints": true
+    },
+    {
+      "idx": 95,
+      "version": "7",
+      "when": 1794322505168,
+      "tag": "0095_loan_repayment_frequency",
+      "breakpoints": true
     }
   ]
 }
