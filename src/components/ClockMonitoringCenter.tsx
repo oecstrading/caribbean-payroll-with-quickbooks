@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useRole } from "@/hooks/useRole";
 import { SummaryCard } from "@/components/SummaryCard";
 import BulkClockActivation from "@/components/BulkClockActivation";
+import ClockActivityReport from "@/components/ClockActivityReport";
 import BulkEmployeeClockActivation from "@/components/BulkEmployeeClockActivation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -223,6 +224,7 @@ export default function ClockMonitoringCenter() {
           <SummaryCard label="Needs attention" value={attention} icon={ShieldAlert} active={filter === "attention"} onClick={() => chooseFilter("attention")} className="border-sidebar-border bg-sidebar-accent text-sidebar-accent-foreground" valueClassName={attention || incidents.length ? "text-sidebar-primary" : "text-success"} />
         </div>
 
+        <ClockActivityReport />
         <BulkClockActivation />
         <BulkEmployeeClockActivation />
 
