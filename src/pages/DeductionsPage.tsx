@@ -110,6 +110,8 @@ export default function DeductionsPage() {
 
   // Deduction form
   const [showDeductionForm, setShowDeductionForm] = useState(false);
+  const [editingDeductionId, setEditingDeductionId] = useState<string | null>(null);
+  const [editingAdditionId, setEditingAdditionId] = useState<string | null>(null);
   const [deductionForm, setDeductionForm] = useState({ user_id: "", creditor_id: "", amount: 0, frequency: "monthly", notes: "", start_date: "", end_date: "" });
   const [savingDeduction, setSavingDeduction] = useState(false);
 
@@ -169,9 +171,13 @@ export default function DeductionsPage() {
     }
     setSavingDeduction(true);
     try {
-      const { error } = await supabase.from("employee_deductions").insert({ ...deductionForm, start_date: deductionForm.start_date || null, end_date: deductionForm.end_date || null });
+      const row = { ...deductionForm, start_date: deductionForm.start_date || null, end_date: deductionForm.end_date || null };
+      const { error } = editingDeductionId
+        ? await supabase.from("employee_deductions").update(row).eq("id", editingDeductionId)
+        : await supabase.from("employee_deductions").insert(row);
       if (error) throw error;
-      toast.success("Deduction added");
+      toast.success(editingDeductionId ? "Deduction updated" : "Deduction added");
+      setEditingDeductionId(null);
       setShowDeductionForm(false);
       setDeductionForm({ user_id: "", creditor_id: "", amount: 0, frequency: "monthly", notes: "", start_date: "", end_date: "" });
       fetchData();
@@ -180,6 +186,7 @@ export default function DeductionsPage() {
   };
 
   const handleDeleteDeduction = async (id: string) => {
+    if (!confirm("Delete this deduction? It will no longer be taken from future payrolls.")) return;
     const { error } = await supabase.from("employee_deductions").delete().eq("id", id);
     if (error) toast.error(error.message);
     else { toast.success("Deduction removed"); fetchData(); }
@@ -192,7 +199,7 @@ export default function DeductionsPage() {
     }
     setSavingAddition(true);
     try {
-      const { error } = await supabase.from("employee_additions").insert({
+      const row = {
         user_id: additionForm.user_id,
         addition_type: additionForm.addition_type as any,
         description: additionForm.description || additionTypes.find(t => t.value === additionForm.addition_type)?.label || "",
@@ -201,9 +208,13 @@ export default function DeductionsPage() {
         notes: additionForm.notes,
         start_date: additionForm.start_date || null,
         end_date: additionForm.end_date || null,
-      } as any);
+      } as any;
+      const { error } = editingAdditionId
+        ? await supabase.from("employee_additions").update(row).eq("id", editingAdditionId)
+        : await supabase.from("employee_additions").insert(row);
       if (error) throw error;
-      toast.success("Addition added");
+      toast.success(editingAdditionId ? "Addition updated" : "Addition added");
+      setEditingAdditionId(null);
       setShowAdditionForm(false);
       setAdditionForm({ user_id: "", addition_type: "bonus", description: "", amount: 0, frequency: "one-time", notes: "", start_date: "", end_date: "" });
       fetchData();
@@ -212,6 +223,7 @@ export default function DeductionsPage() {
   };
 
   const handleDeleteAddition = async (id: string) => {
+    if (!confirm("Delete this addition? It will no longer be paid in future payrolls.")) return;
     const { error } = await supabase.from("employee_additions").delete().eq("id", id);
     if (error) toast.error(error.message);
     else { toast.success("Addition removed"); fetchData(); }
@@ -434,7 +446,7 @@ export default function DeductionsPage() {
         <div className="space-y-4">
           <div className="flex justify-end">
             <button
-              onClick={() => { setDeductionForm({ user_id: "", creditor_id: "", amount: 0, frequency: "monthly", notes: "", start_date: "", end_date: "" }); setShowDeductionForm(true); }}
+              onClick={() => { setEditingDeductionId(null); setDeductionForm({ user_id: "", creditor_id: "", amount: 0, frequency: "monthly", notes: "", start_date: "", end_date: "" }); setShowDeductionForm(true); }}
               className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
             >
               <Plus size={16} />
@@ -485,7 +497,10 @@ export default function DeductionsPage() {
                             </button>
                           </td>
                           <td className="py-3 px-4 text-right">
-                            <button onClick={() => handleDeleteDeduction(d.id)} className="p-1.5 rounded-md hover:bg-secondary transition-colors">
+                            <button aria-label="Edit deduction" title="Edit deduction" onClick={() => { setEditingDeductionId(d.id); setDeductionForm({ user_id: d.user_id, creditor_id: d.creditor_id, amount: Number(d.amount), frequency: d.frequency, notes: d.notes || "", start_date: d.start_date || "", end_date: d.end_date || "" }); setShowDeductionForm(true); }} className="p-1.5 rounded-md hover:bg-secondary transition-colors">
+                              <Edit2 size={14} className="text-primary" />
+                            </button>
+                            <button aria-label="Delete deduction" title="Delete deduction" onClick={() => handleDeleteDeduction(d.id)} className="p-1.5 rounded-md hover:bg-secondary transition-colors">
                               <Trash2 size={14} className="text-destructive" />
                             </button>
                           </td>
@@ -527,7 +542,7 @@ export default function DeductionsPage() {
               {importing ? "Importing..." : "Import CSV"}
             </button>
             <button
-              onClick={() => { setAdditionForm({ user_id: "", addition_type: "bonus", description: "", amount: 0, frequency: "one-time", notes: "", start_date: "", end_date: "" }); setShowAdditionForm(true); }}
+              onClick={() => { setEditingAdditionId(null); setAdditionForm({ user_id: "", addition_type: "bonus", description: "", amount: 0, frequency: "one-time", notes: "", start_date: "", end_date: "" }); setShowAdditionForm(true); }}
               className="flex items-center gap-2 px-4 py-2.5 bg-success text-success-foreground rounded-lg text-sm font-medium hover:bg-success/90 transition-colors"
             >
               <Plus size={16} />
@@ -586,7 +601,10 @@ export default function DeductionsPage() {
                             </button>
                           </td>
                           <td className="py-3 px-4 text-right">
-                            <button onClick={() => handleDeleteAddition(a.id)} className="p-1.5 rounded-md hover:bg-secondary transition-colors">
+                            <button aria-label="Edit addition" title="Edit addition" onClick={() => { setEditingAdditionId(a.id); setAdditionForm({ user_id: a.user_id, addition_type: a.addition_type, description: a.description || "", amount: Number(a.amount), frequency: a.frequency, notes: a.notes || "", start_date: a.start_date || "", end_date: a.end_date || "" }); setShowAdditionForm(true); }} className="p-1.5 rounded-md hover:bg-secondary transition-colors">
+                              <Edit2 size={14} className="text-primary" />
+                            </button>
+                            <button aria-label="Delete addition" title="Delete addition" onClick={() => handleDeleteAddition(a.id)} className="p-1.5 rounded-md hover:bg-secondary transition-colors">
                               <Trash2 size={14} className="text-destructive" />
                             </button>
                           </td>
@@ -637,7 +655,7 @@ export default function DeductionsPage() {
       </Dialog>
 
       {/* Deduction Form Dialog */}
-      <Dialog open={showDeductionForm} onOpenChange={setShowDeductionForm}>
+      <Dialog open={showDeductionForm} onOpenChange={o => { setShowDeductionForm(o); if (!o) setEditingDeductionId(null); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="font-display flex items-center gap-2">
@@ -697,7 +715,7 @@ export default function DeductionsPage() {
       </Dialog>
 
       {/* Addition Form Dialog */}
-      <Dialog open={showAdditionForm} onOpenChange={setShowAdditionForm}>
+      <Dialog open={showAdditionForm} onOpenChange={o => { setShowAdditionForm(o); if (!o) setEditingAdditionId(null); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="font-display flex items-center gap-2">
