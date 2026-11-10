@@ -8,14 +8,14 @@ import { NativeSelect } from "@/components/ui/native-select";
 type Punch = { id: string; punched_at: string; direction: string; mode: string; employee_id: string; device_id: string | null; captured_offline: boolean };
 const pad = (n: number) => String(n).padStart(2, "0");
 const toLocal = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-const label: Record<string, string> = { in: "Clock in", out: "Clock out", lunch_out: "Lunch start", lunch_in: "Lunch end", break_out: "Break start", break_in: "Break end" };
+const label: Record<string, string> = { clock_in: "Clock in", clock_out: "Clock out", lunch_out: "Lunch start", lunch_in: "Lunch end" };
 
 /** Worked hours = time between each "in" and the following "out" for the same person. */
 export function workedHours(punches: Punch[]) {
   let total = 0, start: number | null = null;
   [...punches].sort((a, b) => a.punched_at.localeCompare(b.punched_at)).forEach(p => {
     const t = new Date(p.punched_at).getTime();
-    if (p.direction === "in" || p.direction === "lunch_in") start = t;
+    if (p.direction === "clock_in" || p.direction === "lunch_in") start = t;
     else if (start != null) { total += t - start; start = null; }
   });
   return total / 3600000;
