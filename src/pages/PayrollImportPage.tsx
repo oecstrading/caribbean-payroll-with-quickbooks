@@ -25,7 +25,8 @@ interface ImportSummary {
 }
 
 export default function PayrollImportPage() {
-  const { isAdmin, isAdminOrManager, canAccess } = useRole();
+  const { isAdminOrManager, canAccess } = useRole();
+  const isAdmin = isAdminOrManager && canAccess("/payroll-import");
   const qboEnabled = canAccess("/quickbooks");
   const [fileName, setFileName] = useState("");
   const [book, setBook] = useState<WorkbookSheet[]>([]);
@@ -103,7 +104,7 @@ export default function PayrollImportPage() {
         return id;
       };
 
-      if (onboarding.company.company_name) {
+      if (onboarding.company.company_name && canAccess("/settings")) {
         const { data: settings } = await supabase.from("company_settings").select("id").limit(1).maybeSingle();
         const values = {
           company_name: onboarding.company.company_name, employer_nic_number: onboarding.company.employer_nic_number,
