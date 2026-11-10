@@ -659,6 +659,13 @@
       "when": 1794245017511,
       "tag": "0093_addition_time_frame",
       "breakpoints": true
+    },
+    {
+      "idx": 94,
+      "version": "7",
+      "when": 1794315493793,
+      "tag": "0094_paymaster_full_payroll_access",
+      "breakpoints": true
     }
   ]
 }
