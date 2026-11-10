@@ -29,3 +29,9 @@ describe("employee loan repayments", () => {
     expect(() => loanDeduction(-1, 100, 1)).toThrow();
   });
 });
+import { loanMonthlyEquivalent } from "@/lib/employee-loans";
+describe("loan repayment frequency", () => {
+  it("weekly 100 equals 433.33 a month", () => expect(loanMonthlyEquivalent(100, "weekly")).toBe(433.33));
+  it("semi-monthly 300 equals 600 a month", () => expect(loanMonthlyEquivalent(300, "semi-monthly")).toBe(600));
+  it("bi-weekly 120 equals 260 a month", () => expect(loanMonthlyEquivalent(120, "bi-weekly")).toBe(260));
+});
