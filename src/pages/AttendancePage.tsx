@@ -85,10 +85,10 @@ export default function AttendancePage() {
       {/* Day Summary */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: "Complete", value: completeCount, icon: CheckCircle, color: "text-success", bg: "bg-success/10" },
-          { label: "Missing Punch", value: missingCount, icon: XCircle, color: "text-destructive", bg: "bg-destructive/10" },
-          { label: "Late Arrivals", value: lateCount, icon: AlertTriangle, color: "text-warning", bg: "bg-warning/10" },
-          { label: "OT Hours", value: totalOT.toFixed(1), icon: Clock, color: "text-primary", bg: "bg-primary/10" },
+          { label: "Complete", value: completeCount, icon: CheckCircle, tone: "palm" as const, color: "text-success", bg: "bg-success/10" },
+          { label: "Missing Punch", value: missingCount, icon: XCircle, tone: "hibiscus" as const, color: "text-destructive", bg: "bg-destructive/10" },
+          { label: "Late Arrivals", value: lateCount, icon: AlertTriangle, tone: "mango" as const, color: "text-warning", bg: "bg-warning/10" },
+          { label: "OT Hours", value: totalOT.toFixed(1), icon: Clock, tone: "sea" as const, color: "text-primary", bg: "bg-primary/10" },
         ].map((stat) => (
           <SummaryCard key={stat.label} {...stat} active={detail===stat.label} onClick={()=>setDetail(detail===stat.label?"":stat.label)} />
         ))}

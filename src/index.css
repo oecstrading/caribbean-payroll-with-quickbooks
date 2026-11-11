@@ -180,6 +180,24 @@ select option {
   --carib-palm: 145 55% 34%;
   --carib-ink: 0 0% 100%;
 }
+
+/* Summary-card tones: readable text on a tinted card in both light and dark mode */
+:root {
+  --tone-sea: 195 85% 30%;
+  --tone-lagoon: 178 70% 28%;
+  --tone-palm: 145 55% 27%;
+  --tone-mango: 30 92% 38%;
+  --tone-coral: 348 80% 42%;
+  --tone-hibiscus: 330 75% 38%;
+}
+.dark {
+  --tone-sea: 193 90% 66%;
+  --tone-lagoon: 176 70% 62%;
+  --tone-palm: 146 55% 60%;
+  --tone-mango: 38 95% 64%;
+  --tone-coral: 349 88% 70%;
+  --tone-hibiscus: 331 85% 72%;
+}
 @layer components {
   .carib-tile { color: hsl(var(--carib-ink)); position: relative; overflow: hidden; }
   .carib-tile::after { content: ""; position: absolute; right: -30px; top: -30px; width: 110px; height: 110px; border-radius: 9999px; background: hsl(0 0% 100% / 0.14); }
@@ -195,4 +213,8 @@ select option {
   .carib-lift:hover { transform: translateY(-3px); box-shadow: 0 12px 24px -10px hsl(var(--carib-sea) / .45); filter: saturate(1.15); }
   .carib-lift:active { transform: translateY(0) scale(.98); }
   .carib-tile-active { outline: 3px solid hsl(var(--carib-mango)); outline-offset: 2px; }
+  /* Gradient tiles carry white ink: keep card text readable on the saturated background */
+  .carib-tile .card-label, .carib-tile .card-value { color: hsl(var(--carib-ink)); }
+  .carib-tile .card-label { opacity: .92; }
+  .carib-tile .card-chip { color: hsl(var(--carib-ink)); background: hsl(0 0% 100% / .2); }
 }

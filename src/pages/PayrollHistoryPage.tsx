@@ -223,10 +223,10 @@ export default function PayrollHistoryPage() {
       {period && <div className="flex flex-wrap items-center gap-3"><Badge variant="secondary">Pay period: {period}</Badge><Button variant="ghost" onClick={() => setSearchParams({})}>Show all periods</Button></div>}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         {[
-          { label: "Total Runs", detail: "runs", value: visibleRuns.length, icon: History, color: "text-primary" },
-          { label: "Total Gross Paid", detail: "gross", value: formatCurrency(totals.gross), icon: DollarSign, color: "text-foreground" },
-          { label: "Total Deductions", detail: "deductions", value: formatCurrency(totals.deductions), icon: FileText, color: "text-destructive" },
-          { label: "Total Net Paid", detail: "net", value: formatCurrency(totals.net), icon: DollarSign, color: "text-success" },
+          { label: "Total Runs", detail: "runs", value: visibleRuns.length, icon: History, tone: "sea" as const, color: "text-primary" },
+          { label: "Total Gross Paid", detail: "gross", value: formatCurrency(totals.gross), icon: DollarSign, tone: "mango" as const, color: "text-foreground" },
+          { label: "Total Deductions", detail: "deductions", value: formatCurrency(totals.deductions), icon: FileText, tone: "coral" as const, color: "text-destructive" },
+          { label: "Total Net Paid", detail: "net", value: formatCurrency(totals.net), icon: DollarSign, tone: "palm" as const, color: "text-success" },
         ].map((card) => (
           <SummaryCard key={card.label} {...card} valueClassName={card.color} active={metric === card.detail} onClick={() => openDetail(card.detail)} />
         ))}
