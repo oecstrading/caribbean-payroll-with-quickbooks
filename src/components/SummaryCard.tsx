@@ -107,13 +107,13 @@ export function SummaryCard({
       )}
     >
       {t && <span aria-hidden="true" className={cn("absolute inset-y-0 left-0 w-1.5", t.bar)} />}
-      <span className={cn("text-xs text-muted-foreground uppercase tracking-wide", t?.label)}>
+      <span className={cn("card-label text-xs text-muted-foreground uppercase tracking-wide", t?.label)}>
         {label}
-        <span className={cn("block text-xl font-display font-bold mt-1", t?.value, valueClassName)}>
+        <span className={cn("card-value block text-xl font-display font-bold mt-1", t?.value, valueClassName)}>
           {value}
         </span>
       </span>
-      <span className={cn("flex items-center gap-1 text-muted-foreground", t?.chip, "rounded-lg p-1.5")}>
+      <span className={cn("card-chip flex items-center gap-1 text-muted-foreground", t?.chip, "rounded-lg p-1.5")}>
         {Icon && <Icon size={16} />}
         <ChevronRight size={14} className={t?.chevron} />
       </span>
