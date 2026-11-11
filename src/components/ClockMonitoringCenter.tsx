@@ -218,10 +218,10 @@ export default function ClockMonitoringCenter() {
         {error && <div role="alert" className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm"><p>Unable to load the monitoring center: {error}</p><Button variant="link" className="h-auto p-0 text-sidebar-primary" onClick={() => void load()}>Try again</Button></div>}
 
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <SummaryCard label="All clocks" value={clocks.length} icon={Clock3} active={filter === "all"} onClick={() => chooseFilter("all")} className="border-sidebar-border bg-sidebar-accent text-sidebar-accent-foreground" />
-          <SummaryCard label="Shared tablets online" value={`${sharedOnline} / ${shared.length}`} icon={Wifi} active={filter === "shared"} onClick={() => chooseFilter("shared")} className="border-sidebar-border bg-sidebar-accent text-sidebar-accent-foreground" />
-          <SummaryCard label="Staff on clock" value={working} icon={Smartphone} active={filter === "working"} onClick={() => chooseFilter("working")} className="border-sidebar-border bg-sidebar-accent text-sidebar-accent-foreground" />
-          <SummaryCard label="Needs attention" value={attention} icon={ShieldAlert} active={filter === "attention"} onClick={() => chooseFilter("attention")} className="border-sidebar-border bg-sidebar-accent text-sidebar-accent-foreground" valueClassName={attention || incidents.length ? "text-sidebar-primary" : "text-success"} />
+          <SummaryCard label="All clocks" value={clocks.length} icon={Clock3} tone="sea" active={filter === "all"} onClick={() => chooseFilter("all")} />
+          <SummaryCard label="Shared tablets online" value={`${sharedOnline} / ${shared.length}`} icon={Wifi} tone="lagoon" active={filter === "shared"} onClick={() => chooseFilter("shared")} />
+          <SummaryCard label="Staff on clock" value={working} icon={Smartphone} tone="palm" active={filter === "working"} onClick={() => chooseFilter("working")} />
+          <SummaryCard label="Needs attention" value={attention} icon={ShieldAlert} tone="coral" active={filter === "attention"} onClick={() => chooseFilter("attention")} valueClassName={attention || incidents.length ? "text-tone-coral" : "text-tone-palm"} />
         </div>
 
         <ClockActivityReport />
