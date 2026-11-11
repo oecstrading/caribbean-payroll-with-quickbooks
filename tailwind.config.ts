@@ -63,6 +63,14 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        tone: {
+          sea: "hsl(var(--tone-sea))",
+          lagoon: "hsl(var(--tone-lagoon))",
+          palm: "hsl(var(--tone-palm))",
+          mango: "hsl(var(--tone-mango))",
+          coral: "hsl(var(--tone-coral))",
+          hibiscus: "hsl(var(--tone-hibiscus))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
