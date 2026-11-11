@@ -48,11 +48,11 @@ export default function PayrollRegisterReport() {
   const t = rows.reduce((s, r) => ({ gross: s.gross + r.gross, paye: s.paye + r.paye, nis: s.nis + r.nis, levy: s.levy + r.levy, other: s.other + r.other, net: s.net + r.net, eNis: s.eNis + r.employerNis, eLevy: s.eLevy + r.employerLevy }), { gross: 0, paye: 0, nis: 0, levy: 0, other: 0, net: 0, eNis: 0, eLevy: 0 });
   const empDed = t.paye + t.nis + t.levy + t.other, employer = t.eNis + t.eLevy;
   const cards = [
-    { label: "Total cash requirement", value: t.gross + employer, icon: Wallet, tone: "bg-primary/10 text-primary", note: "Gross + employer liabilities" },
-    { label: "Total gross", value: t.gross, icon: TrendingUp, tone: "bg-accent/15 text-accent-foreground", note: `${rows.length} payslips` },
-    { label: "Employee deductions", value: empDed, icon: MinusCircle, tone: "bg-destructive/10 text-destructive", note: "PAYE, NIS/NIB, levies, other" },
-    { label: "Employer liabilities", value: employer, icon: Building2, tone: "bg-secondary text-secondary-foreground", note: `NIS/NIB ${formatCurrency(t.eNis)} · levies ${formatCurrency(t.eLevy)}` },
-    { label: "Total net pay", value: t.net, icon: Banknote, tone: "bg-primary/10 text-primary", note: "Paid to employees" },
+    { label: "Total cash requirement", value: t.gross + employer, icon: Wallet, tone: "sea" as const, note: "Gross + employer liabilities" },
+    { label: "Total gross", value: t.gross, icon: TrendingUp, tone: "mango" as const, note: `${rows.length} payslips` },
+    { label: "Employee deductions", value: empDed, icon: MinusCircle, tone: "coral" as const, note: "PAYE, NIS/NIB, levies, other" },
+    { label: "Employer liabilities", value: employer, icon: Building2, tone: "lagoon" as const, note: `NIS/NIB ${formatCurrency(t.eNis)} · levies ${formatCurrency(t.eLevy)}` },
+    { label: "Total net pay", value: t.net, icon: Banknote, tone: "palm" as const, note: "Paid to employees" },
   ];
   const heads = ["Employee", "Department", "Period", "Gross", "PAYE", "NIS/NIB (EE)", "Statutory levies", "Other deductions", "Net pay", "Employer NIS/NIB", "Employer levies", "Cash requirement"];
 
@@ -64,7 +64,7 @@ export default function PayrollRegisterReport() {
   return <Card>
     <CardHeader><CardTitle className="font-display">Payroll Register & Summary</CardTitle><p className="text-sm text-muted-foreground">From approved payslips. Levies use each payroll's jurisdiction rules (OECS islands have none beyond NIS/NIC and PAYE).</p></CardHeader>
     <CardContent className="space-y-5">
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">{cards.map(c => <SummaryCard key={c.label} label={c.label} value={formatCurrency(c.value)} icon={c.icon} active={detail===c.label} onClick={()=>{setDetail(c.label);document.getElementById("register-details")?.scrollIntoView({behavior:"smooth",block:"start"});}} />)}</div>
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">{cards.map(c => <SummaryCard key={c.label} label={c.label} value={formatCurrency(c.value)} icon={c.icon} tone={c.tone} active={detail===c.label} onClick={()=>{setDetail(c.label);document.getElementById("register-details")?.scrollIntoView({behavior:"smooth",block:"start"});}} />)}</div>
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 items-end">
         <div className="space-y-1"><Label htmlFor="reg-from">From</Label><Input id="reg-from" type="date" value={from} onChange={e => setFrom(e.target.value)} /></div>
         <div className="space-y-1"><Label htmlFor="reg-to">To</Label><Input id="reg-to" type="date" value={to} onChange={e => setTo(e.target.value)} /></div>

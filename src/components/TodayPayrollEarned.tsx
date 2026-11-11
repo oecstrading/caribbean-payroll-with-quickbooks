@@ -26,5 +26,5 @@ export default function TodayPayrollEarned() {
     const t = window.setInterval(load, 60000);
     return () => { active = false; window.clearInterval(t); };
   }, []);
-  return <SummaryCard label="Payroll earned today" value={total === null ? "—" : total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} icon={DollarSign} onClick={() => navigate("/attendance")} className="carib-tile border-0 shadow-lg hover:shadow-xl" />;
+  return <SummaryCard label="Payroll earned today" value={total === null ? "—" : total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} icon={DollarSign} onClick={() => navigate("/attendance")} className="carib-tile carib-mango border-0 shadow-lg hover:shadow-xl" />;
 }

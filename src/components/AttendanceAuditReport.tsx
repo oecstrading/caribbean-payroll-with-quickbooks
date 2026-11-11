@@ -85,7 +85,7 @@ export default function AttendanceAuditReport() {
       <CardHeader><CardTitle className="font-display flex items-center gap-2"><UserX size={20} className="text-destructive" />Absentee & Leave Summary</CardTitle>
         <p className="text-sm text-muted-foreground">Scheduled days with no clock-in. Approved leave makes an absence excused. Cost = monthly salary ÷ 22 working days per missed day.</p></CardHeader>
       <CardContent className="space-y-3">
-        <SummaryCard label="Economic cost of absence this cycle" value={formatCurrency(totalCost)} icon={UserX} valueClassName="text-destructive" onClick={()=>document.getElementById("absence-details")?.scrollIntoView({behavior:"smooth",block:"start"})} />
+        <SummaryCard label="Economic cost of absence this cycle" value={formatCurrency(totalCost)} icon={UserX} tone="coral" valueClassName="text-tone-coral" onClick={()=>document.getElementById("absence-details")?.scrollIntoView({behavior:"smooth",block:"start"})} />
         <div id="absence-details">{!summary.length ? <p className="text-sm text-muted-foreground">No absences or late arrivals in this pay cycle.</p> : <div className="overflow-x-auto"><table className="w-full text-sm">
           <thead><tr className="border-b border-border text-muted-foreground text-left">{["Employee", "Days absent", "Unexcused", "Sick leave", "Late arrivals", "Cost of absence"].map((h, i) => <th key={h} className={`py-2 px-2 ${i ? "text-right" : ""}`}>{h}</th>)}</tr></thead>
           <tbody>{summary.map(r => <tr key={r.emp.id} className="border-b border-border/50">

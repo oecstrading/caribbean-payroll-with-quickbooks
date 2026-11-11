@@ -48,7 +48,7 @@ export default function StatutoryRemittanceReport() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
         <div className="space-y-1"><Label htmlFor="rem-month">Month</Label><Input id="rem-month" type="month" value={month} onChange={e => setMonth(e.target.value)} /></div>
         <div className="space-y-1"><Label htmlFor="rem-country">Jurisdiction</Label><NativeSelect id="rem-country" value={code} onChange={e => setCode(e.target.value)}>{Object.entries(REMITTANCE_TERMS).map(([k, v]) => <option key={k} value={k}>{v.name}</option>)}</NativeSelect></div>
-        <SummaryCard label="Grand total due to government" value={formatCurrency(remit)} icon={Landmark} onClick={()=>document.getElementById("remittance-details")?.scrollIntoView({behavior:"smooth",block:"start"})} />
+        <SummaryCard label="Grand total due to government" value={formatCurrency(remit)} icon={Landmark} tone="hibiscus" onClick={()=>document.getElementById("remittance-details")?.scrollIntoView({behavior:"smooth",block:"start"})} />
       </div>
       <div id="remittance-details" className="overflow-x-auto"><table className="w-full text-sm">
         <thead><tr className="border-b border-border text-muted-foreground"><th className="text-left py-2 px-2">Employee</th>{heads.map(h => <th key={h} className="text-right px-2 whitespace-nowrap">{h}</th>)}</tr></thead>
