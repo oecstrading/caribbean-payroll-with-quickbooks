@@ -34,6 +34,7 @@ import { useRole } from "@/hooks/useRole";
 import { Button } from "@/components/ui/button";
 import { WORKSPACE_MODULES, ROUTE_MODULES } from "@/lib/workspace-access";
 import caribbeanHero from "@/assets/caribbean-hero.jpg";
+import TodayPayrollEarned from "@/components/TodayPayrollEarned";
 import PaymasterAlert from "@/components/PaymasterAlert";
 import { loadCompanySummaries, dashboardMoney, type CompanySummary } from '@/lib/company-dashboard';
 
@@ -291,6 +292,7 @@ export default function DashboardPage() {
       {!demoMode && liveSummary && <section className="border-y border-border py-3 flex flex-wrap justify-between gap-3"><div><h2 className="font-display font-semibold">{liveSummary.name}</h2><p className="text-sm text-muted-foreground">{liveSummary.active_employees ?? '—'} active employees · Latest approved payroll: {liveSummary.period ?? 'None yet'}</p></div>{liveSummary.monthly_salaries !== null && <div><p className="text-sm text-muted-foreground">Active monthly salary equivalents</p><p className="font-semibold">{dashboardMoney(liveSummary.monthly_salaries, liveSummary.currency)}</p></div>}</section>}
       {summaryError && <p role="alert" className="text-destructive">{summaryError}</p>}
       {/* Metrics */}
+      {!demoMode && isAdminOrManager && canAccess("/attendance") && <div className="max-w-sm"><TodayPayrollEarned /></div>}
       {canAccess("/attendance") && <><StaffTimeClock />{demoMode && <AttendanceClock />}</>}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {metrics.filter(metric => canAccess(metric.path.split("?")[0])).map((metric, i) => (
