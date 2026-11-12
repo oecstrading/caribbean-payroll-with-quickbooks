@@ -49,15 +49,15 @@ Deno.serve(async req => {
    const monthStart=new Date(); monthStart.setUTCDate(1); const ms=monthStart.toISOString().slice(0,10); const today=new Date().toISOString().slice(0,10);
    const [month,person,contact,phone]=await Promise.all([
     admin.from("workforce_shifts").select("shift_date,scheduled_start,clock_in,clock_out,lunch_out,lunch_in,break_minutes,approved_hours").eq("org_id",org).eq("employee_id",employee).gte("shift_date",ms),
-    admin.from("payroll_employee_directory").select("first_name,last_name,job_title,department,monthly_salary,hr_details").eq("user_id",employee).eq("org_id",org).maybeSingle(),
+    admin.from("payroll_employee_directory").select("first_name,last_name,job_title,department").eq("user_id",employee).eq("org_id",org).maybeSingle(),
     admin.from("user_roles").select("user_id").eq("org_id",org).eq("role","admin").limit(1).maybeSingle(),
     admin.from("company_settings").select("company_name,telephone").eq("org_id",org).maybeSingle()]);
    let hours=0,late=0,missing=0,days=0;
    for(const s of month.data??[]){ if(s.clock_in)days++; if(s.clock_in&&s.scheduled_start&&new Date(s.clock_in).getTime()>new Date(s.scheduled_start).getTime()+5*60000)late++; if(s.clock_in&&!s.clock_out&&s.shift_date<today)missing++;
     if(s.approved_hours!==null)hours+=Number(s.approved_hours); else if(s.clock_in&&s.clock_out){const lunch=s.lunch_out&&s.lunch_in?(new Date(s.lunch_in).getTime()-new Date(s.lunch_out).getTime())/3600000:(s.break_minutes??0)/60;hours+=Math.max(0,(new Date(s.clock_out).getTime()-new Date(s.clock_in).getTime())/3600000-lunch);} }
-   const hd=(person.data?.hr_details??{}) as Record<string,unknown>; const weekly=Number(hd.weekly_hours)||40; const salary=Number(person.data?.monthly_salary)||0; const rate=salary?salary*12/52/weekly:0;
    let adminEmail:string|null=null; if(contact.data?.user_id){const p=await admin.from("profiles").select("email").eq("id",contact.data.user_id).maybeSingle();adminEmail=p.data?.email??null;}
-   const summary={name:person.data?`${person.data.first_name??""} ${person.data.last_name??""}`.trim():"",job_title:person.data?.job_title??null,department:person.data?.department??null,month_hours:Math.round(hours*100)/100,days_worked:days,times_late:late,missing_punches:missing,hourly_rate:Math.round(rate*100)/100,estimated_earnings:Math.round(hours*rate*100)/100,company:phone.data?.company_name??null,company_phone:phone.data?.telephone??null,company_email:adminEmail};
+   // Earnings are deliberately never sent to the clock: staff see hours only, pay comes on the payslip.
+   const summary={name:person.data?`${person.data.first_name??""} ${person.data.last_name??""}`.trim():"",job_title:person.data?.job_title??null,department:person.data?.department??null,month_hours:Math.round(hours*100)/100,days_worked:days,times_late:late,missing_punches:missing,company:phone.data?.company_name??null,company_phone:phone.data?.telephone??null,company_email:adminEmail};
    return reply({summary,next:!sh.data?"clock_in":sh.data.lunch_out&&!sh.data.lunch_in?"lunch_in":"clock_out",lunch_taken:!!sh.data?.lunch_out,clock_in:sh.data?.clock_in??null,location_required:!!sc.data?.site_id,allowed_methods:methods,history:history.data,schedule:sc.data?{start:sc.data.shift_start,end:sc.data.shift_end,days:sc.data.days_of_week}:null});
   }
   if(!body.direction) return reply({error:"Choose clock in or clock out"},400);

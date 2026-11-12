@@ -680,6 +680,13 @@
       "when": 1794323007605,
       "tag": "0096_loan_edit_and_delete",
       "breakpoints": true
+    },
+    {
+      "idx": 97,
+      "version": "7",
+      "when": 1794450584167,
+      "tag": "0097_clock_shows_hours_only",
+      "breakpoints": true
     }
   ]
 }

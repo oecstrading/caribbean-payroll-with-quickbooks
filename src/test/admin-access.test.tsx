@@ -8,12 +8,13 @@ vi.mock("@/hooks/useAuth", () => ({
 }));
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
-    rpc: async () => ({ data: { modules: ["hr", "payroll", "attendance", "settings"], demo_mode: false }, error: null }),
-    from: (table: string) => ({
-      select: () => ({ eq: () => table === "user_roles" ? Promise.resolve({ data: [{ role: mocks.role }], error: null }) : ({ maybeSingle: async () => ({
-        data: table === "user_workspace_access" ? null : { jurisdiction: "LC" }, error: null,
-      }) }) }),
-    }),
+    rpc: async (fn: string) => {
+      if (fn === "my_workspace_access") return { data: { roles: [mocks.role], modules: null, jurisdiction: "LC" }, error: null };
+      if (fn === "company_configuration") return { data: { modules: ["hr", "payroll", "attendance", "settings"], demo_mode: false }, error: null };
+      if (fn === "administrator_authority") return { data: { company_super_admin: false, platform_super_admin: false }, error: null };
+      if (fn === "has_employee_clock_access") return { data: false, error: null };
+      return { data: null, error: null };
+    },
   },
 }));
 
