@@ -4385,6 +4385,10 @@ export type Database = {
       current_org_id: { Args: never; Returns: string }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       delete_clock_device: { Args: { _id: string }; Returns: undefined }
+      delete_employee_clock: {
+        Args: { _employee: string; _reason?: string }
+        Returns: undefined
+      }
       delete_employee_loan: { Args: { _loan: string }; Returns: undefined }
       delete_punch_selfie: { Args: { _punch_id: string }; Returns: boolean }
       edit_employee_loan: {

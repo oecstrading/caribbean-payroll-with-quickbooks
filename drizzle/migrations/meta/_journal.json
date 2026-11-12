@@ -701,6 +701,13 @@
       "when": 1794479689790,
       "tag": "0099_clock_devices_admin_workflow",
       "breakpoints": true
+    },
+    {
+      "idx": 100,
+      "version": "7",
+      "when": 1794480984753,
+      "tag": "0100_delete_employee_clock",
+      "breakpoints": true
     }
   ]
 }
