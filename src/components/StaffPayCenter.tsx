@@ -5,8 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { NativeSelect } from "@/components/ui/native-select";
-import { estimateDraftPay, type PayPreview } from "@/lib/staff-pay-preview";
-import { Wallet, MessageSquareWarning, Wrench } from "lucide-react";
+import { CalendarCheck, MessageSquareWarning, Wrench } from "lucide-react";
 import { toast } from "sonner";
 
 type Shift = { id: string; shift_date: string; clock_in: string | null; clock_out: string | null; approved_hours: number | null };
@@ -15,7 +14,9 @@ type Req = { id: string; kind: string; shift_date: string | null; reason: string
 const monthRange = () => { const d = new Date(); const s = new Date(d.getFullYear(), d.getMonth(), 1); const e = new Date(d.getFullYear(), d.getMonth() + 1, 0); const f = (x: Date) => x.toLocaleDateString("en-CA"); return { start: f(s), end: f(e) }; };
 const localInput = (iso: string | null) => iso ? new Date(new Date(iso).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : "";
 
-/** Staff self-service: draft pay preview, punch corrections and pay disputes before payroll is approved. */
+type PayPreview = { hours: number; regular: number; overtime: number; pending: number; shifts: number };
+
+/** Staff self-service: worked-hours preview, punch corrections and pay disputes before payroll is approved. */
 export default function StaffPayCenter() {
   const range = monthRange();
   const [preview, setPreview] = useState<PayPreview | null>(null);
