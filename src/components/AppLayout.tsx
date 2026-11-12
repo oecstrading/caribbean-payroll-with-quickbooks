@@ -95,7 +95,7 @@ const navItems: NavItem[] = [
   { path: "/training", label: "Training Hub", icon: BookOpen, separator: true },
   { path: "/portal", label: "My Portal", icon: UserCircle, bottomNav: true },
   { path: "/users", label: "User Management", icon: Shield, adminOnly: true },
-  { path: "/clock-devices", label: "Clock Devices", icon: Tablet, adminOnly: true },
+  { path: "/clock-devices", label: "Clock Devices", icon: Tablet },
   { path: "/settings", label: "Settings", icon: Settings, bottomNav: true },
 ];
 

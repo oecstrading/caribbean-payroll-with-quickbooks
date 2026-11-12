@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toast } from "sonner";
 import { PUBLISHED_URL } from "@/lib/staff-clock-link";
 import { kioskActivationLink } from "@/lib/kiosk-setup";
+import EmployeeClockManager from "@/components/EmployeeClockManager";
 
 type Device = { id: string; name: string; department: string | null; site_id: string | null; activated_at: string | null; last_seen_at: string | null; revoked_at: string | null };
 type Shot = { id: string; punched_at: string; direction: string; mode: string; photo_path: string | null; employee_id: string; url?: string; name?: string; device?: string };
@@ -25,7 +26,7 @@ export default function ClockDevicesPage() {
 
   const load = async () => {
     const [d, s, w, p] = await Promise.all([
-      supabase.from("clock_devices").select("id,name,department,site_id,activated_at,last_seen_at,revoked_at").order("created_at"),
+      supabase.from("clock_devices").select("id,name,department,site_id,activated_at,last_seen_at,revoked_at").is("deleted_at" as never, null).order("created_at"),
       supabase.from("client_sites").select("id,name").order("name"),
       supabase.from("workforce_clock_settings").select("selfie_policy").maybeSingle(),
       supabase.from("workforce_punches").select("id,punched_at,direction,mode,photo_path,employee_id,device_id").not("device_id", "is", null).order("punched_at", { ascending: false }).limit(24),
@@ -59,6 +60,11 @@ export default function ClockDevicesPage() {
     const { error } = await supabase.rpc("revoke_clock_device", { _id: d.id });
     error ? toast.error(error.message) : (toast.success("Clock switched off"), void load());
   };
+  const remove = async (d: Device) => {
+    if (!confirm(`Delete "${d.name}" permanently? The tablet stops working at once and disappears from this list. Past punches it recorded are kept.`)) return;
+    const { error } = await supabase.rpc("delete_clock_device" as never, { _id: d.id } as never);
+    error ? toast.error((error as { message: string }).message) : (toast.success("Clock deleted"), void load());
+  };
   const savePolicy = async (v: "optional" | "always") => {
     const { error } = await supabase.rpc("set_selfie_policy", { _policy: v });
     error ? toast.error(error.message) : (setPolicy(v), toast.success("Selfie setting saved"));
@@ -81,9 +87,23 @@ export default function ClockDevicesPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div><h1 className="text-2xl font-bold">Clock devices</h1><p className="text-muted-foreground">Shared tablets where staff clock in by name and PIN, or hands-free by voice and selfie.</p></div>
-        <Button onClick={() => setOpen(true)} className="h-11"><Plus className="mr-2 h-4 w-4" />Add clock</Button>
+        <div><h1 className="text-2xl font-bold">Clock devices</h1><p className="text-muted-foreground">Add, reset, resend or delete company tablets and staff phone clocks.</p></div>
+        <Button onClick={() => setOpen(true)} className="h-11"><Plus className="mr-2 h-4 w-4" />Add tablet clock</Button>
       </div>
+
+      <section className="rounded-2xl border bg-card p-4 text-sm">
+        <h2 className="mb-2 font-semibold">How to manage a clock</h2>
+        <ol className="list-decimal space-y-1 pl-5 text-muted-foreground">
+          <li><b>Add:</b> “Add tablet clock” for a shared tablet, or “Turn on” a staff phone clock below, then send the link.</li>
+          <li><b>Reset (new or lost phone/tablet):</b> “Reset & resend link” — the old device stops working and the new one links on first use.</li>
+          <li><b>Resend:</b> “Send link” shares the clock link again by WhatsApp, email or copy.</li>
+          <li><b>Staff member left:</b> “Staff left – remove clock” switches their clock off and unlinks their phone. Hours and pay history are kept.</li>
+          <li><b>Delete a tablet:</b> “Delete” stops it at once and removes it from the list.</li>
+        </ol>
+      </section>
+
+      <EmployeeClockManager />
+      <h2 className="font-semibold">Company tablets</h2>
 
       <section className="rounded-2xl border bg-card p-4">
         <h2 className="mb-2 flex items-center gap-2 font-semibold"><Camera className="h-4 w-4" />Selfie with each tablet punch</h2>
@@ -99,7 +119,7 @@ export default function ClockDevicesPage() {
             <div className="flex items-start justify-between gap-2"><div className="flex items-center gap-2"><Tablet className="h-5 w-5 text-primary" /><h3 className="font-semibold">{d.name}</h3></div><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${s.c}`}>{s.t}</span></div>
             <p className="text-sm text-muted-foreground">{d.department ?? "All departments"}{d.site_id ? ` · ${sites.find((x) => x.id === d.site_id)?.name ?? "Site"}` : ""}</p>
             <p className="text-xs text-muted-foreground">Activated {fmt(d.activated_at)} · Last seen {fmt(d.last_seen_at)}</p>
-            <div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => renew(d)}><RefreshCw className="mr-1 h-4 w-4" />New code</Button>{!d.revoked_at && <Button size="sm" variant="outline" className="text-destructive" onClick={() => revoke(d)}><Trash2 className="mr-1 h-4 w-4" />Switch off</Button>}</div>
+            <div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => renew(d)}><RefreshCw className="mr-1 h-4 w-4" />{d.activated_at ? "Reset & resend link" : "Resend link"}</Button>{!d.revoked_at && <Button size="sm" variant="outline" onClick={() => revoke(d)}>Switch off</Button>}<Button size="sm" variant="outline" className="text-destructive" onClick={() => remove(d)}><Trash2 className="mr-1 h-4 w-4" />Delete</Button></div>
           </div>); })}
         {!devices.length && <p className="col-span-full rounded-2xl border border-dashed p-8 text-center text-muted-foreground">No clocks yet. Click “Add clock” to set up your first tablet.</p>}
       </div>
