@@ -687,6 +687,13 @@
       "when": 1794450584167,
       "tag": "0097_clock_shows_hours_only",
       "breakpoints": true
+    },
+    {
+      "idx": 98,
+      "version": "7",
+      "when": 1794452715831,
+      "tag": "0098_client_sites_scoped_view",
+      "breakpoints": true
     }
   ]
 }
