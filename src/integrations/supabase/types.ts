@@ -426,6 +426,7 @@ export type Database = {
           activation_hash: string | null
           created_at: string
           created_by: string | null
+          deleted_at: string | null
           department: string | null
           id: string
           last_seen_at: string | null
@@ -441,6 +442,7 @@ export type Database = {
           activation_hash?: string | null
           created_at?: string
           created_by?: string | null
+          deleted_at?: string | null
           department?: string | null
           id?: string
           last_seen_at?: string | null
@@ -456,6 +458,7 @@ export type Database = {
           activation_hash?: string | null
           created_at?: string
           created_by?: string | null
+          deleted_at?: string | null
           department?: string | null
           id?: string
           last_seen_at?: string | null
@@ -4229,6 +4232,10 @@ export type Database = {
         Args: { _actor: string; _org: string }
         Returns: boolean
       }
+      admin_reset_employee_clock: {
+        Args: { _employee: string }
+        Returns: undefined
+      }
       administrator_authority: { Args: { _user: string }; Returns: Json }
       apply_payroll_loans: {
         Args: {
@@ -4281,6 +4288,7 @@ export type Database = {
         Args: { _employee: string; _shared: boolean }
         Returns: boolean
       }
+      can_admin_clocks: { Args: { _org: string }; Returns: boolean }
       can_erase_payroll: { Args: { _org: string }; Returns: boolean }
       can_manage_clock_devices: { Args: { _org: string }; Returns: boolean }
       can_view_company: { Args: { _org: string }; Returns: boolean }
@@ -4291,6 +4299,7 @@ export type Database = {
       claim_user_pin_attempt: { Args: { _user: string }; Returns: boolean }
       clear_punch_selfie: { Args: { _punch_id: string }; Returns: string }
       client_portal_data: { Args: { _code: string }; Returns: Json }
+      clock_admin_access: { Args: never; Returns: boolean }
       clock_monitoring: { Args: never; Returns: Json }
       clock_phone_bindings: {
         Args: never
@@ -4375,6 +4384,7 @@ export type Database = {
       }
       current_org_id: { Args: never; Returns: string }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
+      delete_clock_device: { Args: { _id: string }; Returns: undefined }
       delete_employee_loan: { Args: { _loan: string }; Returns: undefined }
       delete_punch_selfie: { Args: { _punch_id: string }; Returns: boolean }
       edit_employee_loan: {
@@ -4628,6 +4638,10 @@ export type Database = {
       }
       set_company_admin_access: {
         Args: { _orgs: string[]; _user: string }
+        Returns: undefined
+      }
+      set_employee_clock_active: {
+        Args: { _active: boolean; _employee: string; _reason?: string }
         Returns: undefined
       }
       set_employee_clock_roaming: {
