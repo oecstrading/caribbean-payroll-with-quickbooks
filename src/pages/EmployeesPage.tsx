@@ -19,7 +19,13 @@ import type { EmployeeLogin } from "@/lib/employee-login";
 export default function EmployeesPage() {
   const { role, demoMode } = useRole();
   const { user } = useAuth();
-  const permissions = employeePermissions(role);
+  const [canRemove, setCanRemove] = useState(false);
+  useEffect(() => {
+    if (!user) return;
+    void supabase.rpc("current_org_id").then(({ data: org }) => org && supabase.rpc("can_remove_employees", { _actor: user.id, _org: org as string }).then(({ data }) => setCanRemove(data === true)));
+  }, [user]);
+  const basePermissions = employeePermissions(role);
+  const permissions = { ...basePermissions, delete: basePermissions.delete || canRemove };
   const [live, setLive] = useState<EmployeeFolder[]>([]);
   const [samples, setSamples] = useState(() => sampleEmployees.map(sampleToFolder));
   const [mode, setMode] = useState("live");
