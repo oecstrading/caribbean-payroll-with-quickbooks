@@ -4291,6 +4291,10 @@ export type Database = {
       can_admin_clocks: { Args: { _org: string }; Returns: boolean }
       can_erase_payroll: { Args: { _org: string }; Returns: boolean }
       can_manage_clock_devices: { Args: { _org: string }; Returns: boolean }
+      can_remove_employees: {
+        Args: { _actor: string; _org: string }
+        Returns: boolean
+      }
       can_view_company: { Args: { _org: string }; Returns: boolean }
       claim_clock_device: {
         Args: { _device_hash: string; _employee: string; _org: string }

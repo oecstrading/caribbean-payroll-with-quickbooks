@@ -708,6 +708,13 @@
       "when": 1794480984753,
       "tag": "0100_delete_employee_clock",
       "breakpoints": true
+    },
+    {
+      "idx": 101,
+      "version": "7",
+      "when": 1794482212223,
+      "tag": "0101_employee_removal_authority",
+      "breakpoints": true
     }
   ]
 }
