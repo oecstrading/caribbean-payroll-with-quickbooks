@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Copy, Mail, MessageCircle, RefreshCw, Smartphone, UserMinus, Power } from "lucide-react";
+import { Copy, Mail, MessageCircle, RefreshCw, Smartphone, UserMinus, Power, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,14 @@ export default function EmployeeClockManager() {
     if (kind !== "left") setShare(e);
   };
 
+  const removeClock = async (e: Emp) => {
+    if (!confirm(`Delete ${e.name}'s clock from the system? Use this if they left or the phone was lost or stolen. The phone stops working at once, the clock code is removed, and the clock must be set up again in their employee folder. Hours and pay history are kept.`)) return;
+    const { error } = await rpc("delete_employee_clock", { _employee: e.employee_id, _reason: "Removed from Clock Devices" });
+    if (error) return void toast.error(error.message);
+    toast.success("Clock deleted from the system");
+    await load();
+  };
+
   const list = emps.filter((e) => e.name.toLowerCase().includes(q.toLowerCase()));
   const link = share ? staffClockLink(share.org_id, share.code ?? undefined) : "";
   const text = share ? `Hi ${share.name}, here is your work clock: ${link}\nOpen it in Safari (iPhone) or Chrome (Android), enter your PIN, then add it to your home screen. It will only work on this one phone.` : "";
@@ -58,6 +66,7 @@ export default function EmployeeClockManager() {
                     <Button size="sm" variant="outline" onClick={() => act(e, "reset")}><RefreshCw className="mr-1 h-4 w-4" />Reset & resend</Button>
                     <Button size="sm" variant="outline" className="text-destructive" onClick={() => act(e, "left")}><UserMinus className="mr-1 h-4 w-4" />Staff left – remove clock</Button>
                   </> : <Button size="sm" variant="outline" onClick={() => act(e, "on")}><Power className="mr-1 h-4 w-4" />Turn on</Button>}
+                {e.has_credential && <Button size="sm" variant="destructive" onClick={() => removeClock(e)}><Trash2 className="mr-1 h-4 w-4" />Delete clock</Button>}
               </div>
             </div>);
         })}
