@@ -9,7 +9,7 @@ const isStandalone = () =>
   window.matchMedia?.("(display-mode: standalone)").matches || (navigator as unknown as { standalone?: boolean }).standalone === true;
 
 /** Lets staff pin the clock app to their phone or desktop home screen. */
-export default function AddToHomeScreen() {
+export default function AddToHomeScreen({ staffClock = false }: { staffClock?: boolean }) {
   const [prompt, setPrompt] = useState<PromptEvent | null>(null);
   const [installed, setInstalled] = useState(isStandalone());
   const [help, setHelp] = useState(false);
@@ -17,7 +17,7 @@ export default function AddToHomeScreen() {
   const ios = /iphone|ipad|ipod/i.test(ua) || (ua.includes("Mac") && "ontouchend" in document);
 
   useEffect(() => {
-    if (isStandalone()) return;
+    if (!staffClock || isStandalone()) return;
     tagLinkWithDeviceId();
     // Clock-specific manifest so the installed icon opens this clock (Android) and is named correctly.
     const start = window.location.pathname + window.location.hash;
@@ -29,7 +29,7 @@ export default function AddToHomeScreen() {
     const prev = link.href;
     link.href = "data:application/manifest+json," + encodeURIComponent(JSON.stringify(manifest));
     return () => { if (created) link?.remove(); else if (link) link.href = prev; };
-  }, []);
+  }, [staffClock]);
 
   useEffect(() => {
     const onPrompt = (e: Event) => { e.preventDefault(); setPrompt(e as PromptEvent); };
