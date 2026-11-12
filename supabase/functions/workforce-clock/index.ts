@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { z } from "npm:zod@3.25.76";
-const bodySchema = z.object({ action: z.enum(["status","punch"]), org_id: z.string().uuid().optional(), employee_code: z.string().regex(/^[A-Za-z0-9_-]{2,40}$/).optional(), pin: z.string().regex(/^\d{4,6}$/).optional(), direction: z.enum(["clock_in","clock_out","lunch_out","lunch_in"]).optional(), mode: z.enum(["device","voice","pin"]).default("device"), latitude: z.number().finite().min(-90).max(90).optional(), longitude: z.number().finite().min(-180).max(180).optional(), captured_at: z.string().datetime({offset:true}).optional(), offline_id: z.string().uuid().optional(), device_id: z.string().uuid().optional() }).strict();
+const bodySchema = z.object({ action: z.enum(["status","punch"]), org_id: z.string().uuid().optional(), employee_code: z.string().regex(/^[A-Za-z0-9_-]{2,40}$/).optional(), pin: z.string().regex(/^\d{4,6}$/).optional(), direction: z.enum(["clock_in","clock_out","lunch_out","lunch_in"]).optional(), mode: z.enum(["device","voice","pin"]).default("device"), latitude: z.number().finite().min(-90).max(90).optional(), longitude: z.number().finite().min(-180).max(180).optional(), captured_at: z.string().datetime({offset:true}).optional(), offline_id: z.string().uuid().optional(), device_id: z.string().uuid().optional(), move_phone: z.boolean().optional() }).strict();
 const sha256 = async (s: string) => Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)))).map(b=>b.toString(16).padStart(2,"0")).join("");
 const reply = (data: unknown, status=200) => new Response(JSON.stringify(data), {status, headers:{...corsHeaders,"Content-Type":"application/json","Cache-Control":"no-store"}});
 Deno.serve(async req => {
@@ -20,7 +20,17 @@ Deno.serve(async req => {
    if(!body.device_id) return reply({error:"Please update the clock app: open your clock link again on your own phone."},400);
    const bound=await admin.rpc("claim_clock_device",{_org:org,_employee:employee,_device_hash:await sha256(`${org}:${body.device_id}`)});
    if(bound.error) return reply({error:"Unable to verify this phone. Please try again."},503);
-   if(!bound.data) return reply({error:"This clock only works on the employee's own registered phone, and each phone can belong to only one employee. Use your own phone, or ask your manager to reset your phone."},403);
+   if(!bound.data) {
+    // Code + PIN are correct but this browser has a new phone ID (iPhone home-screen icon, Private browsing, new phone…).
+    // The employee may move their own clock here; a phone already used by a colleague is always refused.
+    const hash=await sha256(`${org}:${body.device_id}`);
+    if(!body.move_phone) return reply({error:"This phone is not yet registered for your clock.",can_move:true},409);
+    const moved=await admin.rpc("move_clock_device",{_org:org,_employee:employee,_device_hash:hash});
+    if(moved.error) return reply({error:"Unable to verify this phone. Please try again."},503);
+    if(moved.data==="other_employee") return reply({error:"This phone is already the clock for another employee. Each phone can belong to only one employee — use your own phone."},403);
+    if(moved.data==="too_many") return reply({error:"Your clock has been moved to a new phone too many times this week. Ask your manager to press “Reset phone” for you."},403);
+    if(moved.data!=="moved") return reply({error:"Unable to verify this phone. Please try again."},403);
+   }
   } else {
    const authorization=req.headers.get("Authorization"); if(!authorization?.startsWith("Bearer ")) return reply({error:"Sign in or enter your company employee code and PIN"},401);
    const caller=createClient(url,anon,{global:{headers:{Authorization:authorization}}});

@@ -4458,6 +4458,10 @@ export type Database = {
         Args: { _amount: number; _frequency: string }
         Returns: number
       }
+      move_clock_device: {
+        Args: { _device_hash: string; _employee: string; _org: string }
+        Returns: string
+      }
       multi_company_admins: {
         Args: never
         Returns: {

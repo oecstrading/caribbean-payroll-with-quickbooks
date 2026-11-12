@@ -19,6 +19,11 @@ export default function AddToHomeScreen({ staffClock = false }: { staffClock?: b
   useEffect(() => {
     if (!staffClock || isStandalone()) return;
     tagLinkWithDeviceId();
+    // iPhone/iPad: no manifest at all, so "Add to Home Screen" keeps this exact clock link (and phone ID).
+    if (/iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.userAgent.includes("Mac") && "ontouchend" in document)) {
+      document.querySelectorAll('link[rel="manifest"]').forEach((l) => l.remove());
+      return;
+    }
     // Clock-specific manifest so the installed icon opens this clock (Android) and is named correctly.
     const start = window.location.pathname + window.location.hash;
     const manifest = { id: window.location.pathname, name: "Staff Time Clock", short_name: "Time Clock", start_url: window.location.origin + start, scope: window.location.origin + "/", display: "standalone", background_color: "#06516b", theme_color: "#06516b",

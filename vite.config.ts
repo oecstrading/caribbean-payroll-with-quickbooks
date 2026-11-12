@@ -39,36 +39,10 @@ export default defineConfig(({ mode }) => ({
         ],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
-      manifest: {
-        name: "OECS HR & Payroll Solutions",
-        short_name: "OECS HR",
-        description: "Cloud-based HR and Payroll platform for Caribbean SMEs",
-        theme_color: "#1c1917",
-        background_color: "#1c1917",
-        display: "standalone",
-        orientation: "any",
-        id: "/",
-        scope: "/",
-        start_url: "/",
-        icons: [
-          {
-            src: "pwa-icon-192.png",
-            sizes: "192x192",
-            type: "image/png",
-          },
-          {
-            src: "pwa-icon-512.png",
-            sizes: "512x512",
-            type: "image/png",
-          },
-          {
-            src: "pwa-icon-512.png",
-            sizes: "512x512",
-            type: "image/png",
-            purpose: "maskable",
-          },
-        ],
-      },
+      // The manifest is a static file linked from index.html everywhere except the staff clock,
+      // so an iPhone "Add to Home Screen" on a clock link opens that clock instead of the login page.
+      manifest: false,
+
     }),
   ].filter(Boolean),
   resolve: {
