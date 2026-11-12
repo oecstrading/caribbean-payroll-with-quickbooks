@@ -8,6 +8,12 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Time Clock" />
     <link rel="apple-touch-icon" href="/pwa-icon-192.png" />
+    <script>
+      // Staff clock links get no app manifest: iPhone then saves the exact clock link (with this phone's ID) to the home screen.
+      if (!/^\/(time-clock|kiosk)(\/|$)/.test(location.pathname)) {
+        var l = document.createElement("link"); l.rel = "manifest"; l.href = "/manifest.webmanifest"; document.head.appendChild(l);
+      }
+    </script>
     <meta name="theme-color" content="#1c1917" />
     <!-- TODO: Set the document title to the name of your application -->
     <title>OECS HR &amp; Payroll Solutions</title>
