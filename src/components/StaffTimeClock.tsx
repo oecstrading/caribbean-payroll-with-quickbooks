@@ -20,7 +20,7 @@ type Dir="clock_in"|"clock_out"|"lunch_out"|"lunch_in";
 const LABEL:Record<Dir,string>={clock_in:"Clock In",clock_out:"Clock Out",lunch_out:"Out to Lunch",lunch_in:"Back from Lunch"};
 const DONE:Record<Dir,string>={clock_in:"Clocked in",clock_out:"Clocked out",lunch_out:"Out to lunch",lunch_in:"Back from lunch"};
 export default function StaffTimeClock({ companyId }: { companyId?: string }) {
- const { user }=useAuth(); const [now,setNow]=useState(new Date()); const [code,setCode]=useState(""); const [pin,setPin]=useState(""); const [next,setNext]=useState<Dir>("clock_in"); const [lunchTaken,setLunchTaken]=useState(false); const [busy,setBusy]=useState(false); const [pinMode,setPinMode]=useState(!!companyId); const [known,setKnown]=useState(false); const [last,setLast]=useState(""); const [error,setError]=useState("");
+ const { user }=useAuth(); const [now,setNow]=useState(new Date()); const [code,setCode]=useState(""); const [pin,setPin]=useState(""); const [next,setNext]=useState<Dir>("clock_in"); const [lunchTaken,setLunchTaken]=useState(false); const [busy,setBusy]=useState(false); const [pinMode,setPinMode]=useState(!!companyId); const [known,setKnown]=useState(false); const [last,setLast]=useState(""); const [error,setError]=useState(""); const [canMove,setCanMove]=useState(false); const movePhone=useRef(false);
  const [resolvedCompany,setResolvedCompany]=useState(companyId??"");
  const [summary,setSummary]=useState<StaffSummary|null>(null); const [tab,setTab]=useState<"clock"|"me">("clock");
  const [methods,setMethods]=useState<string[]>([]);
@@ -37,7 +37,7 @@ export default function StaffTimeClock({ companyId }: { companyId?: string }) {
  const cacheNext=(d:Dir)=>{try{localStorage.setItem(stateKey(),d);}catch{/* private mode */}};
  async function request(action:"status"|"punch", mode="device", dir:Dir=next) {
   const body: Record<string,unknown>={action,mode};
-  if(pinMode) { if(!resolvedCompany||!code.trim()||!/^\d{4,6}$/.test(pin.trim())) throw new Error("Enter your employee code and 4–6 digit PIN"); if(isInAppBrowser()) throw new Error("This link opened inside WhatsApp/Facebook. Tap ⋮ (top right) → “Open in Chrome” (iPhone: open in Safari), then clock in there so your phone is recognised."); Object.assign(body,{org_id:resolvedCompany,employee_code:code.trim(),pin:pin.trim(),device_id:clockDeviceId()}); }
+  if(pinMode) { if(!resolvedCompany||!code.trim()||!/^\d{4,6}$/.test(pin.trim())) throw new Error("Enter your employee code and 4–6 digit PIN"); if(isInAppBrowser()) throw new Error("This link opened inside WhatsApp/Facebook. Tap ⋮ (top right) → “Open in Chrome” (iPhone: open in Safari), then clock in there so your phone is recognised."); Object.assign(body,{org_id:resolvedCompany,employee_code:code.trim(),pin:pin.trim(),device_id:clockDeviceId(),...(movePhone.current?{move_phone:true}:{})}); }
   if(action==="punch") {
    body.direction=dir;
    // Every punch must carry the device location (anti buddy-punching); the server rejects punches without it.
@@ -57,13 +57,13 @@ export default function StaffTimeClock({ companyId }: { companyId?: string }) {
   try{res=await supabase.functions.invoke("workforce-clock",{body});}catch(e){if(isNetworkFailure(e)){goOffline();return;}throw e;}
   const {data,error}=res;
   if(error&&!(error.context instanceof Response)&&isNetworkFailure(error)){goOffline();return;}
-  if(error) { let message=error.message; if(error.context instanceof Response){const detail=await error.context.json().catch(()=>null);message=detail?.error??message;} throw new Error(message); }
+  if(error) { let message=error.message; if(error.context instanceof Response){const detail=await error.context.json().catch(()=>null);message=detail?.error??message;if(detail?.can_move){setCanMove(true);throw new Error("");}} throw new Error(message); }
   if(data?.error)throw new Error(data.error);
   if(data?.not_employee){if(resolvedCompany)setPinMode(true);throw new Error("Your sign-in isn't an employee clock for this company. Use the Employee PIN option to clock in.");}
   if(data.next)cacheNext(data.next);setNext(data.next);if(data.lunch_taken!==undefined)setLunchTaken(!!data.lunch_taken);setKnown(true);if(pinMode&&resolvedCompany)rememberClockCode(resolvedCompany,code.trim());if(data.history)setHistory(data.history);if(data.summary)setSummary(data.summary);if(data.allowed_methods)setMethods(data.allowed_methods);if(data.schedule!==undefined)setSchedule(data.schedule);if(action==="punch"){setLast(`${DONE[dir]} · ${new Date(data.punched_at).toLocaleTimeString()}`);await request("status",mode).catch(()=>undefined);toast.success(`${DONE[dir]} — attendance saved`);}
  }
  useEffect(()=>{if(user&&!pinMode)void request("status").catch(e=>setError(e.message));},[user?.id,pinMode]);
- async function submit(mode="device",dir:Dir=next) {setBusy(true);setError("");try{await request(pinMode&&!known?"status":"punch",mode,dir);}catch(e){setError(e instanceof Error?e.message:"Clock unavailable");}finally{setBusy(false);}}
+ async function submit(mode="device",dir:Dir=next,move=false) {setBusy(true);setError("");setCanMove(false);movePhone.current=move;try{await request(pinMode&&!known?"status":"punch",mode,dir);}catch(e){setError(e instanceof Error?e.message:"Clock unavailable");}finally{movePhone.current=false;setBusy(false);}}
  async function voice() {
   const w=window as unknown as {SpeechRecognition?:new()=>{lang:string;start:()=>void;onresult:(e:{results:{[key:number]:{[key:number]:{transcript:string}}}})=>void;onerror:()=>void};webkitSpeechRecognition?:new()=>{lang:string;start:()=>void;onresult:(e:{results:{[key:number]:{[key:number]:{transcript:string}}}})=>void;onerror:()=>void}};
   const Recognition=w.SpeechRecognition??w.webkitSpeechRecognition;
@@ -95,6 +95,12 @@ export default function StaffTimeClock({ companyId }: { companyId?: string }) {
   {queue.length>0&&<div className="rounded-md border border-warning p-3 text-left text-sm space-y-2"><div className="flex items-center justify-between gap-2"><span className="font-medium">{queue.filter(q=>!q.error).length} punch(es) waiting to send</span><Button size="sm" variant="outline" disabled={!online} onClick={()=>void syncPunches().then(r=>r.sent&&toast.success("Offline punches sent"))}><RefreshCw size={14}/>Send now</Button></div>
    {queue.map(q=><div key={q.id} className="flex items-center justify-between gap-2 border-t border-border pt-2"><span>{DONE[q.direction]} · {new Date(q.captured_at).toLocaleString([],{dateStyle:"short",timeStyle:"short"})}{q.error&&<span className="block text-destructive">Not accepted: {q.error}</span>}</span>{q.error&&<Button size="sm" variant="ghost" onClick={()=>discardPunch(q.id)}>Dismiss</Button>}</div>)}</div>}
   {last&&<p role="status" className="text-success font-medium">{last}</p>}{error&&<p role="alert" className="text-destructive text-sm">{error}</p>}
+  {canMove&&<div role="alert" className="rounded-lg border-2 border-warning bg-warning/10 p-4 text-left text-sm space-y-3">
+   <p className="font-semibold">Your code and PIN are correct, but this phone is not yet registered for your clock.</p>
+   <p>This happens on a new phone, after adding the clock to the iPhone home screen, or when Safari is in <b>Private</b> mode (switch Private off: tap the tabs button → “Private” → choose a normal tab).</p>
+   <p>If this is <b>your own</b> phone, move your clock here. Your old phone will stop clocking and your manager can see the change. A phone that already clocks for a colleague cannot be used.</p>
+   <Button className="w-full min-h-11" disabled={busy} onClick={()=>void submit("device",next,true)}><Smartphone size={18}/>Yes, this is my phone — use it for my clock</Button>
+  </div>}
   <p className="text-xs text-muted-foreground flex justify-center items-center gap-2"><ShieldCheck size={14}/>{online?"Live attendance · Company-protected records":"Offline mode · punches checked by your manager"}</p>
  </section>;
 }
