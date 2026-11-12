@@ -20,6 +20,7 @@ export function clockDeviceId(): string {
   let id: string | null = null;
   try { const v = localStorage.getItem(KEY); if (v && VALID.test(v)) id = v; } catch { /* ignore */ }
   if (!id) id = readCookie();
+  if (!id) id = fromHomeScreenLink();
   if (!id) id = crypto.randomUUID();
   try { localStorage.setItem(KEY, id); } catch { /* ignore */ }
   writeCookie(id);
@@ -29,4 +30,27 @@ export function clockDeviceId(): string {
 /** WhatsApp/Facebook/Instagram open links in their own mini-browser, which looks like a different phone. */
 export function isInAppBrowser(ua: string = typeof navigator !== "undefined" ? navigator.userAgent : ""): boolean {
   return /WhatsApp|FBAN|FBAV|FB_IAB|Instagram|Line\/|Snapchat|; wv\)/i.test(ua);
+}
+
+const isStandalone = () => {
+  try { return window.matchMedia?.("(display-mode: standalone)").matches || (navigator as unknown as { standalone?: boolean }).standalone === true; } catch { return false; }
+};
+
+/** iPhone home-screen apps get empty storage, so the saved link carries this phone's ID (#d=...). */
+function fromHomeScreenLink(): string | null {
+  try {
+    if (!isStandalone()) return null;
+    const m = window.location.hash.match(/(?:^#|&)d=([0-9a-f-]{36})/);
+    return m && VALID.test(m[1]) ? m[1] : null;
+  } catch { return null; }
+}
+
+/** Puts this phone's ID in the page link so "Add to Home Screen" on iPhone keeps the same clock identity. */
+export function tagLinkWithDeviceId() {
+  try {
+    const id = clockDeviceId();
+    const url = new URL(window.location.href);
+    url.hash = `d=${id}`;
+    window.history.replaceState(window.history.state, "", url.toString());
+  } catch { /* ignore */ }
 }
