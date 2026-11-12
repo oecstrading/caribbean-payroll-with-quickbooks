@@ -32,7 +32,7 @@ Deno.serve(async req => {
    employee=employment.data; org=company.data;
   }
   const active=await admin.from("payroll_employee_directory").select("user_id").eq("user_id",employee).eq("org_id",org).is("deleted_at",null).ilike("status","active").maybeSingle();
-  if(!active.data) return reply({error:"Active employee required"},403);
+  if(!active.data) return body.action==="status"&&!body.pin?reply({not_employee:true}):reply({error:"Active employee required"},403);
   const [schedule,company]=await Promise.all([admin.from("workforce_schedules").select("enabled,allowed_methods").eq("org_id",org).eq("employee_id",employee).maybeSingle(),admin.from("organizations").select("enabled_modules").eq("id",org).single()]);
   if(schedule.error||company.error) return reply({error:"Unable to check clock configuration"},503);
   if(!company.data?.enabled_modules.includes("attendance")||!schedule.data?.enabled) return reply({error:"Your code and PIN are correct, but your time clock is switched off. Ask your administrator to turn on \"Employee clock enabled\" in your employee folder."},403);

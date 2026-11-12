@@ -59,6 +59,7 @@ export default function StaffTimeClock({ companyId }: { companyId?: string }) {
   if(error&&!(error.context instanceof Response)&&isNetworkFailure(error)){goOffline();return;}
   if(error) { let message=error.message; if(error.context instanceof Response){const detail=await error.context.json().catch(()=>null);message=detail?.error??message;} throw new Error(message); }
   if(data?.error)throw new Error(data.error);
+  if(data?.not_employee){if(resolvedCompany)setPinMode(true);throw new Error("Your sign-in isn't an employee clock for this company. Use the Employee PIN option to clock in.");}
   if(data.next)cacheNext(data.next);setNext(data.next);if(data.lunch_taken!==undefined)setLunchTaken(!!data.lunch_taken);setKnown(true);if(pinMode&&resolvedCompany)rememberClockCode(resolvedCompany,code.trim());if(data.history)setHistory(data.history);if(data.summary)setSummary(data.summary);if(data.allowed_methods)setMethods(data.allowed_methods);if(data.schedule!==undefined)setSchedule(data.schedule);if(action==="punch"){setLast(`${DONE[dir]} · ${new Date(data.punched_at).toLocaleTimeString()}`);await request("status",mode).catch(()=>undefined);toast.success(`${DONE[dir]} — attendance saved`);}
  }
  useEffect(()=>{if(user&&!pinMode)void request("status").catch(e=>setError(e.message));},[user?.id,pinMode]);
