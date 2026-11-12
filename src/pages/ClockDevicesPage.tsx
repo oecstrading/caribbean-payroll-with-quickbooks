@@ -98,6 +98,7 @@ export default function ClockDevicesPage() {
           <li><b>Reset (new or lost phone/tablet):</b> “Reset & resend link” — the old device stops working and the new one links on first use.</li>
           <li><b>Resend:</b> “Send link” shares the clock link again by WhatsApp, email or copy.</li>
           <li><b>Staff member left:</b> “Staff left – remove clock” switches their clock off and unlinks their phone. Hours and pay history are kept.</li>
+          <li><b>Lost or stolen phone:</b> “Delete clock” removes the clock from the system completely. Set it up again in the employee folder if needed.</li>
           <li><b>Delete a tablet:</b> “Delete” stops it at once and removes it from the list.</li>
         </ol>
       </section>
