@@ -53,6 +53,7 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
   const [authority, setAuthority] = useState({ company_super_admin: false, platform_super_admin: false });
   const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
   const verifiedFor = useRef<string | null>(null);
+  const [clockAdmin, setClockAdmin] = useState(false);
   const refreshAccess = useCallback(async () => {
     if (!user) { setAccessError(false); setRole(null); setModules([]); setAuthority({ company_super_admin: false, platform_super_admin: false }); setJurisdiction(null); setLoadedUserId(null); setLoading(false); return; }
     setAccessError(false);
@@ -79,6 +80,9 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
       setRole(nextRole); setModules(nextRole ? (nextRole === "admin" ? roleModules(nextRole) : access?.modules ?? roleModules(nextRole)).filter(m => enabled.includes(m)) : []);
       setJurisdiction(access?.jurisdiction ?? null);
       verifiedFor.current = user.id;
+      // Clock Devices is limited to administrators and Pay Masters (checked again on the server).
+      const ca = await supabase.rpc("clock_admin_access" as never);
+      setClockAdmin(!ca.error && ca.data === true);
     } catch {
       // A background re-check that fails keeps the already-verified workspace open.
       if (verifiedFor.current === user.id) return;
@@ -93,7 +97,7 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
     return () => { window.removeEventListener("focus", refresh); window.clearInterval(interval); };
   }, [refreshAccess]);
   const ready = !loading && loadedUserId === (user?.id ?? null);
-  const canAccess = useCallback((path: string) => ready && canOpenPath(role, modules, path, companyModules, clockEnabled), [ready, role, modules, companyModules, clockEnabled]);
+  const canAccess = useCallback((path: string) => ready && (path === "/clock-devices" ? clockAdmin : canOpenPath(role, modules, path, companyModules, clockEnabled)), [ready, role, modules, companyModules, clockEnabled, clockAdmin]);
 
   const isAdmin = role === "admin";
   const isManager = role === "manager";

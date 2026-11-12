@@ -694,6 +694,13 @@
       "when": 1794452715831,
       "tag": "0098_client_sites_scoped_view",
       "breakpoints": true
+    },
+    {
+      "idx": 99,
+      "version": "7",
+      "when": 1794479689790,
+      "tag": "0099_clock_devices_admin_workflow",
+      "breakpoints": true
     }
   ]
 }

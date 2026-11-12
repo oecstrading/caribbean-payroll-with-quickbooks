@@ -85,7 +85,7 @@ function ClockMap({ clocks, selected, onSelect }: { clocks: MonitoredClock[]; se
 }
 
 export default function ClockMonitoringCenter() {
-  const { isAdmin } = useRole();
+  const { isAdmin, canAccess } = useRole();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const initialFilter = (params.get("clock_view") || "all") as ClockFilter;
@@ -205,7 +205,7 @@ export default function ClockMonitoringCenter() {
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" className="border-sidebar-border bg-sidebar-accent text-sidebar-accent-foreground hover:bg-sidebar-accent/80" disabled={checking} onClick={() => void runCheck()}><Bot className={cn("mr-2 h-4 w-4", checking && "animate-pulse")} />{checking ? "AI checking…" : "AI health check"}</Button>
             <Button variant="outline" className="border-sidebar-border bg-sidebar-accent text-sidebar-accent-foreground hover:bg-sidebar-accent/80" onClick={() => void load()}><RefreshCw className={cn("mr-2 h-4 w-4", loading && "animate-spin")} />Refresh</Button>
-            {isAdmin && <Button variant="outline" className="border-sidebar-border bg-sidebar-accent text-sidebar-accent-foreground hover:bg-sidebar-accent/80" onClick={() => navigate("/clock-devices")}><Tablet className="mr-2 h-4 w-4" />Manage tablets</Button>}
+            {canAccess("/clock-devices") && <Button variant="outline" className="border-sidebar-border bg-sidebar-accent text-sidebar-accent-foreground hover:bg-sidebar-accent/80" onClick={() => navigate("/clock-devices")}><Tablet className="mr-2 h-4 w-4" />Manage tablets</Button>}
           </div>
         </div>
         <div className="mt-4 flex items-start gap-2 rounded-xl border border-sidebar-primary/25 bg-sidebar-primary/10 p-3 text-sm text-sidebar-foreground/85">
