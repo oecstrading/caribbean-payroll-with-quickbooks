@@ -1,5 +1,5 @@
 import { clockDeviceId, isInAppBrowser } from "@/lib/clock-device-id";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import AddToHomeScreen from "@/components/AddToHomeScreen";
 import ClockReminders from "@/components/ClockReminders";
 import type { ClockSchedule } from "@/lib/clock-reminders";
@@ -14,7 +14,7 @@ import { rememberedClockCode, rememberClockCode } from "@/lib/staff-clock-link";
 import StaffPayCenter from "@/components/StaffPayCenter";
 import StaffDashboard, { type StaffSummary } from "@/components/StaffDashboard";
 import { discardPunch, isNetworkFailure, onQueueChange, queuePunch, queuedPunches, startPunchSync, syncPunches, type QueuedPunch } from "@/lib/offline-punches";
-import { CloudOff, RefreshCw } from "lucide-react";
+import { CloudOff, RefreshCw, Smartphone } from "lucide-react";
 
 type Dir="clock_in"|"clock_out"|"lunch_out"|"lunch_in";
 const LABEL:Record<Dir,string>={clock_in:"Clock In",clock_out:"Clock Out",lunch_out:"Out to Lunch",lunch_in:"Back from Lunch"};
