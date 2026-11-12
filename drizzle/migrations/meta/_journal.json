@@ -715,6 +715,13 @@
       "when": 1794482212223,
       "tag": "0101_employee_removal_authority",
       "breakpoints": true
+    },
+    {
+      "idx": 102,
+      "version": "7",
+      "when": 1794517562295,
+      "tag": "0102_migration",
+      "breakpoints": true
     }
   ]
 }
