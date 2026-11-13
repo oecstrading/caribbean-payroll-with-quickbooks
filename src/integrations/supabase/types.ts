@@ -4462,6 +4462,10 @@ export type Database = {
         Args: { _device_hash: string; _employee: string; _org: string }
         Returns: string
       }
+      move_clock_device_company: {
+        Args: { _id: string; _name?: string; _org: string }
+        Returns: undefined
+      }
       multi_company_admins: {
         Args: never
         Returns: {
