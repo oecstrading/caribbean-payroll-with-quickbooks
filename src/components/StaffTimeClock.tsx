@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { rememberedClockCode, rememberClockCode } from "@/lib/staff-clock-link";
 import StaffPayCenter from "@/components/StaffPayCenter";
 import StaffDashboard, { type StaffSummary } from "@/components/StaffDashboard";
-import { discardPunch, isNetworkFailure, onQueueChange, queuePunch, queuedPunches, startPunchSync, syncPunches, type QueuedPunch } from "@/lib/offline-punches";
+import { rememberPin, needsPin, discardPunch, isNetworkFailure, onQueueChange, queuePunch, queuedPunches, startPunchSync, syncPunches, type QueuedPunch } from "@/lib/offline-punches";
 import { CloudOff, RefreshCw, Smartphone } from "lucide-react";
 
 type Dir="clock_in"|"clock_out"|"lunch_out"|"lunch_in";
@@ -37,7 +37,7 @@ export default function StaffTimeClock({ companyId }: { companyId?: string }) {
  const cacheNext=(d:Dir)=>{try{localStorage.setItem(stateKey(),d);}catch{/* private mode */}};
  async function request(action:"status"|"punch", mode="device", dir:Dir=next) {
   const body: Record<string,unknown>={action,mode};
-  if(pinMode) { if(!resolvedCompany||!code.trim()||!/^\d{4,6}$/.test(pin.trim())) throw new Error("Enter your employee code and 4–6 digit PIN"); if(isInAppBrowser()) throw new Error("This link opened inside WhatsApp/Facebook. Tap ⋮ (top right) → “Open in Chrome” (iPhone: open in Safari), then clock in there so your phone is recognised."); Object.assign(body,{org_id:resolvedCompany,employee_code:code.trim(),pin:pin.trim(),device_id:clockDeviceId(),...(movePhone.current?{move_phone:true}:{})}); }
+  if(pinMode) { if(!resolvedCompany||!code.trim()||!/^\d{4,6}$/.test(pin.trim())) throw new Error("Enter your employee code and 4–6 digit PIN"); if(isInAppBrowser()) throw new Error("This link opened inside WhatsApp/Facebook. Tap ⋮ (top right) → “Open in Chrome” (iPhone: open in Safari), then clock in there so your phone is recognised."); rememberPin(resolvedCompany,code.trim(),pin.trim());Object.assign(body,{org_id:resolvedCompany,employee_code:code.trim(),pin:pin.trim(),device_id:clockDeviceId(),...(movePhone.current?{move_phone:true}:{})}); }
   if(action==="punch") {
    body.direction=dir;
    // Every punch must carry the device location (anti buddy-punching); the server rejects punches without it.

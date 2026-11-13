@@ -20,18 +20,36 @@ export type QueuedPunch = {
 const KEY = "offline-clock-punches";
 const listeners = new Set<() => void>();
 
+// PINs are never written to phone storage. They live only in memory for this open page;
+// after a reload the employee re-enters code + PIN and the waiting punches send.
+const pins = new Map<string, string>();
+const pinKey = (org?: string, code?: string) => `${org ?? ""}|${(code ?? "").toLowerCase()}`;
+export function rememberPin(org: string | undefined, code: string | undefined, pin: string) { if (org && code && pin) pins.set(pinKey(org, code), pin); }
+export function needsPin(p: QueuedPunch) { return p.mode === "pin" && !pins.has(pinKey(p.org_id, p.employee_code)); }
+
 export function queuedPunches(): QueuedPunch[] {
-  try { return JSON.parse(localStorage.getItem(KEY) ?? "[]"); } catch { return []; }
+  try {
+    const list: QueuedPunch[] = JSON.parse(localStorage.getItem(KEY) ?? "[]");
+    if (list.some((q) => q.pin)) { // clean up PINs left by older versions
+      list.forEach((q) => { if (q.pin) rememberPin(q.org_id, q.employee_code, q.pin); delete q.pin; });
+      try { localStorage.setItem(KEY, JSON.stringify(list)); } catch { /* ignore */ }
+    }
+    return list;
+  } catch { return []; }
 }
-function save(list: QueuedPunch[]) {
-  try { localStorage.setItem(KEY, JSON.stringify(list)); } catch { /* storage full */ }
+function save(list: QueuedPunch[]): boolean {
+  let ok = true;
+  try { localStorage.setItem(KEY, JSON.stringify(list.map(({ pin: _pin, ...q }) => q))); } catch { ok = false; }
   listeners.forEach((l) => l());
+  return ok;
 }
 export function onQueueChange(fn: () => void) { listeners.add(fn); return () => { listeners.delete(fn); }; }
 
 export function queuePunch(p: Omit<QueuedPunch, "id" | "captured_at">) {
   const item: QueuedPunch = { ...p, id: crypto.randomUUID(), captured_at: new Date().toISOString() };
-  save([...queuedPunches(), item]);
+  if (item.pin) rememberPin(item.org_id, item.employee_code, item.pin);
+  delete item.pin;
+  if (!save([...queuedPunches(), item])) throw new Error("Punch NOT saved — this phone's storage is full or blocked (private browsing?). Try again with internet, or tell your manager.");
   return item;
 }
 export function discardPunch(id: string) { save(queuedPunches().filter((p) => p.id !== id)); }
@@ -52,8 +70,9 @@ export async function syncPunches(): Promise<{ sent: number; failed: number }> {
     const list = [...queuedPunches()].sort((a, b) => a.captured_at.localeCompare(b.captured_at));
     for (const p of list) {
       if (p.error) { failed++; continue; }
+      if (needsPin(p)) continue; // waits until the employee enters code + PIN again
       const body: Record<string, unknown> = { action: "punch", mode: p.mode, direction: p.direction, latitude: p.latitude, longitude: p.longitude, captured_at: p.captured_at, offline_id: p.id };
-      if (p.pin) Object.assign(body, { org_id: p.org_id, employee_code: p.employee_code, pin: p.pin, device_id: clockDeviceId() });
+      if (p.mode === "pin") Object.assign(body, { org_id: p.org_id, employee_code: p.employee_code, pin: pins.get(pinKey(p.org_id, p.employee_code)), device_id: clockDeviceId() });
       try {
         const { data, error } = await supabase.functions.invoke("workforce-clock", { body });
         if (error) {
@@ -66,7 +85,7 @@ export async function syncPunches(): Promise<{ sent: number; failed: number }> {
         discardPunch(p.id); sent++;
       } catch (e) {
         if (isNetworkFailure(e)) break;
-        save(queuedPunches().map((q) => q.id === p.id ? { ...q, error: e instanceof Error ? e.message : "Rejected", pin: undefined } : q));
+        save(queuedPunches().map((q) => q.id === p.id ? { ...q, error: e instanceof Error ? e.message : "Rejected" } : q));
         failed++;
       }
     }
