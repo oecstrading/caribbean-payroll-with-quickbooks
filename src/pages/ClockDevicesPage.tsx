@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { PUBLISHED_URL } from "@/lib/staff-clock-link";
 import { kioskActivationLink } from "@/lib/kiosk-setup";
 import EmployeeClockManager from "@/components/EmployeeClockManager";
+import WindowsClockInstaller from "@/components/WindowsClockInstaller";
 
 type Device = { id: string; name: string; department: string | null; site_id: string | null; activated_at: string | null; last_seen_at: string | null; revoked_at: string | null };
 type Shot = { id: string; punched_at: string; direction: string; mode: string; photo_path: string | null; employee_id: string; url?: string; name?: string; device?: string };
@@ -103,6 +104,7 @@ export default function ClockDevicesPage() {
         </ol>
       </section>
 
+      <WindowsClockInstaller />
       <EmployeeClockManager />
       <h2 className="font-semibold">Company tablets</h2>
 
