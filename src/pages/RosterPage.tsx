@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useRole } from "@/hooks/useRole";
 import { toast } from "sonner";
 import { format, startOfWeek, addDays, isSameDay } from "date-fns";
+import { pairShifts, hoursOn } from "@/lib/roster-hours";
 
 interface Site {
   id: string;
@@ -60,16 +61,14 @@ export default function RosterPage() {
   const weekDates = useMemo(() => DAYS.map((_, i) => addDays(weekStart, i)), [weekStart]);
 
   const fetchAll = async () => {
-    const weekEndStr = format(addDays(weekStart, 6), "yyyy-MM-dd");
-    const weekStartStr = format(weekStart, "yyyy-MM-dd");
 
     const [sitesRes, assignRes, profilesRes, punchesRes] = await Promise.all([
       supabase.from("client_sites").select("id, name, client_name, status").eq("status", "active"),
       supabase.from("guard_assignments").select("*").eq("is_active", true),
       supabase.from("profiles").select("user_id, first_name, last_name").eq("status", "Active"),
-      supabase.from("clock_punches").select("user_id, punched_at, punch_type, geofence_zone_id, address_label")
-        .gte("punched_at", weekStartStr)
-        .lte("punched_at", weekEndStr + "T23:59:59"),
+      supabase.from("clock_punches").select("user_id, punched_at, punch_type, geofence_zone_id, address_label, site_id")
+        .gte("punched_at", addDays(weekStart, -1).toISOString())
+        .lte("punched_at", addDays(weekStart, 8).toISOString()),
     ]);
 
     setSites(sitesRes.data || []);
@@ -96,23 +95,13 @@ export default function RosterPage() {
   };
 
   // Calculate hours from punches for a user on a given date
-  const getHoursForUserOnDate = (userId: string, date: Date) => {
-    const dayPunches = punches
-      .filter(p => p.user_id === userId && isSameDay(new Date(p.punched_at), date))
-      .sort((a: any, b: any) => new Date(a.punched_at).getTime() - new Date(b.punched_at).getTime());
-
-    let totalMs = 0;
-    for (let i = 0; i < dayPunches.length - 1; i += 2) {
-      if (dayPunches[i].punch_type === "clock_in" && dayPunches[i + 1]?.punch_type === "clock_out") {
-        totalMs += new Date(dayPunches[i + 1].punched_at).getTime() - new Date(dayPunches[i].punched_at).getTime();
-      }
-    }
-    return totalMs / (1000 * 60 * 60);
-  };
+  // Shifts pair across midnight (an 18:00–06:00 shift counts on its start day) and keep their site.
+  const shifts = useMemo(() => pairShifts(punches), [punches]);
+  const getHoursForUserOnDate = (userId: string, date: Date, siteId?: string) => hoursOn(shifts, userId, date, siteId);
 
   // Total weekly hours per guard per site
-  const getWeeklyHours = (userId: string) => {
-    return weekDates.reduce((sum, date) => sum + getHoursForUserOnDate(userId, date), 0);
+  const getWeeklyHours = (userId: string, siteId?: string) => {
+    return weekDates.reduce((sum, date) => sum + getHoursForUserOnDate(userId, date, siteId), 0);
   };
 
   const handleAssign = async () => {
@@ -148,8 +137,8 @@ export default function RosterPage() {
     const clockOut = new Date(clockIn.getTime() + hours * 60 * 60 * 1000);
 
     const { error } = await supabase.from("clock_punches").insert([
-      { user_id: manualHours.userId, punch_type: "clock_in", punched_at: clockIn.toISOString(), address_label: "Manual entry" },
-      { user_id: manualHours.userId, punch_type: "clock_out", punched_at: clockOut.toISOString(), address_label: "Manual entry" },
+      { user_id: manualHours.userId, punch_type: "clock_in", punched_at: clockIn.toISOString(), address_label: `Manual entry${manualHours.description ? ` — ${manualHours.description}` : ""}`, site_id: manualHours.siteId },
+      { user_id: manualHours.userId, punch_type: "clock_out", punched_at: clockOut.toISOString(), address_label: `Manual entry${manualHours.description ? ` — ${manualHours.description}` : ""}`, site_id: manualHours.siteId },
     ]);
     if (error) { toast.error("Failed to log hours"); return; }
     toast.success(`${hours}h logged manually`);
@@ -254,7 +243,7 @@ export default function RosterPage() {
                       ) : (
                         guardIds.map(userId => {
                           const guardAssignments = siteAssignments.filter(a => a.user_id === userId);
-                          const weeklyHrs = getWeeklyHours(userId);
+                          const weeklyHrs = getWeeklyHours(userId, site.id);
                           return (
                             <tr key={userId} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
                               <td className="p-3">
@@ -279,7 +268,7 @@ export default function RosterPage() {
                               {weekDates.map((date, dayIdx) => {
                                 const assigned = getAssignmentsForSiteAndDay(site.id, dayIdx)
                                   .some(a => a.user_id === userId);
-                                const hours = getHoursForUserOnDate(userId, date);
+                                const hours = getHoursForUserOnDate(userId, date, site.id);
                                 const isToday = isSameDay(date, new Date());
                                 return (
                                   <td key={dayIdx} className={`text-center p-2 ${isToday ? "bg-primary/5" : ""}`}>

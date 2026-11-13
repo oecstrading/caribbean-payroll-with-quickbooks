@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { rememberedClockCode, rememberClockCode } from "@/lib/staff-clock-link";
 import StaffPayCenter from "@/components/StaffPayCenter";
 import StaffDashboard, { type StaffSummary } from "@/components/StaffDashboard";
-import { discardPunch, isNetworkFailure, onQueueChange, queuePunch, queuedPunches, startPunchSync, syncPunches, type QueuedPunch } from "@/lib/offline-punches";
+import { rememberPin, needsPin, discardPunch, isNetworkFailure, onQueueChange, queuePunch, queuedPunches, startPunchSync, syncPunches, type QueuedPunch } from "@/lib/offline-punches";
 import { CloudOff, RefreshCw, Smartphone } from "lucide-react";
 
 type Dir="clock_in"|"clock_out"|"lunch_out"|"lunch_in";
@@ -37,7 +37,7 @@ export default function StaffTimeClock({ companyId }: { companyId?: string }) {
  const cacheNext=(d:Dir)=>{try{localStorage.setItem(stateKey(),d);}catch{/* private mode */}};
  async function request(action:"status"|"punch", mode="device", dir:Dir=next) {
   const body: Record<string,unknown>={action,mode};
-  if(pinMode) { if(!resolvedCompany||!code.trim()||!/^\d{4,6}$/.test(pin.trim())) throw new Error("Enter your employee code and 4–6 digit PIN"); if(isInAppBrowser()) throw new Error("This link opened inside WhatsApp/Facebook. Tap ⋮ (top right) → “Open in Chrome” (iPhone: open in Safari), then clock in there so your phone is recognised."); Object.assign(body,{org_id:resolvedCompany,employee_code:code.trim(),pin:pin.trim(),device_id:clockDeviceId(),...(movePhone.current?{move_phone:true}:{})}); }
+  if(pinMode) { if(!resolvedCompany||!code.trim()||!/^\d{4,6}$/.test(pin.trim())) throw new Error("Enter your employee code and 4–6 digit PIN"); if(isInAppBrowser()) throw new Error("This link opened inside WhatsApp/Facebook. Tap ⋮ (top right) → “Open in Chrome” (iPhone: open in Safari), then clock in there so your phone is recognised."); rememberPin(resolvedCompany,code.trim(),pin.trim());Object.assign(body,{org_id:resolvedCompany,employee_code:code.trim(),pin:pin.trim(),device_id:clockDeviceId(),...(movePhone.current?{move_phone:true}:{})}); }
   if(action==="punch") {
    body.direction=dir;
    // Every punch must carry the device location (anti buddy-punching); the server rejects punches without it.
@@ -92,8 +92,8 @@ export default function StaffTimeClock({ companyId }: { companyId?: string }) {
   {known&&<ClockReminders schedule={schedule} next={next==="clock_in"?"clock_in":"clock_out"}/>}
   {user&&!pinMode&&known&&<StaffPayCenter/>}
   {!online&&<p role="status" className="flex items-center justify-center gap-2 rounded-md bg-warning/15 text-sm font-medium p-2"><CloudOff size={16}/>No internet — punches are saved on this phone and sent later.</p>}
-  {queue.length>0&&<div className="rounded-md border border-warning p-3 text-left text-sm space-y-2"><div className="flex items-center justify-between gap-2"><span className="font-medium">{queue.filter(q=>!q.error).length} punch(es) waiting to send</span><Button size="sm" variant="outline" disabled={!online} onClick={()=>void syncPunches().then(r=>r.sent&&toast.success("Offline punches sent"))}><RefreshCw size={14}/>Send now</Button></div>
-   {queue.map(q=><div key={q.id} className="flex items-center justify-between gap-2 border-t border-border pt-2"><span>{DONE[q.direction]} · {new Date(q.captured_at).toLocaleString([],{dateStyle:"short",timeStyle:"short"})}{q.error&&<span className="block text-destructive">Not accepted: {q.error}</span>}</span>{q.error&&<Button size="sm" variant="ghost" onClick={()=>discardPunch(q.id)}>Dismiss</Button>}</div>)}</div>}
+  {queue.length>0&&<div className="rounded-md border border-warning p-3 text-left text-sm space-y-2"><div className="flex items-center justify-between gap-2"><span className="font-medium">{queue.filter(q=>!q.error).length} punch(es) waiting to send</span><Button size="sm" variant="outline" disabled={!online} onClick={()=>{if(pinMode&&code.trim()&&pin.trim())rememberPin(resolvedCompany,code.trim(),pin.trim());void syncPunches().then(r=>r.sent&&toast.success("Offline punches sent"));}}><RefreshCw size={14}/>Send now</Button></div>
+   {queue.map(q=><div key={q.id} className="flex items-center justify-between gap-2 border-t border-border pt-2"><span>{DONE[q.direction]} · {new Date(q.captured_at).toLocaleString([],{dateStyle:"short",timeStyle:"short"})}{q.error&&<span className="block text-destructive">Not accepted: {q.error}</span>}{!q.error&&needsPin(q)&&<span className="block text-muted-foreground">Enter your code and PIN, then tap Send now</span>}</span>{q.error&&<Button size="sm" variant="ghost" onClick={()=>discardPunch(q.id)}>Dismiss</Button>}</div>)}</div>}
   {last&&<p role="status" className="text-success font-medium">{last}</p>}{error&&<p role="alert" className="text-destructive text-sm">{error}</p>}
   {canMove&&<div role="alert" className="rounded-lg border-2 border-warning bg-warning/10 p-4 text-left text-sm space-y-3">
    <p className="font-semibold">Your code and PIN are correct, but this phone is not yet registered for your clock.</p>
