@@ -6,7 +6,7 @@ import { PUBLISHED_URL } from "@/lib/staff-clock-link";
 
 const shareUrl = `${PUBLISHED_URL.replace(/\/$/, "")}${installer.url}`;
 const kioskUrl = `${PUBLISHED_URL.replace(/\/$/, "")}/kiosk`;
-const msg = `Install the OECS Time Clock on this Windows PC (one click): ${shareUrl}\nThen enter the activation code from your manager.`;
+const msg = `Install the OECS Time Clock on this Windows PC (open in Microsoft Edge, then click Install in the address bar): ${kioskUrl}\nThen enter the activation code from your manager.`;
 
 export default function WindowsClockInstaller() {
   return (
