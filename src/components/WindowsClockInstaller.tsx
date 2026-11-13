@@ -14,7 +14,8 @@ export default function WindowsClockInstaller() {
       <div className="flex items-center gap-3"><Monitor className="h-6 w-6 text-primary" /><h2 className="text-lg font-semibold">Add Windows clock</h2></div>
       <p className="text-sm text-muted-foreground">Turn any office Windows PC into a shared clock for every employee. One click installs it — no admin rights needed. It starts with Windows, lives in the tray, and the PC stays free for normal work.</p>
       <ol className="list-decimal pl-5 text-sm space-y-1">
-        <li>Click “One Click Installation”, then open the downloaded file (if Windows warns, click “More info” → “Run anyway”).</li>
+        <li>Click "One Click Installation" — the clock opens in Microsoft Edge. Click the Install icon in the address bar (or ⋯ → Apps → Install this site as an app). Nothing is downloaded, so Windows Defender has nothing to block.</li>
+        <li>In the "App installed" box, tick "Start automatically when I sign in" and "Pin to taskbar".</li>
         <li>Click “Add tablet clock” above for the company and site, then enter its code in the PC clock.</li>
       </ol>
       <div className="flex flex-wrap gap-2">
