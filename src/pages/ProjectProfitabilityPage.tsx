@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { allocateLabor, type ApprovedSlip, type TimeLog } from "@/lib/project-labor-cost";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/payroll-engine";
 import { downloadCSV } from "@/lib/export-utils";
@@ -19,6 +20,7 @@ interface ProjectProfit {
   budget: number;
   laborHours: number;
   laborCost: number;
+  awaitingHours: number;
   contractorCost: number;
   totalCost: number;
   profit: number;
@@ -34,16 +36,15 @@ export default function ProjectProfitabilityPage() {
     const fetchData = async () => {
       const [{ data: projectsData }, { data: timeLogs }, { data: payments }, { data: assignments }] = await Promise.all([
         supabase.from("projects").select("*"),
-        supabase.from("project_time_logs").select("project_id, hours"),
+        supabase.from("project_time_logs").select("project_id, user_id, log_date, hours"),
         supabase.from("contractor_payments").select("project_id, amount, status"),
-        supabase.from("project_assignments").select("project_id, hourly_rate"),
+        supabase.from("payslips").select("user_id, gross_pay, employer_nic, payroll_runs!inner(period_start, period_end, status)"),
       ]);
-
-      const avgRateByProject: Record<string, number> = {};
-      (assignments || []).forEach((a) => {
-        if (!avgRateByProject[a.project_id]) avgRateByProject[a.project_id] = Number(a.hourly_rate) || 25;
-        else avgRateByProject[a.project_id] = (avgRateByProject[a.project_id] + (Number(a.hourly_rate) || 25)) / 2;
-      });
+      // Actual cost: approved payslips split across projects by logged hours (no estimated rates).
+      const slips: ApprovedSlip[] = ((assignments || []) as any[])
+        .filter((s) => s.payroll_runs?.period_start && s.payroll_runs?.period_end && !["draft", "cancelled"].includes(String(s.payroll_runs.status).toLowerCase()))
+        .map((s) => ({ user_id: s.user_id, gross_pay: Number(s.gross_pay), employer_nic: Number(s.employer_nic || 0), period_start: s.payroll_runs.period_start, period_end: s.payroll_runs.period_end }));
+      const { cost: laborByProject, unpaidHours } = allocateLabor((timeLogs || []) as TimeLog[], slips);
 
       const hoursByProject: Record<string, number> = {};
       (timeLogs || []).forEach((t) => {
@@ -59,8 +60,8 @@ export default function ProjectProfitabilityPage() {
 
       const result: ProjectProfit[] = (projectsData || []).map((p) => {
         const laborHours = hoursByProject[p.id] || 0;
-        const rate = avgRateByProject[p.id] || 25;
-        const laborCost = laborHours * rate;
+        const laborCost = laborByProject[p.id] || 0;
+        const awaitingHours = unpaidHours[p.id] || 0;
         const contractorCost = contractorByProject[p.id] || 0;
         const totalCost = laborCost + contractorCost;
         const budget = Number(p.budget) || 0;
@@ -75,6 +76,7 @@ export default function ProjectProfitabilityPage() {
           budget,
           laborHours,
           laborCost,
+          awaitingHours,
           contractorCost,
           totalCost,
           profit,
@@ -130,7 +132,7 @@ export default function ProjectProfitabilityPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-xl md:text-2xl font-display font-bold text-foreground">Project Profitability</h1>
-          <p className="text-sm text-muted-foreground mt-1">Budget vs actual labor & contractor costs per project</p>
+          <p className="text-sm text-muted-foreground mt-1">Budget vs actual costs — labor comes from approved payroll, split by hours logged on each project</p>
         </div>
         <Button onClick={handleExport} variant="outline" className="gap-2">
           <Download size={16} /> Export CSV
@@ -215,7 +217,7 @@ export default function ProjectProfitabilityPage() {
                       </td>
                       <td className="py-3 px-4 text-right font-mono text-foreground">{formatCurrency(p.budget)}</td>
                       <td className="py-3 px-4 text-right font-mono text-foreground">{p.laborHours.toFixed(1)}</td>
-                      <td className="py-3 px-4 text-right font-mono text-foreground">{formatCurrency(p.laborCost)}</td>
+                      <td className="py-3 px-4 text-right font-mono text-foreground">{formatCurrency(p.laborCost)}{p.awaitingHours > 0 && <span className="block text-[11px] text-muted-foreground">{p.awaitingHours.toFixed(1)}h no approved payroll yet</span>}</td>
                       <td className="py-3 px-4 text-right font-mono text-foreground">{formatCurrency(p.contractorCost)}</td>
                       <td className="py-3 px-4 text-right font-mono font-semibold text-foreground">{formatCurrency(p.totalCost)}</td>
                       <td className="py-3 px-4 text-right">

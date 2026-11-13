@@ -61,8 +61,6 @@ export default function RosterPage() {
   const weekDates = useMemo(() => DAYS.map((_, i) => addDays(weekStart, i)), [weekStart]);
 
   const fetchAll = async () => {
-    const weekEndStr = format(addDays(weekStart, 6), "yyyy-MM-dd");
-    const weekStartStr = format(weekStart, "yyyy-MM-dd");
 
     const [sitesRes, assignRes, profilesRes, punchesRes] = await Promise.all([
       supabase.from("client_sites").select("id, name, client_name, status").eq("status", "active"),
