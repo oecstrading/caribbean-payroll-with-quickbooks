@@ -61,7 +61,7 @@ def intro(c, ed):
     for i, (sec, col, tasks) in enumerate(TASKS):
         c.setFillColor(col); c.roundRect(40, y - 70, W - 80, 70, 12, stroke=0, fill=1)
         c.setFillColor(colors.white if col != SEA else INK); c.setFont('BB', 15); c.drawString(58, y - 30, sec)
-        c.setFont('B', 9.5); c.drawString(58, y - 50, ' · '.join(t[0] for t in tasks)[:110])
+        wrap(c, ' · '.join(t[0] for t in tasks), 58, y - 46, W - 120, size=8.5, lead=11, color=colors.white if col != SEA else INK)
         y -= 84
     foot(c, ed, 1)
 

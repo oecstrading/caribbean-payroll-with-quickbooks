@@ -8,8 +8,8 @@ import hero from "@/assets/promo-hero.jpg";
 
 const PUBLISHED = "https://caribbean-payroll-with-quickbooks.lovable.app";
 export const PROMO_LINK = `${PUBLISHED}/discover`;
-const BROCHURE = "/training/OECS_Brochure_v7.pdf";
-const GUIDE = "/training/OECS_User_Manual_v11.pdf";
+const BROCHURE = "/training/OECS_Brochure_v8.pdf";
+const GUIDE = "/training/OECS_User_Manual_v12.pdf";
 
 export const PROMO_MESSAGE =
   "🌴 Payroll in minutes, not days! Your staff clock in from any phone or site, AI prepares the payroll, you approve with one tap — and it syncs to QuickBooks. Built for the Caribbean. 👉 See the brochure & guide:";
