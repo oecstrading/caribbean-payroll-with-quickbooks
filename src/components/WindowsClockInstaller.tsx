@@ -5,6 +5,7 @@ import installer from "@/assets/OECS_Time_Clock_Setup.exe.asset.json";
 import { PUBLISHED_URL } from "@/lib/staff-clock-link";
 
 const shareUrl = `${PUBLISHED_URL.replace(/\/$/, "")}${installer.url}`;
+const kioskUrl = `${PUBLISHED_URL.replace(/\/$/, "")}/kiosk`;
 const msg = `Install the OECS Time Clock on this Windows PC (one click): ${shareUrl}\nThen enter the activation code from your manager.`;
 
 export default function WindowsClockInstaller() {
@@ -18,12 +19,12 @@ export default function WindowsClockInstaller() {
       </ol>
       <div className="flex flex-wrap gap-2">
         <Button asChild size="lg" className="h-12 text-base shadow-sm">
-          <a href={shareUrl} target="_blank" rel="noreferrer" download="OECS_Time_Clock_Setup.exe">
+          <a href={kioskUrl} target="_blank" rel="noreferrer">
             <MousePointerClick className="mr-2 h-5 w-5" />One Click Installation
           </a>
         </Button>
         <Button variant="outline" className="h-11" asChild>
-          <a href={shareUrl} target="_blank" rel="noreferrer"><Download className="mr-2 h-4 w-4" />Download installer (80 MB)</a>
+          <a href={shareUrl} target="_blank" rel="noreferrer"><Download className="mr-2 h-4 w-4" />Backup: .exe installer (80 MB)</a>
         </Button>
         <Button variant="outline" className="h-11" onClick={() => { navigator.clipboard.writeText(shareUrl); toast.success("Download link copied"); }}><Copy className="mr-2 h-4 w-4" />Copy link</Button>
         <Button variant="outline" className="h-11" asChild><a href={`https://wa.me/?text=${encodeURIComponent(msg)}`} target="_blank" rel="noreferrer"><MessageCircle className="mr-2 h-4 w-4" />WhatsApp</a></Button>
