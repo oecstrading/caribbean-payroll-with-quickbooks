@@ -1,0 +1,2 @@
+ALTER TABLE public.clock_punches ADD COLUMN IF NOT EXISTS site_id uuid REFERENCES public.client_sites(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS clock_punches_site_idx ON public.clock_punches(site_id);

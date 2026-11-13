@@ -561,6 +561,7 @@ export type Database = {
           org_id: string | null
           punch_type: string
           punched_at: string
+          site_id: string | null
           user_id: string
           within_geofence: boolean | null
         }
@@ -574,6 +575,7 @@ export type Database = {
           org_id?: string | null
           punch_type: string
           punched_at?: string
+          site_id?: string | null
           user_id: string
           within_geofence?: boolean | null
         }
@@ -587,6 +589,7 @@ export type Database = {
           org_id?: string | null
           punch_type?: string
           punched_at?: string
+          site_id?: string | null
           user_id?: string
           within_geofence?: boolean | null
         }
@@ -603,6 +606,13 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clock_punches_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "client_sites"
             referencedColumns: ["id"]
           },
         ]
