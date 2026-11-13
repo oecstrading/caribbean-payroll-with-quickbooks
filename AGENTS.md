@@ -31,4 +31,4 @@
 - A user's home company (profiles.org_id) is their default workspace: a fresh sign-in applies it over the last company switched to, and the applied marker is per browser tab so an in-session company switch is never undone.
 - PIN clocks bind to one phone ID (hashed, claim_clock_device); a phone never serves two employees. Code+PIN holders may self-move via move_clock_device (audited, rate-limited; else manager reset). Clock pages ship no manifest so iOS saves the exact link.
 - Clock Devices is admin/Pay Master only via can_admin_clocks; departed-staff clocks are disabled (history kept) and tablets soft-deleted to keep punch history.
-- Roster hours pair across midnight by site; project labour = approved payslips split by hours; offline queues never store PINs.
+- Roster pairs overnight by site; project labour uses approved payslips; offline queues keep no PINs.
