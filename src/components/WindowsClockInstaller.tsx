@@ -27,7 +27,7 @@ export default function WindowsClockInstaller() {
         <Button variant="outline" className="h-11" asChild>
           <a href={shareUrl} target="_blank" rel="noreferrer"><Download className="mr-2 h-4 w-4" />Backup: .exe installer (80 MB)</a>
         </Button>
-        <Button variant="outline" className="h-11" onClick={() => { navigator.clipboard.writeText(shareUrl); toast.success("Download link copied"); }}><Copy className="mr-2 h-4 w-4" />Copy link</Button>
+        <Button variant="outline" className="h-11" onClick={() => { navigator.clipboard.writeText(kioskUrl); toast.success("Install link copied"); }}><Copy className="mr-2 h-4 w-4" />Copy link</Button>
         <Button variant="outline" className="h-11" asChild><a href={`https://wa.me/?text=${encodeURIComponent(msg)}`} target="_blank" rel="noreferrer"><MessageCircle className="mr-2 h-4 w-4" />WhatsApp</a></Button>
         <Button variant="outline" className="h-11" asChild><a href={`mailto:?subject=${encodeURIComponent("OECS Time Clock for Windows")}&body=${encodeURIComponent(msg)}`}><Mail className="mr-2 h-4 w-4" />Email</a></Button>
       </div>
