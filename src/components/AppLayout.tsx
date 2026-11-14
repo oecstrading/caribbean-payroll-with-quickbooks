@@ -74,7 +74,7 @@ const navItems: NavItem[] = [
   { path: "/reports", label: "Reports", icon: FileText },
   { path: "/geofencing", label: "Geofencing", icon: MapPin },
   { path: "/leave-management", label: "Leave Approvals", icon: CalendarDays, managerOnly: true },
-  { path: "/deductions", label: "Deductions", icon: Landmark, managerOnly: true },
+  { path: "/deductions", label: "Additions and Deductions", icon: Landmark, managerOnly: true },
   { path: "/projects", label: "Projects", icon: FolderKanban, separator: true },
   { path: "/crews", label: "Crews", icon: UsersRound },
   { path: "/equipment", label: "Equipment", icon: Wrench },
