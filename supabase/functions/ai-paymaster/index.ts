@@ -40,7 +40,7 @@ async function processOrg(admin: ReturnType<typeof createClient>, orgId: string,
       admin.from("employee_loans").select("id, monthly_repayment, balance").eq("org_id", orgId).eq("is_active", true),
       admin.from("clock_incidents").select("id", { count: "exact", head: true }).eq("org_id", orgId).neq("status", "resolved"),
     ]);
-    const staff = [...(profiles.data ?? []), ...(records.data ?? [])].filter(e => (e.status ?? "active") === "active");
+    const staff = [...(profiles.data ?? []), ...(records.data ?? [])].filter(e => String(e.status ?? "active").toLowerCase() === "active");
     const gross = staff.reduce((s, e) => s + Number(e.monthly_salary ?? 0), 0);
     const covering = (runs.data ?? []).find(r => r.period_start && r.period_end && r.period_start <= iso(end) && r.period_end >= iso(start));
     const previous = (runs.data ?? []).find(r => r.id !== covering?.id && (!r.period_end || r.period_end < iso(start)));
