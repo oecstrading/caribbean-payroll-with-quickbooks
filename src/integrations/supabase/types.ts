@@ -2559,6 +2559,60 @@ export type Database = {
           },
         ]
       }
+      pay_item_templates: {
+        Row: {
+          addition_type: string | null
+          amount: number
+          created_at: string
+          creditor_id: string | null
+          frequency: string
+          id: string
+          kind: string
+          name: string
+          notes: string | null
+          org_id: string
+        }
+        Insert: {
+          addition_type?: string | null
+          amount?: number
+          created_at?: string
+          creditor_id?: string | null
+          frequency?: string
+          id?: string
+          kind: string
+          name: string
+          notes?: string | null
+          org_id?: string
+        }
+        Update: {
+          addition_type?: string | null
+          amount?: number
+          created_at?: string
+          creditor_id?: string | null
+          frequency?: string
+          id?: string
+          kind?: string
+          name?: string
+          notes?: string | null
+          org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pay_item_templates_creditor_id_fkey"
+            columns: ["creditor_id"]
+            isOneToOne: false
+            referencedRelation: "creditors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pay_item_templates_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       paymaster_drafts: {
         Row: {
           acknowledged_at: string | null
