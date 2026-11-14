@@ -743,6 +743,13 @@
       "when": 1794672295105,
       "tag": "0105_round_up_shift_hours",
       "breakpoints": true
+    },
+    {
+      "idx": 106,
+      "version": "7",
+      "when": 1794673873784,
+      "tag": "0106_pay_item_templates",
+      "breakpoints": true
     }
   ]
 }

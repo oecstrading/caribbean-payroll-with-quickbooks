@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useRole } from "@/hooks/useRole";
 import { toast } from "sonner";
 import EmployeeLoans from "@/components/EmployeeLoans";
+import PayItemTemplates, { type PayItemTemplate } from "@/components/PayItemTemplates";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
 
@@ -94,7 +95,8 @@ const additionTypeColors: Record<string, string> = {
 
 export default function DeductionsPage() {
   const { isAdminOrManager } = useRole();
-  const [tab, setTab] = useState<"creditors" | "deductions" | "additions" | "loans">("creditors");
+  const [tab, setTab] = useState<"creditors" | "deductions" | "additions" | "loans" | "templates">("creditors");
+  const [templates, setTemplates] = useState<PayItemTemplate[]>([]);
   const [creditors, setCreditors] = useState<Creditor[]>([]);
   const [deductions, setDeductions] = useState<EmployeeDeduction[]>([]);
   const [additions, setAdditions] = useState<EmployeeAddition[]>([]);
@@ -121,10 +123,11 @@ export default function DeductionsPage() {
   const [savingAddition, setSavingAddition] = useState(false);
 
   const fetchData = async () => {
-    const [credRes, dedRes, addRes, profRes] = await Promise.all([
+    const [credRes, dedRes, addRes, , profRes] = await Promise.all([
       supabase.from("creditors").select("*").order("name"),
       supabase.from("employee_deductions").select("*").order("created_at", { ascending: false }),
       supabase.from("employee_additions").select("*").order("created_at", { ascending: false }),
+      supabase.from("pay_item_templates").select("*").order("name").then(r => setTemplates((r.data as PayItemTemplate[]) || [])),
       supabase.from("payroll_employee_directory").select("user_id, first_name, last_name, email, department").is("deleted_at", null),
     ]);
     setCreditors((credRes.data as Creditor[]) || []);
@@ -360,10 +363,12 @@ export default function DeductionsPage() {
           <TrendingUp size={14} />
           Additions ({additions.length})
         </button>
+        <Button variant={tab === "templates" ? "default" : "ghost"} onClick={() => setTab("templates")}><Plus size={14} />Templates ({templates.length})</Button>
       </div>
 
       {/* Creditors Tab */}
       {tab === "loans" && <EmployeeLoans />}
+      {tab === "templates" && <PayItemTemplates templates={templates} creditors={creditors} additionTypes={additionTypes} onChanged={fetchData} inputClass={inputClass} />}
       {tab === "creditors" && (
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-3">
@@ -664,6 +669,15 @@ export default function DeductionsPage() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-2">
+            {templates.some(t => t.kind === "deduction") && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Start from a template (optional)</label>
+                <NativeSelect value="" onChange={(e) => { const t = templates.find(x => x.id === e.target.value); if (t) setDeductionForm({ ...deductionForm, creditor_id: t.creditor_id || deductionForm.creditor_id, amount: Number(t.amount), frequency: t.frequency, notes: t.notes || t.name }); }} className={inputClass}>
+                  <option value="">Choose a template...</option>
+                  {templates.filter(t => t.kind === "deduction").map(t => <option key={t.id} value={t.id}>{t.name} — XCD {Number(t.amount).toFixed(2)}</option>)}
+                </NativeSelect>
+              </div>
+            )}
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Employee</label>
               <NativeSelect value={deductionForm.user_id} onChange={(e) => setDeductionForm({ ...deductionForm, user_id: e.target.value })} className={inputClass}>
@@ -724,6 +738,15 @@ export default function DeductionsPage() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-2">
+            {templates.some(t => t.kind === "addition") && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Start from a template (optional)</label>
+                <NativeSelect value="" onChange={(e) => { const t = templates.find(x => x.id === e.target.value); if (t) setAdditionForm({ ...additionForm, addition_type: t.addition_type || "other", description: t.name, amount: Number(t.amount), frequency: t.frequency, notes: t.notes || "" }); }} className={inputClass}>
+                  <option value="">Choose a template...</option>
+                  {templates.filter(t => t.kind === "addition").map(t => <option key={t.id} value={t.id}>{t.name} — XCD {Number(t.amount).toFixed(2)}</option>)}
+                </NativeSelect>
+              </div>
+            )}
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Employee</label>
               <NativeSelect value={additionForm.user_id} onChange={(e) => setAdditionForm({ ...additionForm, user_id: e.target.value })} className={inputClass}>
