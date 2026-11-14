@@ -11,6 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useRole } from "@/hooks/useRole";
 import { usePaymasterDraft } from "@/components/PaymasterAlert";
 import { PayrollForecast } from "@/components/PayrollForecast";
+import { PaymasterFlagDetails } from "@/components/PaymasterFlagDetails";
+import { ChevronDown } from "lucide-react";
 
 const money = (n: number | null | undefined) => n == null ? "—" : `XCD ${Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 type Flag = { severity: string; title: string; detail: string };
@@ -87,7 +89,7 @@ export default function AiPaymasterPage() {
             <CardHeader><CardTitle className="flex items-center gap-2"><AlertTriangle className="h-5 w-5 text-accent" />Flags ({flags.length})</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               {flags.length === 0 ? <p className="text-sm text-muted-foreground">No unusual changes found.</p> : flags.map((f, i) => (
-                <div key={i} className="rounded-lg border p-3"><div className="flex items-center gap-2"><Badge variant={f.severity === "high" ? "destructive" : "secondary"}>{f.severity}</Badge><b className="text-sm">{f.title}</b></div><p className="text-sm text-muted-foreground mt-1">{f.detail}</p></div>
+                <details key={i} className="group rounded-lg border p-3 hover:bg-muted/40"><summary className="cursor-pointer list-none"><div className="flex items-center gap-2"><Badge variant={f.severity === "high" ? "destructive" : "secondary"}>{f.severity}</Badge><b className="text-sm flex-1">{f.title}</b><ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" /></div><p className="text-sm text-muted-foreground mt-1">{f.detail} <span className="text-primary">Show details</span></p></summary><PaymasterFlagDetails title={f.title} /></details>
               ))}
             </CardContent>
           </Card>
