@@ -736,6 +736,13 @@
       "when": 1794572613680,
       "tag": "0104_clock_punches_site",
       "breakpoints": true
+    },
+    {
+      "idx": 105,
+      "version": "7",
+      "when": 1794672295105,
+      "tag": "0105_round_up_shift_hours",
+      "breakpoints": true
     }
   ]
 }
