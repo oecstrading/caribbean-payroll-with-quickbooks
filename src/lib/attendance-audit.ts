@@ -35,7 +35,6 @@ export function lunchOverMinutes(s: ShiftIn) {
   const taken = (new Date(s.lunch_in).getTime() - new Date(s.lunch_out).getTime()) / 60000;
   return Math.max(0, Math.round(taken - (s.break_minutes ?? 0)));
 }
-}
 
 /** Cost of one missed day: monthly salary spread over working days in the month. */
 export const dailyCost = (monthlySalary: number, workingDays = 22) => Math.round((monthlySalary / workingDays) * 100) / 100;
