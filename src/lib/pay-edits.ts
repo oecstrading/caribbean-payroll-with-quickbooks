@@ -24,7 +24,7 @@ export function linesFromResult(r: PayrollResult, nicOnBasicOnly: boolean, loanA
   for (const d of r.creditorDeductions) {
     const isLoan = loanLeft > 0 && d.creditorName === "Employee loan repayment";
     if (isLoan) loanLeft = 0;
-    lines.push({ id: newLineId(), label: d.creditorName, kind: "deduction", qty: null, rate: null, amount: d.amount, nic: false, locked: isLoan });
+    lines.push({ id: newLineId(), label: d.creditorName, kind: "deduction", qty: null, rate: null, amount: d.amount, nic: false });
   }
   return { lines, paye: r.paye };
 }
