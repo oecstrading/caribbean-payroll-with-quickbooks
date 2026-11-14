@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { Clock, UserX } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +23,7 @@ export default function AttendanceAuditReport() {
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [leave, setLeave] = useState<Leave[]>([]);
   const [loading, setLoading] = useState(true);
+  const [open, setOpen] = useState<string | null>(null);
 
   useEffect(() => { void (async () => {
     setLoading(true);
@@ -59,6 +60,15 @@ export default function AttendanceAuditReport() {
     }
     return [...out.values()].filter(r => r.absent || r.late).sort((a, b) => b.unexcused - a.unexcused || b.late - a.late);
   }, [grid, emps, leave]);
+  const dayDetails = (emp: Emp) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const rows = grid.filter(s => emps.get(s.employee_id)?.id === emp.id && (s.late || (!s.clock_in && s.shift_date < today)));
+    return <table className="w-full text-xs"><thead><tr className="text-muted-foreground text-left">{["Date", "Scheduled start", "Clocked in", "Minutes late", "Status"].map(h => <th key={h} className="py-1 px-2">{h}</th>)}</tr></thead>
+      <tbody>{rows.map(s => { const cover = !s.clock_in ? leave.find(l => emp.users.includes(l.user_id) && l.status === "approved" && l.start_date <= s.shift_date && l.end_date >= s.shift_date) : undefined;
+        const mins = s.clock_in && s.scheduled_start ? Math.round((new Date(s.clock_in).getTime() - new Date(s.scheduled_start).getTime()) / 60000) : null;
+        return <tr key={s.id} className="border-t border-border/40"><td className="py-1 px-2">{s.shift_date}</td><td className="px-2">{fmtTime(s.scheduled_start)}</td><td className="px-2">{fmtTime(s.clock_in)}</td><td className="px-2">{mins !== null ? mins : "—"}</td>
+          <td className="px-2">{s.late ? <Badge className="bg-accent text-accent-foreground">Late</Badge> : cover ? <Badge variant="secondary">{cover.leave_type === "sick" ? "Sick leave" : "Approved leave"}</Badge> : <Badge variant="destructive">Absent – unexcused</Badge>}</td></tr>; })}</tbody></table>;
+  };
   const totalCost = summary.reduce((s, r) => s + r.absent * dailyCost(r.emp.salary), 0);
 
   return <div className="space-y-5">
@@ -88,13 +98,14 @@ export default function AttendanceAuditReport() {
         <SummaryCard label="Economic cost of absence this cycle" value={formatCurrency(totalCost)} icon={UserX} tone="coral" valueClassName="text-tone-coral" onClick={()=>document.getElementById("absence-details")?.scrollIntoView({behavior:"smooth",block:"start"})} />
         <div id="absence-details">{!summary.length ? <p className="text-sm text-muted-foreground">No absences or late arrivals in this pay cycle.</p> : <div className="overflow-x-auto"><table className="w-full text-sm">
           <thead><tr className="border-b border-border text-muted-foreground text-left">{["Employee", "Days absent", "Unexcused", "Sick leave", "Late arrivals", "Cost of absence"].map((h, i) => <th key={h} className={`py-2 px-2 ${i ? "text-right" : ""}`}>{h}</th>)}</tr></thead>
-          <tbody>{summary.map(r => <tr key={r.emp.id} className="border-b border-border/50">
-            <td className="py-2 px-2">{r.emp.name}</td>
+          <tbody>{summary.map(r => <Fragment key={r.emp.id}>{<tr key={r.emp.id} onClick={() => setOpen(open === r.emp.id ? null : r.emp.id)} className="border-b border-border/50 cursor-pointer hover:bg-muted/50" title="Click to see each day">
+            <td className="py-2 px-2 font-medium text-primary">{open === r.emp.id ? "▾" : "▸"} {r.emp.name}</td>
             <td className="px-2 text-right">{r.absent}</td>
             <td className="px-2 text-right">{r.unexcused ? <Badge variant="destructive">{r.unexcused}</Badge> : 0}</td>
             <td className="px-2 text-right">{r.sick ? <Badge variant="secondary">{r.sick}</Badge> : 0}</td>
             <td className="px-2 text-right">{r.late ? <Badge className="bg-accent text-accent-foreground">{r.late}</Badge> : 0}</td>
-            <td className="px-2 text-right tabular-nums">{formatCurrency(r.absent * dailyCost(r.emp.salary))}</td></tr>)}</tbody>
+            <td className="px-2 text-right tabular-nums">{formatCurrency(r.absent * dailyCost(r.emp.salary))}</td></tr>}
+            {open === r.emp.id && <tr key={r.emp.id + "-d"}><td colSpan={6} className="bg-muted/30 p-3">{dayDetails(r.emp)}</td></tr>}</Fragment>)}</tbody>
         </table></div>}</div>
       </CardContent>
     </Card>
