@@ -2769,6 +2769,35 @@ export type Database = {
           },
         ]
       }
+      payroll_run_drafts: {
+        Row: {
+          draft: Json
+          org_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          draft: Json
+          org_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          draft?: Json
+          org_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_run_drafts_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payroll_runs: {
         Row: {
           created_at: string

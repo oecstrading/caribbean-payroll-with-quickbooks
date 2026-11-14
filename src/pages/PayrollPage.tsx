@@ -1,7 +1,7 @@
 import { payrollOptions } from "@/lib/employee-folder";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { clearPayrollDraft, hasDraftWork, loadPayrollDraft, savePayrollDraft } from "@/lib/payroll-draft";
+import { clearPayrollDraft, syncSharedPayrollDraft, hasDraftWork, loadPayrollDraft, savePayrollDraft } from "@/lib/payroll-draft";
 import { motion } from "framer-motion";
 import { CheckCircle, ArrowRight, DollarSign, FileText, AlertCircle, Receipt, Mail, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -37,6 +37,13 @@ import { Pencil } from "lucide-react";
 const steps = ["Review & Sync", "Audit", "Approve & Run"];
 
 export default function PayrollPage() {
+  const [ready, setReady] = useState(false);
+  useEffect(() => { void syncSharedPayrollDraft().finally(() => setReady(true)); }, []);
+  if (!ready) return <div className="p-6 text-sm text-muted-foreground">Loading the company's payroll…</div>;
+  return <RunPayroll />;
+}
+
+function RunPayroll() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [draft] = useState(() => loadPayrollDraft());
@@ -134,8 +141,6 @@ export default function PayrollPage() {
   useEffect(() => { if (restoring.current.edits) { restoring.current.edits = false; return; } setEdits({}); setDecisions({}); }, [source, range.start, range.end, jurisdiction]);
   // Release the step lock once the restored departments are in place.
   useEffect(() => { if (restoring.current.step && !restoring.current.selected) { const t = setTimeout(() => { restoring.current.step = false; }, 0); return () => clearTimeout(t); } }, [selected]);
-  // A draft saved by another person on this device is never shown.
-  useEffect(() => { if (draft && user && draft.userId && draft.userId !== user.id) { clearPayrollDraft(); window.location.reload(); } }, [user?.id]);
   // Autosave every change to the unapproved payroll so leaving the page never loses work.
   const draftWork = { manualMode, manualHours, edits, notes, decisions };
   const dirty = source === "live" && !approved && hasDraftWork(draftWork);
@@ -161,7 +166,7 @@ export default function PayrollPage() {
       _pay_type: payType, _start: range.start, _end: range.end, _notes: ([notes, manualMode ? "Hours entered manually" : "", Object.keys(edits).length ? `Pay edited for ${Object.keys(edits).length} employee(s)` : ""].filter(Boolean).join(" · ") || (manualMode ? [notes, "Hours entered manually"].filter(Boolean).join(" · ") : notes)) || undefined, _jurisdiction: jurisdiction, _departments: selected,
       _rows: payrollData.map(e => ({ user_id: e.id, department: e.department, basic_pay: e.payroll.basicPay,
         overtime_pay: e.payroll.overtimePay, gross_pay: e.payroll.grossMonthly, employee_nic: e.payroll.employeeNIC,
-        employer_nic: e.payroll.employerNIC, paye: e.payroll.paye, total_deductions: e.payroll.totalDeductions, net_pay: e.payroll.netPay, loan_deductions: e.loanDeductions,
+        employer_nic: e.payroll.employerNIC, paye: e.payroll.paye, total_deductions: e.payroll.totalDeductions, net_pay: e.payroll.netPay, loan_deductions: e.edited ? Math.round(e.edited.lines.filter(l => l.label === "Employee loan repayment" && l.kind === "deduction").reduce((t, l) => t + (l.amount || 0), 0) * 100) / 100 : e.loanDeductions,
         ...(e.edited ? { pay_lines: serverLines(e.edited) } : {}),
         ...(!e.edited && e.manual ? { manual_hours: { ...e.manual } as Record<string, number> } : {}) })),
     });
