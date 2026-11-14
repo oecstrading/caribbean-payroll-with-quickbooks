@@ -3931,6 +3931,7 @@ export type Database = {
           default_shift_end: string
           default_shift_start: string
           default_work_days: number[]
+          grace_minutes: number
           org_id: string
           overtime_basis: string
           overtime_multiplier: number
@@ -3945,6 +3946,7 @@ export type Database = {
           default_shift_end?: string
           default_shift_start?: string
           default_work_days?: number[]
+          grace_minutes?: number
           org_id: string
           overtime_basis?: string
           overtime_multiplier?: number
@@ -3959,6 +3961,7 @@ export type Database = {
           default_shift_end?: string
           default_shift_start?: string
           default_work_days?: number[]
+          grace_minutes?: number
           org_id?: string
           overtime_basis?: string
           overtime_multiplier?: number
@@ -4745,6 +4748,7 @@ export type Database = {
         Args: { _company: boolean; _platform: boolean; _user: string }
         Returns: undefined
       }
+      set_clock_grace: { Args: { _minutes: number }; Returns: undefined }
       set_company_admin_access: {
         Args: { _orgs: string[]; _user: string }
         Returns: undefined
