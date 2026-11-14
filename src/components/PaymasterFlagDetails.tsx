@@ -61,7 +61,7 @@ async function load(kind: string): Promise<Detail> {
   if (kind === "loans") {
     const { data } = await supabase.from("employee_loans").select("*").order("created_at", { ascending: false }).limit(100);
     const rows = (data ?? []) as Record<string, unknown>[];
-    return { head: ["Employee", "Balance", "Repayment", "Status"], rows: rows.map(l => ({ key: String(l.id), cols: [n(l.employee_id as string), Number(l.balance ?? l.remaining_balance ?? 0).toFixed(2), `${Number(l.repayment_amount ?? l.monthly_repayment ?? 0).toFixed(2)} ${String(l.repayment_frequency ?? "")}`.trim(), String(l.status ?? "")] })), path: "/deductions", label: "Edit loans on Deductions" };
+    return { head: ["Employee", "Balance", "Repayment", "Status"], rows: rows.map(l => ({ key: String(l.id), cols: [n(l.user_id as string), Number(l.balance ?? 0).toFixed(2), `${Number(l.repayment_amount ?? l.monthly_repayment ?? 0).toFixed(2)} ${String(l.repayment_frequency ?? "")}`.trim(), l.is_active ? "Active" : "Stopped"] })), path: "/deductions", label: "Edit loans on Deductions" };
   }
   return { head: [], rows: [], path: "/payroll", label: "Open Payroll" };
 }
