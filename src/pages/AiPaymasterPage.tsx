@@ -30,6 +30,8 @@ export default function AiPaymasterPage() {
     queryKey: ["paymaster-settings"],
     queryFn: async () => (await supabase.from("paymaster_settings").select("*").maybeSingle()).data,
   });
+  const [open, setOpen] = useState<string | null>(null);
+  const toggle = (k: string) => setOpen(o => o === k ? null : k);
   const [payDay, setPayDay] = useState<string>("");
 
   const runNow = async () => {
@@ -75,11 +77,17 @@ export default function AiPaymasterPage() {
           <span className="text-sm text-muted-foreground">Period {draft.period_start} – {draft.period_end} · Pay date {draft.pay_date} · Last checked {new Date(draft.updated_at).toLocaleString()}</span>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <Stat icon={Users} label="Staff" value={String(draft.employee_count)} />
-          <Stat icon={up ? TrendingUp : TrendingDown} label="Projected gross" value={money(draft.projected_gross)} sub={draft.change_pct == null ? "No earlier run" : `${up ? "+" : ""}${draft.change_pct}% vs ${money(draft.last_gross)}`} />
-          <Stat icon={Clock} label="Missing punches / pending shifts" value={`${draft.missing_punches} / ${draft.pending_shifts}`} />
-          <Stat icon={Landmark} label="Loan repayments" value={money(draft.loan_repayments)} sub={`${draft.active_loans} active loans`} />
+          <Stat active={open === "staff"} onClick={() => toggle("staff")} icon={Users} label="Staff" value={String(draft.employee_count)} />
+          <Stat active={open === "cost"} onClick={() => toggle("cost")} icon={up ? TrendingUp : TrendingDown} label="Projected gross" value={money(draft.projected_gross)} sub={draft.change_pct == null ? "No earlier run" : `${up ? "+" : ""}${draft.change_pct}% vs ${money(draft.last_gross)}`} />
+          <Stat active={open === "time"} onClick={() => toggle("time")} icon={Clock} label="Missing punches / pending shifts" value={`${draft.missing_punches} / ${draft.pending_shifts}`} />
+          <Stat active={open === "loans"} onClick={() => toggle("loans")} icon={Landmark} label="Loan repayments" value={money(draft.loan_repayments)} sub={`${draft.active_loans} active loans`} />
         </div>
+        {open && <Card><CardContent className="p-4">
+          {open === "staff" && <><b className="text-sm">Staff in this payroll</b><PaymasterFlagDetails title="staff" /></>}
+          {open === "cost" && <><b className="text-sm">Recent payrolls behind the projection</b><PaymasterFlagDetails title="payroll cost" /><p className="text-xs text-muted-foreground mt-2">To change this period's figures, edit them in "Prepare a payroll" below.</p></>}
+          {open === "time" && <><b className="text-sm">Missing punches</b><PaymasterFlagDetails title="missing punch" /><b className="text-sm block mt-4">Shifts awaiting review</b><PaymasterFlagDetails title="awaiting review" /></>}
+          {open === "loans" && <><b className="text-sm">Loans</b><PaymasterFlagDetails title="loans" /></>}
+        </CardContent></Card>}
         <Card>
           <CardHeader><CardTitle className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary" />AI briefing</CardTitle></CardHeader>
           <CardContent className="whitespace-pre-wrap text-sm leading-relaxed">{draft.summary ?? "AI briefing unavailable for this check; figures below are still current."}</CardContent>
@@ -117,6 +125,6 @@ export default function AiPaymasterPage() {
   );
 }
 
-function Stat({ icon: Icon, label, value, sub }: { icon: React.ElementType; label: string; value: string; sub?: string }) {
-  return <Card><CardContent className="p-4"><Icon className="h-5 w-5 text-primary" /><p className="text-xs text-muted-foreground mt-2">{label}</p><p className="text-lg font-bold">{value}</p>{sub && <p className="text-xs text-muted-foreground">{sub}</p>}</CardContent></Card>;
+function Stat({ icon: Icon, label, value, sub, onClick, active }: { icon: React.ElementType; label: string; value: string; sub?: string; onClick?: () => void; active?: boolean }) {
+  return <Card role="button" tabIndex={0} aria-expanded={active} onClick={onClick} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick?.(); } }} className={`cursor-pointer transition hover:border-primary hover:shadow-md ${active ? "border-primary ring-2 ring-primary/30" : ""}`}><CardContent className="p-4"><Icon className="h-5 w-5 text-primary" /><p className="text-xs text-muted-foreground mt-2">{label}</p><p className="text-lg font-bold">{value}</p>{sub && <p className="text-xs text-muted-foreground">{sub}</p>}<p className="text-xs text-primary mt-1">{active ? "Hide details" : "Show details"}</p></CardContent></Card>;
 }
