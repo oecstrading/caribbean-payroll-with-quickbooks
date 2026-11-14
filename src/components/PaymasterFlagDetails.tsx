@@ -15,6 +15,8 @@ export function flagKind(title: string) {
   if (t.includes("nic or tax")) return "ids";
   if (t.includes("no pay rate")) return "zero";
   if (t.includes("clock incident")) return "incident";
+  if (t === "staff") return "staff";
+  if (t === "loans") return "loans";
   return "other";
 }
 
@@ -51,6 +53,15 @@ async function load(kind: string): Promise<Detail> {
   if (kind === "incident") {
     const { data } = await supabase.from("clock_incidents").select("id,title,detail,severity,last_detected_at").neq("status", "resolved").order("last_detected_at", { ascending: false }).limit(50);
     return { head: ["Incident", "Detail", "Last seen"], rows: (data ?? []).map(c => ({ key: c.id, cols: [c.title, c.detail ?? "", t(c.last_detected_at)] })), path: "/clock-devices", label: "Open Clock devices" };
+  }
+  if (kind === "staff") {
+    const act = staff.filter(e => String(e.status ?? "active").toLowerCase() === "active");
+    return { head: ["Employee", "Monthly pay", "NIC", "Tax no."], rows: act.map((e, i) => ({ key: e.user_id ?? String(i), cols: [n(e.user_id), Number(e.monthly_salary ?? 0).toFixed(2), e.nic_number || "missing", e.tan_number || "missing"] })), path: "/employees", label: "Edit on Employees" };
+  }
+  if (kind === "loans") {
+    const { data } = await supabase.from("employee_loans").select("*").order("created_at", { ascending: false }).limit(100);
+    const rows = (data ?? []) as Record<string, unknown>[];
+    return { head: ["Employee", "Balance", "Repayment", "Status"], rows: rows.map(l => ({ key: String(l.id), cols: [n(l.user_id as string), Number(l.balance ?? 0).toFixed(2), `${Number(l.repayment_amount ?? l.monthly_repayment ?? 0).toFixed(2)} ${String(l.repayment_frequency ?? "")}`.trim(), l.is_active ? "Active" : "Stopped"] })), path: "/deductions", label: "Edit loans on Deductions" };
   }
   return { head: [], rows: [], path: "/payroll", label: "Open Payroll" };
 }
