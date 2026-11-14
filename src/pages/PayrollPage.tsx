@@ -1,7 +1,7 @@
 import { payrollOptions } from "@/lib/employee-folder";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { clearPayrollDraft, hasDraftWork, loadPayrollDraft, savePayrollDraft } from "@/lib/payroll-draft";
+import { clearPayrollDraft, syncSharedPayrollDraft, hasDraftWork, loadPayrollDraft, savePayrollDraft } from "@/lib/payroll-draft";
 import { motion } from "framer-motion";
 import { CheckCircle, ArrowRight, DollarSign, FileText, AlertCircle, Receipt, Mail, Loader2 } from "lucide-react";
 import { toast } from "sonner";
