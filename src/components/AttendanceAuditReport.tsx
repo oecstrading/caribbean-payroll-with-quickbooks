@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatCurrency } from "@/lib/payroll-engine";
 import { splitHours, isLate, lateMinutes, lunchOverMinutes, LATE_GRACE_MIN, dailyCost, unconfirmedAbsence, type ShiftIn } from "@/lib/attendance-audit";
-import { attendanceConfirmed } from "@/lib/attendance-details";
+import { attendanceConfirmed, manuallyConfirmed } from "@/lib/attendance-details";
 import { SummaryCard } from "@/components/SummaryCard";
 
 type Emp = { id: string; name: string; salary: number; std: number; users: string[] };
@@ -87,7 +87,7 @@ export default function AttendanceAuditReport() {
         <div className="overflow-x-auto max-h-[480px]"><table className="w-full text-sm">
           <thead className="sticky top-0 bg-card"><tr className="border-b border-border text-muted-foreground text-left">{["Employee", "Date", "Clock-in", "Clock-out", "Min late", "Lunch over", "Regular", "OT 1.5×", "DT 2.0×"].map((h, i) => <th key={h} className={`py-2 px-2 whitespace-nowrap ${i > 3 ? "text-right" : ""}`}>{h}</th>)}</tr></thead>
           <tbody>{loading ? <tr><td colSpan={9} className="py-6 text-center text-muted-foreground">Loading shifts…</td></tr> : !grid.length ? <tr><td colSpan={9} className="py-6 text-center text-muted-foreground">No shifts in this pay cycle.</td></tr> : grid.map(r => <tr key={r.id} className="border-b border-border/50">
-            <td className="py-2 px-2">{r.name}</td><td className="px-2 whitespace-nowrap">{r.shift_date}</td>
+            <td className="py-2 px-2">{r.name}{manuallyConfirmed(r)&&<span className="block text-xs text-primary">Manually confirmed</span>}</td><td className="px-2 whitespace-nowrap">{r.shift_date}</td>
             <td className="px-2 whitespace-nowrap">{fmtTime(r.clock_in)} {r.late && <Badge className="ml-1 bg-accent text-accent-foreground">Late</Badge>}{!r.clock_in && <Badge variant={attendanceConfirmed(r) ? "secondary" : "destructive"} className="ml-1">{attendanceConfirmed(r) ? "Manually confirmed" : "Unconfirmed punch"}</Badge>}</td>
             <td className="px-2">{fmtTime(r.clock_out)}{!r.clock_out && attendanceConfirmed(r) && <Badge variant="secondary">Manually confirmed</Badge>}</td><td className="px-2 text-right tabular-nums">{r.lateMin || "—"}</td><td className={`px-2 text-right tabular-nums ${r.lunchOver > grace ? "text-destructive font-semibold" : ""}`}>{r.lunchOver || "—"}</td>
             {[r.regular, r.overtime, r.double].map((v, i) => <td key={i} className="px-2 text-right tabular-nums">{v ? v.toFixed(2) : "—"}</td>)}</tr>)}</tbody>

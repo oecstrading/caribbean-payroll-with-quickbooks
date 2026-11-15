@@ -14,7 +14,7 @@ export default function WorkforceAlerts() {
     let alive = true;
     const load = async () => {
       const [missing, clocks] = await Promise.all([
-        supabase.from("workforce_shifts").select("id", { count: "exact", head: true }).is("approved_hours", null).is("reviewed_at", null).eq("review_status", "pending").or("clock_in.is.null,clock_out.is.null").lt("scheduled_end", new Date().toISOString()),
+        supabase.from("workforce_shifts").select("id", { count: "exact", head: true }).is("approved_hours", null).is("reviewed_at", null).eq("review_status", "pending").lt("scheduled_end", new Date().toISOString()),
         supabase.from("clock_incidents").select("id", { count: "exact", head: true }).eq("status", "open"),
       ]);
       if (!alive) return;
