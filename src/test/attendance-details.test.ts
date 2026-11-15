@@ -1,7 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { matchesAttendanceDetail } from "@/lib/attendance-details";
+import { matchesAttendanceDetail, manuallyConfirmed } from "@/lib/attendance-details";
 const shift = { clock_in: "2026-11-07T08:00:00Z", clock_out: null, scheduled_start: "2026-11-07T08:00:00Z", scheduled_end: "2026-11-07T16:00:00Z", approved_hours: null };
 describe("attendance card details", () => {
+  it("identifies manual reviews even when both punch times exist", () => {
+    expect(manuallyConfirmed({ ...shift, review_status: "reviewed" })).toBe(true);
+    expect(manuallyConfirmed({ approved_hours: 8, review_status: "pending" })).toBe(false);
+  });
   it("on-clock lists open shifts only", () => {
     expect(matchesAttendanceDetail(shift, "on-clock")).toBe(true);
     expect(matchesAttendanceDetail({ ...shift, clock_out: "2026-11-07T16:00:00Z" }, "on-clock")).toBe(false);
