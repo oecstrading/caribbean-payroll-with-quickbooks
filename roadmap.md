@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Remove confirmed missing punches from attendance/dashboard/report counts, preserve evidence and verified hours, and test reconciliation and read-back.
+
 - [x] Add in-place clock explanations, guided repairs, activation sharing, punch review and confirmed deletion.
 - [x] Restrict Monitoring Center to administrators/Pay Masters; signed-in activation sharing/deletion tested on a temporary clock, desktop/mobile checked. Real employee hours and device locks were not changed for testing; physical-device recovery remains unverified.
 
