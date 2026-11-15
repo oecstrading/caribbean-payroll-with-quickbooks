@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Remove confirmed missing punches from attendance/dashboard/report counts, preserve evidence and verified hours, and test reconciliation and read-back.
+- [x] Remove confirmed missing punches from attendance/dashboard/report counts; verified existing confirmations survive reconciliation and reload, missing list excludes them, and 14 regression tests pass. No employee hours were changed for testing.
 
 - [x] Add in-place clock explanations, guided repairs, activation sharing, punch review and confirmed deletion.
 - [x] Restrict Monitoring Center to administrators/Pay Masters; signed-in activation sharing/deletion tested on a temporary clock, desktop/mobile checked. Real employee hours and device locks were not changed for testing; physical-device recovery remains unverified.
