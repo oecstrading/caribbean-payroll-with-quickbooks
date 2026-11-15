@@ -14,7 +14,7 @@ export default function WorkforceAlerts() {
     let alive = true;
     const load = async () => {
       const [missing, clocks] = await Promise.all([
-        supabase.from("workforce_alerts").select("id", { count: "exact", head: true }).is("resolved_at", null),
+        supabase.from("workforce_shifts").select("id", { count: "exact", head: true }).is("approved_hours", null).is("reviewed_at", null).eq("review_status", "pending").or("clock_in.is.null,clock_out.is.null").lt("scheduled_end", new Date().toISOString()),
         supabase.from("clock_incidents").select("id", { count: "exact", head: true }).eq("status", "open"),
       ]);
       if (!alive) return;
@@ -27,6 +27,8 @@ export default function WorkforceAlerts() {
         toast.warning("A staff punch is missing. Review company attendance.");
         void load();
       })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "workforce_alerts" }, () => void load())
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "workforce_shifts" }, () => void load())
       .on("postgres_changes", { event: "*", schema: "public", table: "clock_incidents" }, (payload) => {
         if (payload.eventType === "INSERT") {
           const title = (payload.new as { title?: string }).title;
