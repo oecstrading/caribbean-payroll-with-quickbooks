@@ -64,7 +64,7 @@ export const CLOCK_STATUS_LABELS: Record<ClockStatus, string> = {
 };
 
 export function clockNeedsAttention(clock: MonitoredClock): boolean {
-  return ["offline", "locked", "sync_review"].includes(clock.status);
+  return ["offline", "locked", "sync_review", "activation_pending", "not_configured"].includes(clock.status);
 }
 
 export function clockIsWorking(clock: MonitoredClock): boolean {
@@ -99,8 +99,8 @@ export function explainClock(clock: MonitoredClock, sinceLabel: string): ClockEx
   }
   if (clock.status === "locked") {
     return {
-      why: `${clock.name}'s personal clock is locked to one phone, and a different phone or browser tried to punch.`,
-      fix: "If the employee changed phones or browsers, reset the phone lock. Their next punch will register the new phone.",
+      why: `${clock.name}'s clock is temporarily locked after unsuccessful PIN attempts. This status alone does not mean a different phone was used.`,
+      fix: "Verify the employee’s identity and PIN. Reset the clock if needed; this also unlinks the old phone. Give a replacement PIN through the employee folder if it was forgotten.",
       actions: ["reset_phone"],
     };
   }
@@ -111,6 +111,18 @@ export function explainClock(clock: MonitoredClock, sinceLabel: string): ClockEx
       actions: ["review_punches"],
     };
   }
+  if (clock.status === "activation_pending" || clock.status === "switched_off") {
+    return {
+      why: clock.status === "switched_off" ? "This shared clock was deliberately switched off. It cannot accept punches." : "This shared clock has not completed activation on its intended PC or tablet.",
+      fix: "Generate a new single-use activation link and send it to the person at that PC or tablet. Open it there within 15 minutes, then allow location when asked. Delete the clock instead if it is no longer needed.",
+      actions: ["open_tablets"],
+    };
+  }
+  if (clock.status === "not_configured") return {
+    why: "The employee’s schedule is enabled, but their clock credentials are missing or disabled.",
+    fix: "Open their employee folder, select Login & clock, assign a code and PIN, enable the clock and send the personal link. Give the PIN separately.",
+    actions: [],
+  };
   return null;
 }
 
