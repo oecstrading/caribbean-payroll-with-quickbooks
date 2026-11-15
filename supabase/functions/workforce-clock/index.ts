@@ -63,7 +63,7 @@ Deno.serve(async req => {
     admin.from("user_roles").select("user_id").eq("org_id",org).eq("role","admin").limit(1).maybeSingle(),
     admin.from("company_settings").select("company_name,telephone").eq("org_id",org).maybeSingle()]);
    let hours=0,late=0,missing=0,days=0;
-   for(const s of month.data??[]){ if(s.clock_in)days++; if(s.clock_in&&s.scheduled_start&&new Date(s.clock_in).getTime()>new Date(s.scheduled_start).getTime()+5*60000)late++; if(s.approved_hours===null&&(!s.clock_in||!s.clock_out)&&s.shift_date<today)missing++;
+   for(const s of month.data??[]){ if(s.clock_in)days++; if(s.clock_in&&s.scheduled_start&&new Date(s.clock_in).getTime()>new Date(s.scheduled_start).getTime()+5*60000)late++; if(s.approved_hours===null&&s.shift_date<today)missing++;
     if(s.approved_hours!==null){const a=Number(s.approved_hours);hours+=(a>=7.51&&a<8)?8:a;} else if(s.clock_in&&s.clock_out){const lunch=s.lunch_out&&s.lunch_in?(new Date(s.lunch_in).getTime()-new Date(s.lunch_out).getTime())/3600000:(s.break_minutes??0)/60;{const w=Math.max(0,(new Date(s.clock_out).getTime()-new Date(s.clock_in).getTime())/3600000-lunch);hours+=(Math.round(w*100)/100>=7.51&&w<8)?8:w;}} }
    let adminEmail:string|null=null; if(contact.data?.user_id){const p=await admin.from("profiles").select("email").eq("id",contact.data.user_id).maybeSingle();adminEmail=p.data?.email??null;}
    // Earnings are deliberately never sent to the clock: staff see hours only, pay comes on the payslip.
