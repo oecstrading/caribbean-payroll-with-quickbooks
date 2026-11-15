@@ -13,6 +13,7 @@ import { usePaymasterDraft } from "@/components/PaymasterAlert";
 import { PayrollForecast } from "@/components/PayrollForecast";
 import { PaymasterFlagDetails } from "@/components/PaymasterFlagDetails";
 import { ChevronDown } from "lucide-react";
+import { matchesAttendanceDetail } from "@/lib/attendance-details";
 
 const money = (n: number | null | undefined) => n == null ? "—" : `XCD ${Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 type Flag = { severity: string; title: string; detail: string };
@@ -33,6 +34,16 @@ export default function AiPaymasterPage() {
   const [open, setOpen] = useState<string | null>(null);
   const toggle = (k: string) => setOpen(o => o === k ? null : k);
   const [payDay, setPayDay] = useState<string>("");
+  const { data: liveAttendance } = useQuery({
+    queryKey: ["paymaster-live-attendance", draft?.org_id],
+    enabled: Boolean(draft?.org_id),
+    refetchInterval: 30_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("workforce_shifts").select("clock_in,clock_out,scheduled_start,scheduled_end,approved_hours,reviewed_at,review_status").eq("org_id", draft?.org_id ?? "");
+      if (error) throw error;
+      return { missing: (data ?? []).filter(s => matchesAttendanceDetail(s, "missing")).length };
+    },
+  });
 
   const runNow = async () => {
     setRunning(true);
@@ -52,7 +63,10 @@ export default function AiPaymasterPage() {
     toast({ title: "Pay day saved" });
   };
 
-  const flags = (draft?.flags as Flag[] | null) ?? [];
+  const missingCount = liveAttendance?.missing ?? draft?.missing_punches ?? 0;
+  const flags = ((draft?.flags as Flag[] | null) ?? []).flatMap(f => f.title.toLowerCase().includes("missing punch")
+    ? missingCount ? [{ ...f, title: `${missingCount} unconfirmed missing punches` }] : []
+    : [f]);
   const suggestions = (draft?.suggestions as Suggestion[] | null) ?? [];
   const up = (draft?.change_pct ?? 0) >= 0;
 
@@ -79,7 +93,7 @@ export default function AiPaymasterPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <Stat active={open === "staff"} onClick={() => toggle("staff")} icon={Users} label="Staff" value={String(draft.employee_count)} />
           <Stat active={open === "cost"} onClick={() => toggle("cost")} icon={up ? TrendingUp : TrendingDown} label="Projected gross" value={money(draft.projected_gross)} sub={draft.change_pct == null ? "No earlier run" : `${up ? "+" : ""}${draft.change_pct}% vs ${money(draft.last_gross)}`} />
-          <Stat active={open === "time"} onClick={() => toggle("time")} icon={Clock} label="Missing punches / pending shifts" value={`${draft.missing_punches} / ${draft.pending_shifts}`} />
+          <Stat active={open === "time"} onClick={() => toggle("time")} icon={Clock} label="Missing punches / pending shifts" value={`${missingCount} / ${draft.pending_shifts}`} />
           <Stat active={open === "loans"} onClick={() => toggle("loans")} icon={Landmark} label="Loan repayments" value={money(draft.loan_repayments)} sub={`${draft.active_loans} active loans`} />
         </div>
         {open && <Card><CardContent className="p-4">
