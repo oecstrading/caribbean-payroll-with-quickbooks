@@ -7,6 +7,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { buildPayrollJournal } from "../_shared/qbo-journal.ts";
 
 interface SyncRequest {
   payroll_run_id: string;
@@ -70,44 +71,23 @@ Deno.serve(async (req) => {
       });
     }
 
-    const m = Object.fromEntries((mappings ?? []).map((r: any) => [r.payroll_item, r]));
-    const totals = (slips ?? []).reduce(
-      (a: any, s: any) => ({
-        gross: a.gross + Number(s.basic_pay || 0),
-        ot: a.ot + Number(s.overtime_pay || 0),
-        empNic: a.empNic + Number(s.employee_nic || 0),
-        erNic: a.erNic + Number(s.employer_nic || 0),
-        paye: a.paye + Number(s.paye || 0),
-        net: a.net + Number(s.net_pay || 0),
-        otherDed: a.otherDed +
-          Number(s.total_deductions || 0) -
-          Number(s.employee_nic || 0) -
-          Number(s.paye || 0),
-      }),
-      { gross: 0, ot: 0, empNic: 0, erNic: 0, paye: 0, net: 0, otherDed: 0 },
-    );
-
-    const line = (item: string, amount: number, postingType: "Debit" | "Credit") => ({
-      Amount: Math.round(amount * 100) / 100,
-      DetailType: "JournalEntryLineDetail",
-      Description: m[item]?.qbo_account_name || item,
-      JournalEntryLineDetail: {
-        PostingType: postingType,
-        AccountRef: {
-          value: m[item]?.qbo_account_id || `MOCK-${item}`,
-          name: m[item]?.qbo_account_name || item,
-        },
-      },
-    });
-
-    const lines: any[] = [];
-    if (totals.gross > 0) lines.push(line("gross_wages", totals.gross, "Debit"));
-    if (totals.ot > 0) lines.push(line("overtime", totals.ot, "Debit"));
-    if (totals.erNic > 0) lines.push(line("employer_nic", totals.erNic, "Debit"));
-    if (totals.empNic > 0) lines.push(line("employee_nic_payable", totals.empNic + totals.erNic, "Credit"));
-    if (totals.paye > 0) lines.push(line("paye_payable", totals.paye, "Credit"));
-    if (totals.otherDed > 0) lines.push(line("creditor_deductions", totals.otherDed, "Credit"));
-    if (totals.net > 0) lines.push(line("net_pay_clearing", totals.net, "Credit"));
+    if (body.action && body.action !== "preview" && body.action !== "sync") {
+      return new Response(JSON.stringify({ error: "Unsupported action" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const action = body.action || "preview";
+    const { data: configuration, error: configurationError } = await userClient.rpc("company_configuration");
+    if (configurationError || !configuration) {
+      return new Response(JSON.stringify({ error: "Company configuration unavailable" }), { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (action === "sync" && configuration.demo_mode !== true) {
+      return new Response(JSON.stringify({ error: "Live QuickBooks posting is not configured. Production sync is disabled." }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (action === "sync") {
+      const { data: previous, error: previousError } = await supabase.from("qbo_sync_log").select("id").eq("org_id", orgId).eq("payroll_run_id", body.payroll_run_id).eq("sync_type", "journal_entry").in("status", ["synced", "synced_sandbox"]).limit(1);
+      if (previousError) throw previousError;
+      if (previous?.length) return new Response(JSON.stringify({ error: "Payroll run already synced; duplicate posting prevented" }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const { lines } = buildPayrollJournal(slips ?? [], mappings ?? [], { requireMappedAccounts: false });
 
     const payload = {
       TxnDate: run.run_date,
@@ -116,14 +96,9 @@ Deno.serve(async (req) => {
       Line: lines,
     };
 
-    const action = body.action || "preview";
-    const { data: configuration } = await userClient.rpc("company_configuration");
-    if (action === "sync" && configuration?.demo_mode !== true) {
-      return new Response(JSON.stringify({ error: "A real QuickBooks connection is required. Simulated posting is disabled for production companies." }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-    const sandbox = !conn || conn.environment === "sandbox" || conn.status !== "connected";
+    const sandbox = true; // Live OAuth/API posting intentionally disabled until integration is implemented.
 
-    let response: any = { mode: sandbox ? "sandbox" : "live", lines: lines.length };
+    let response: any = { mode: "sandbox", lines: lines.length, simulated: true };
     let qboId = "";
     let status = "preview";
 
@@ -133,10 +108,6 @@ Deno.serve(async (req) => {
         status = "synced_sandbox";
         response.simulated = true;
         response.qbo_id = qboId;
-      } else {
-        // Live mode placeholder — wire real Intuit API here
-        qboId = `LIVE-JE-${Date.now()}`;
-        status = "synced";
       }
     }
 
