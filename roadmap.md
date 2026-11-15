@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Round reviewed hours/minutes upward to two decimals; optional whole-hour checkbox verified signed-in on desktop/mobile, 26 tests passed. Server preserves reviewed choice; no real employee hours changed for testing.
+
 - [x] Count every ended unconfirmed shift as missing and label all manual reviews; signed-in missing list now shows all three, confirmations persist after reload, and tests pass. No unconfirmed employee hours were approved.
 
 - [x] Remove confirmed missing punches from attendance/dashboard/report counts; verified existing confirmations survive reconciliation and reload, missing list excludes them, and 14 regression tests pass. No employee hours were changed for testing.

@@ -1,4 +1,4 @@
-import { roundShiftHours } from "./hours-rounding";
+import { roundShiftHours, roundTimeUp } from "./hours-rounding";
 import { attendanceConfirmed, type Confirmation } from "./attendance-details";
 // Time & Attendance audit math. Rules: regular hours up to the employee's standard day,
 // overtime (1.5x) beyond that, all Sunday hours double time (2.0x); late = more than 5 min after scheduled start.
@@ -14,7 +14,7 @@ export function splitHours(s: ShiftIn, stdDay = 8, graceMin = 0) {
   if (s.approved_hours == null && (!s.clock_in || !s.clock_out)) return { regular: 0, overtime: 0, double: 0 };
   const worked = s.approved_hours != null ? Number(s.approved_hours)
     : Math.max(0, (Date.parse(s.clock_out ?? "") - Date.parse(s.clock_in ?? "")) / 3_600_000 - (s.break_minutes ?? 0) / 60);
-  const h = roundShiftHours(Math.round(worked * 100) / 100);
+  const h = s.approved_hours != null ? roundTimeUp(worked) : roundShiftHours(roundTimeUp(worked));
   if (new Date(`${s.shift_date}T12:00:00`).getDay() === 0) return { regular: 0, overtime: 0, double: h };
   const regular = Math.min(h, stdDay);
   const extra = Math.round((h - regular) * 100) / 100;
