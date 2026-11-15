@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] Add in-place clock explanations, guided repairs, activation sharing, punch review and confirmed deletion.
+- [ ] Restrict Monitoring Center to administrators/Pay Masters and verify signed-in interactions and tests.
+
 - [x] Add an Attendance Monitoring Center showing authorized personal/shared clocks, locations, live activity, connectivity and actionable health details.
 - [x] Detect clock failures and sync gaps, notify Pay Masters/admins, and let them acknowledge/resolve incidents without changing punches or payroll.
 - [x] Extend AI Paymaster with proactive clock-health checks and recommended next steps while preserving human review and tenant isolation.
