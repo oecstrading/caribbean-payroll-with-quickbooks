@@ -16,7 +16,7 @@ import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function AttendancePage() {
-  const { isAdminOrManager, demoMode } = useRole();
+  const { isAdminOrManager, demoMode, canAccess } = useRole();
   const [companyId, setCompanyId] = useState<string>();
   useEffect(() => { supabase.rpc("current_org_id").then(({data}) => { if(data)setCompanyId(data); }); }, []);
   const [importedRecords, setImportedRecords] = useState<AttendanceRecord[]>([]);
@@ -59,7 +59,7 @@ export default function AttendancePage() {
         {demoMode && <AttendanceCSVImport onImport={handleImport} />}
       </div>
 
-      <ClockMonitoringCenter />
+      {canAccess("/clock-devices") && <ClockMonitoringCenter />}
 
       {/* Date Selector */}
       <StaffTimeClock companyId={companyId} />

@@ -22,6 +22,12 @@ describe("clock monitoring status rules", () => {
     expect(clockNeedsAttention(clock("sync_review"))).toBe(true);
   });
 
+  it("includes missing setup and pending activation in actionable notices", () => {
+    expect(clockNeedsAttention(clock("activation_pending", "shared"))).toBe(true);
+    expect(clockNeedsAttention(clock("not_configured"))).toBe(true);
+    expect(clockNeedsAttention(clock("switched_off", "shared"))).toBe(false);
+  });
+
   it("counts clocked-in and lunch states as working", () => {
     expect(clockIsWorking(clock("clocked_in"))).toBe(true);
     expect(clockIsWorking(clock("on_lunch"))).toBe(true);
