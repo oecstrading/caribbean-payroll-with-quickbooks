@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatCurrency } from "@/lib/payroll-engine";
-import { splitHours, isLate, lateMinutes, lunchOverMinutes, LATE_GRACE_MIN, dailyCost, type ShiftIn } from "@/lib/attendance-audit";
+import { splitHours, isLate, lateMinutes, lunchOverMinutes, LATE_GRACE_MIN, dailyCost, unconfirmedAbsence, type ShiftIn } from "@/lib/attendance-audit";
+import { attendanceConfirmed } from "@/lib/attendance-details";
 import { SummaryCard } from "@/components/SummaryCard";
 
 type Emp = { id: string; name: string; salary: number; std: number; users: string[] };
@@ -30,7 +31,7 @@ export default function AttendanceAuditReport() {
     setLoading(true);
     const [e, s, l, g] = await Promise.all([
       supabase.from("employee_records").select("id,first_name,last_name,monthly_salary,std_hours_per_day,user_id,login_user_id").is("deleted_at", null),
-      supabase.from("workforce_shifts").select("id,employee_id,shift_date,scheduled_start,clock_in,clock_out,break_minutes,approved_hours,lunch_out,lunch_in").gte("shift_date", from).lte("shift_date", to).order("shift_date"),
+      supabase.from("workforce_shifts").select("id,employee_id,shift_date,scheduled_start,clock_in,clock_out,break_minutes,approved_hours,reviewed_at,review_status,lunch_out,lunch_in").gte("shift_date", from).lte("shift_date", to).order("shift_date"),
       supabase.from("leave_requests").select("user_id,leave_type,start_date,end_date,status").lte("start_date", to).gte("end_date", from),
       supabase.from("workforce_clock_settings").select("grace_minutes").maybeSingle(),
     ]);
@@ -54,8 +55,7 @@ export default function AttendanceAuditReport() {
       const row = out.get(emp.id) ?? { emp, absent: 0, unexcused: 0, sick: 0, late: 0, lateMin: 0 };
       if (s.late) row.late++;
       row.lateMin += s.lateMin;
-      const past = s.shift_date < new Date().toISOString().slice(0, 10);
-      if (!s.clock_in && past) {
+      if (unconfirmedAbsence(s)) {
         row.absent++;
         const cover = leave.find(l => emp.users.includes(l.user_id) && l.status === "approved" && l.start_date <= s.shift_date && l.end_date >= s.shift_date);
         if (!cover) row.unexcused++; else if (cover.leave_type === "sick") row.sick++;
@@ -66,7 +66,7 @@ export default function AttendanceAuditReport() {
   }, [grid, emps, leave]);
   const dayDetails = (emp: Emp) => {
     const today = new Date().toISOString().slice(0, 10);
-    const rows = grid.filter(s => emps.get(s.employee_id)?.id === emp.id && (s.lateMin > 0 || (!s.clock_in && s.shift_date < today)));
+    const rows = grid.filter(s => emps.get(s.employee_id)?.id === emp.id && (s.lateMin > 0 || unconfirmedAbsence(s, today)));
     return <table className="w-full text-xs"><thead><tr className="text-muted-foreground text-left">{["Date", "Scheduled start", "Clocked in", "Minutes late", "Status"].map(h => <th key={h} className="py-1 px-2">{h}</th>)}</tr></thead>
       <tbody>{rows.map(s => { const cover = !s.clock_in ? leave.find(l => emp.users.includes(l.user_id) && l.status === "approved" && l.start_date <= s.shift_date && l.end_date >= s.shift_date) : undefined;
         const mins = s.clock_in && s.scheduled_start ? Math.round((new Date(s.clock_in).getTime() - new Date(s.scheduled_start).getTime()) / 60000) : null;
@@ -88,8 +88,8 @@ export default function AttendanceAuditReport() {
           <thead className="sticky top-0 bg-card"><tr className="border-b border-border text-muted-foreground text-left">{["Employee", "Date", "Clock-in", "Clock-out", "Min late", "Lunch over", "Regular", "OT 1.5×", "DT 2.0×"].map((h, i) => <th key={h} className={`py-2 px-2 whitespace-nowrap ${i > 3 ? "text-right" : ""}`}>{h}</th>)}</tr></thead>
           <tbody>{loading ? <tr><td colSpan={9} className="py-6 text-center text-muted-foreground">Loading shifts…</td></tr> : !grid.length ? <tr><td colSpan={9} className="py-6 text-center text-muted-foreground">No shifts in this pay cycle.</td></tr> : grid.map(r => <tr key={r.id} className="border-b border-border/50">
             <td className="py-2 px-2">{r.name}</td><td className="px-2 whitespace-nowrap">{r.shift_date}</td>
-            <td className="px-2 whitespace-nowrap">{fmtTime(r.clock_in)} {r.late && <Badge className="ml-1 bg-accent text-accent-foreground">Late</Badge>}{!r.clock_in && <Badge variant="destructive" className="ml-1">No punch</Badge>}</td>
-            <td className="px-2">{fmtTime(r.clock_out)}</td><td className="px-2 text-right tabular-nums">{r.lateMin || "—"}</td><td className={`px-2 text-right tabular-nums ${r.lunchOver > grace ? "text-destructive font-semibold" : ""}`}>{r.lunchOver || "—"}</td>
+            <td className="px-2 whitespace-nowrap">{fmtTime(r.clock_in)} {r.late && <Badge className="ml-1 bg-accent text-accent-foreground">Late</Badge>}{!r.clock_in && <Badge variant={attendanceConfirmed(r) ? "secondary" : "destructive"} className="ml-1">{attendanceConfirmed(r) ? "Manually confirmed" : "Unconfirmed punch"}</Badge>}</td>
+            <td className="px-2">{fmtTime(r.clock_out)}{!r.clock_out && attendanceConfirmed(r) && <Badge variant="secondary">Manually confirmed</Badge>}</td><td className="px-2 text-right tabular-nums">{r.lateMin || "—"}</td><td className={`px-2 text-right tabular-nums ${r.lunchOver > grace ? "text-destructive font-semibold" : ""}`}>{r.lunchOver || "—"}</td>
             {[r.regular, r.overtime, r.double].map((v, i) => <td key={i} className="px-2 text-right tabular-nums">{v ? v.toFixed(2) : "—"}</td>)}</tr>)}</tbody>
           {!!grid.length && <tfoot><tr className="font-semibold border-t-2 border-border"><td className="py-2 px-2" colSpan={4}>Totals</td><td className="px-2 text-right tabular-nums">{grid.reduce((s, r) => s + r.lateMin, 0)}</td><td />{(["regular", "overtime", "double"] as const).map(k => <td key={k} className="px-2 text-right tabular-nums">{grid.reduce((s, r) => s + r[k], 0).toFixed(2)}</td>)}</tr></tfoot>}
         </table></div>

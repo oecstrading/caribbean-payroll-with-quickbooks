@@ -10,6 +10,20 @@ describe("attendance card details", () => {
     expect(matchesAttendanceDetail(shift, "missing", Date.parse("2026-11-07T15:00:00Z"))).toBe(false);
     expect(matchesAttendanceDetail(shift, "missing", Date.parse("2026-11-07T17:00:00Z"))).toBe(true);
   });
+  it("manually confirmed missing punches leave missing, review and on-clock totals", () => {
+    const confirmed = { ...shift, approved_hours: 8, review_status: "reviewed", reviewed_at: "2026-11-08T09:00:00Z" };
+    expect(matchesAttendanceDetail(confirmed, "missing")).toBe(false);
+    expect(matchesAttendanceDetail(confirmed, "review")).toBe(false);
+    expect(matchesAttendanceDetail(confirmed, "on-clock")).toBe(false);
+    expect(matchesAttendanceDetail(confirmed, "complete")).toBe(true);
+  });
+  it("zero confirmed hours are still confirmed and not missing", () => {
+    expect(matchesAttendanceDetail({ ...shift, clock_in: null, approved_hours: 0 }, "missing")).toBe(false);
+  });
+  it("only unconfirmed incomplete ended shifts count as missing", () => {
+    expect(matchesAttendanceDetail(shift, "missing")).toBe(true);
+    expect(matchesAttendanceDetail({ ...shift, clock_out: "2026-11-07T16:00:00Z" }, "missing")).toBe(false);
+  });
   it("late details use the five-minute grace period", () => {
     expect(matchesAttendanceDetail({ ...shift, clock_in: "2026-11-07T08:05:00Z" }, "late")).toBe(false);
     expect(matchesAttendanceDetail({ ...shift, clock_in: "2026-11-07T08:06:00Z" }, "late")).toBe(true);
