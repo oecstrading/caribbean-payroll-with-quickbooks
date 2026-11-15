@@ -7,7 +7,7 @@ export function roundShiftHours(h: number): number {
 /** Upward rounding without promoting exact decimal boundaries due to floating-point noise. */
 export function roundTimeUp(value: number): number {
   if (!Number.isFinite(value) || value < 0) throw new Error("Enter valid non-negative hours or minutes");
-  return Math.ceil(value * 100 - 1e-9) / 100;
+  return Math.max(0, Math.ceil(value * 100 - 1e-9) / 100);
 }
 
 export function reviewedHours(value: number, wholeHour = false): number {
