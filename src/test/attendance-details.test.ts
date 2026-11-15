@@ -20,9 +20,11 @@ describe("attendance card details", () => {
   it("zero confirmed hours are still confirmed and not missing", () => {
     expect(matchesAttendanceDetail({ ...shift, clock_in: null, approved_hours: 0 }, "missing")).toBe(false);
   });
-  it("only unconfirmed incomplete ended shifts count as missing", () => {
+  it("all three unconfirmed ended shifts count as missing, including recorded pairs", () => {
     expect(matchesAttendanceDetail(shift, "missing")).toBe(true);
-    expect(matchesAttendanceDetail({ ...shift, clock_out: "2026-11-07T16:00:00Z" }, "missing")).toBe(false);
+    const rows = [shift, { ...shift, clock_out: "2026-11-07T16:00:00Z" }, { ...shift, clock_out: "2026-11-07T12:00:00Z" }];
+    expect(rows.filter(s => matchesAttendanceDetail(s, "missing")).length).toBe(3);
+    expect(matchesAttendanceDetail(rows[1], "complete")).toBe(false);
   });
   it("late details use the five-minute grace period", () => {
     expect(matchesAttendanceDetail({ ...shift, clock_in: "2026-11-07T08:05:00Z" }, "late")).toBe(false);

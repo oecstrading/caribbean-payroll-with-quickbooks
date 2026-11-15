@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Count every ended unconfirmed shift as missing and label all manual reviews; verify three-row example without approving employee hours.
+
 - [x] Remove confirmed missing punches from attendance/dashboard/report counts; verified existing confirmations survive reconciliation and reload, missing list excludes them, and 14 regression tests pass. No employee hours were changed for testing.
 
 - [x] Add in-place clock explanations, guided repairs, activation sharing, punch review and confirmed deletion.
