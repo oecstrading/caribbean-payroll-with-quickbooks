@@ -5,3 +5,4 @@
 - scripts/generate-mobile-workforce.py prepends the Workforce on the Move pages (images in src/assets/mobile-workforce) to the current manual/brochure to produce the next versions; rerun after regenerating the base PDFs.
 - scripts/generate-selling-points.py prepends the selling-point pages (accounting, security, geofencing, projects) to the latest manual/brochure; rerun after generate-mobile-workforce.py.
 - scripts/generate-whats-new.py prepends step-by-step What's-new task pages to the latest manual/brochure; rerun after generate-selling-points.py.
+- scripts/generate-latest-updates.py prepends the latest-updates pages to manual v12/brochure v8 (-> v13/v9); rerun after generate-whats-new.py.
