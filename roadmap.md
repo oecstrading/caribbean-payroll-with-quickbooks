@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Round reviewed hours/minutes upward to two decimals; add optional next-whole-hour checkbox and verify saved choice without altering real employee hours.
+- [x] Round reviewed hours/minutes upward to two decimals; optional whole-hour checkbox verified signed-in on desktop/mobile, 26 tests passed. Server preserves reviewed choice; no real employee hours changed for testing.
 
 - [x] Count every ended unconfirmed shift as missing and label all manual reviews; signed-in missing list now shows all three, confirmations persist after reload, and tests pass. No unconfirmed employee hours were approved.
 
