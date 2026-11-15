@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { unconfirmedMissingPunch } from "@/lib/attendance-details";
 
 type Row = { key: string; cols: string[] };
 type Detail = { head: string[]; rows: Row[]; path: string; label: string };
@@ -34,8 +35,9 @@ async function load(kind: string): Promise<Detail> {
   const { m, staff } = await names();
   const n = (id?: string | null) => (id && m[id]) || "Unknown employee";
   if (kind === "missing") {
-    const { data } = await supabase.from("workforce_alerts").select("id,employee_id,missing_type,created_at,shift_id").is("resolved_at", null).order("created_at", { ascending: false }).limit(100);
-    return { head: ["Employee", "Missing", "Detected"], rows: (data ?? []).map(a => ({ key: a.id, cols: [n(a.employee_id), String(a.missing_type ?? "").replace(/_/g, " "), t(a.created_at)] })), path: "/attendance", label: "Fix on Attendance" };
+    const { data, error } = await supabase.from("workforce_shifts").select("id,employee_id,shift_date,clock_in,clock_out,approved_hours,reviewed_at,review_status,scheduled_end").is("approved_hours", null).is("reviewed_at", null).eq("review_status", "pending").lt("scheduled_end", new Date().toISOString()).order("shift_date", { ascending: false }).limit(100);
+    if (error) throw error;
+    return { head: ["Employee", "Unconfirmed punch", "Date"], rows: (data ?? []).filter(unconfirmedMissingPunch).map(s => ({ key: s.id, cols: [n(s.employee_id), !s.clock_in ? "Clock in" : "Clock out", s.shift_date] })), path: "/attendance?filter=missing", label: "Fix on Attendance" };
   }
   if (kind === "pending") {
     const { data } = await supabase.from("workforce_shifts").select("id,employee_id,shift_date,clock_in,clock_out").eq("review_status", "pending").gte("shift_date", monthStart()).order("shift_date", { ascending: false }).limit(100);
