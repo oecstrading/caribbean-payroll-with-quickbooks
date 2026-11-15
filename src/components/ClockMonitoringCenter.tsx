@@ -10,6 +10,7 @@ import { SummaryCard } from "@/components/SummaryCard";
 import BulkClockActivation from "@/components/BulkClockActivation";
 import ClockActivityReport from "@/components/ClockActivityReport";
 import BulkEmployeeClockActivation from "@/components/BulkEmployeeClockActivation";
+import ClockRepairDialog from "@/components/ClockRepairDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -85,7 +86,8 @@ function ClockMap({ clocks, selected, onSelect }: { clocks: MonitoredClock[]; se
 }
 
 export default function ClockMonitoringCenter() {
-  const { isAdmin, canAccess } = useRole();
+  const { canAccess } = useRole();
+  const allowed = canAccess("/clock-devices");
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const initialFilter = (params.get("clock_view") || "all") as ClockFilter;
@@ -95,9 +97,11 @@ export default function ClockMonitoringCenter() {
   const [error, setError] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [siteFilter, setSiteFilter] = useState("all");
+  const [repairKey, setRepairKey] = useState<string | null>(null);
   const filter: ClockFilter = ["all", "attention", "working", "shared", "personal"].includes(initialFilter) ? initialFilter : "all";
 
   const load = useCallback(async (quiet = false) => {
+    if (!allowed) return;
     if (!quiet) setLoading(true);
     const { data: result, error: loadError } = await supabase.rpc("clock_monitoring");
     if (loadError) setError(loadError.message);
@@ -106,9 +110,10 @@ export default function ClockMonitoringCenter() {
       setError("");
     }
     setLoading(false);
-  }, []);
+  }, [allowed]);
 
   useEffect(() => {
+    if (!allowed) return;
     void load();
     const refresh = window.setInterval(() => void load(true), 60_000);
     const focus = () => void load(true);
@@ -122,7 +127,7 @@ export default function ClockMonitoringCenter() {
       window.removeEventListener("focus", focus);
       void supabase.removeChannel(channel);
     };
-  }, [load]);
+  }, [load, allowed]);
 
   const clocks = useMemo(() => data?.clocks ?? [], [data]);
   const incidents = useMemo(() => data?.incidents ?? [], [data]);
@@ -172,12 +177,9 @@ export default function ClockMonitoringCenter() {
     if (!window.confirm(question)) return;
     const { error: fixError } = action === "switch_off_tablet"
       ? await supabase.rpc("revoke_clock_device", { _id: clock.id })
-      : await supabase.rpc("reset_clock_phone", { _employee: clock.id });
+      : await supabase.rpc("admin_reset_employee_clock", { _employee: clock.id });
     if (fixError) return void toast.error(fixError.message);
-    for (const incident of incidents.filter((i) => i.clock_id === clock.id)) {
-      await supabase.rpc("review_clock_incident", { _id: incident.id, _action: "resolve" });
-    }
-    toast.success(action === "switch_off_tablet" ? "Tablet switched off. Alert cleared." : "Phone lock reset.");
+    toast.success(action === "switch_off_tablet" ? "Tablet switched off. Refresh to check alerts." : "Phone lock reset. Review any pending punches separately.");
     await load(true);
   };
 
@@ -188,6 +190,8 @@ export default function ClockMonitoringCenter() {
     window.setTimeout(() => document.getElementById("live-shift-details")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   };
 
+  if (!allowed) return null;
+  const repairClock = clocks.find(c => `${c.type}:${c.id}` === repairKey) ?? null;
   return (
     <section aria-labelledby="clock-monitoring-title" className="overflow-hidden rounded-3xl border border-sidebar-border bg-sidebar text-sidebar-foreground shadow-elevated">
       <div className="carib-band border-b border-sidebar-border p-4 md:p-6">
@@ -240,8 +244,8 @@ export default function ClockMonitoringCenter() {
                   <p className="mt-1 text-sidebar-foreground/80"><strong>Why:</strong> {ex.why}</p>
                   <p className="mt-1 text-sidebar-foreground/80"><strong>How to fix:</strong> {ex.fix}</p>
                   <div className="mt-2 flex flex-wrap gap-2">
-                    {ex.actions.includes("switch_off_tablet") && isAdmin && <Button size="sm" onClick={() => void fixClock(clock, "switch_off_tablet")}><WifiOff className="mr-1 h-4 w-4" />Switch off this tablet</Button>}
-                    {ex.actions.includes("open_tablets") && isAdmin && <Button size="sm" variant="outline" className="border-sidebar-border bg-sidebar text-sidebar-foreground" onClick={() => navigate("/clock-devices")}><Tablet className="mr-1 h-4 w-4" />Open tablet setup</Button>}
+                    <Button size="sm" onClick={() => setRepairKey(`${clock.type}:${clock.id}`)}><CloudCog className="mr-1 h-4 w-4" />Fix here · steps & actions</Button>
+                    {ex.actions.includes("switch_off_tablet") && <Button size="sm" onClick={() => void fixClock(clock, "switch_off_tablet")}><WifiOff className="mr-1 h-4 w-4" />Switch off this tablet</Button>}
                     {ex.actions.includes("reset_phone") && <Button size="sm" onClick={() => void fixClock(clock, "reset_phone")}><Smartphone className="mr-1 h-4 w-4" />Reset phone lock</Button>}
                     {ex.actions.includes("review_punches") && <Button size="sm" onClick={openOfflineReview}><Eye className="mr-1 h-4 w-4" />Review punches</Button>}
                   </div>
@@ -258,7 +262,7 @@ export default function ClockMonitoringCenter() {
               <article key={incident.id} className="rounded-xl border border-sidebar-border bg-sidebar-accent p-3">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div><div className="flex flex-wrap items-center gap-2"><Badge variant={incident.severity === "high" ? "destructive" : "secondary"}>{incident.severity === "high" ? "Urgent" : "Review"}</Badge><Badge variant="outline" className="border-sidebar-border text-sidebar-foreground/75">{incident.status === "open" ? "New" : "Acknowledged"}</Badge><h4 className="font-semibold">{incident.title}</h4></div><p className="mt-1 text-sm text-sidebar-foreground/75">{incident.detail}</p><p className="mt-1 text-xs text-sidebar-foreground/60">First detected {new Date(incident.first_detected_at).toLocaleString()} · Latest check {timeAgo(incident.last_detected_at)}</p></div>
-                  <div className="flex flex-wrap gap-2">{incident.kind === "offline_sync_review" && <Button size="sm" variant="outline" className="border-sidebar-border bg-sidebar text-sidebar-foreground" onClick={openOfflineReview}><Eye className="mr-1 h-4 w-4" />Review punches</Button>}{incident.status === "open" && <Button size="sm" variant="outline" className="border-sidebar-border bg-sidebar text-sidebar-foreground" onClick={() => void reviewIncident(incident, "acknowledge")}><Check className="mr-1 h-4 w-4" />Acknowledge</Button>}<Button size="sm" variant="outline" className="border-sidebar-border bg-sidebar text-sidebar-foreground" onClick={() => void reviewIncident(incident, "resolve")}><CheckCircle2 className="mr-1 h-4 w-4" />Resolve</Button></div>
+                  <div className="flex flex-wrap gap-2">{clocks.some(c => c.id === incident.clock_id && c.type === incident.clock_type) && <Button size="sm" onClick={() => setRepairKey(`${incident.clock_type}:${incident.clock_id}`)}>Fix here · steps & actions</Button>}{incident.status === "open" && <Button size="sm" variant="outline" className="border-sidebar-border bg-sidebar text-sidebar-foreground" onClick={() => void reviewIncident(incident, "acknowledge")}><Check className="mr-1 h-4 w-4" />Acknowledge</Button>}<Button size="sm" variant="outline" className="border-sidebar-border bg-sidebar text-sidebar-foreground" title="Resolve only after corrective action; this does not approve hours or change payroll." onClick={() => void reviewIncident(incident, "resolve")}><CheckCircle2 className="mr-1 h-4 w-4" />Resolve</Button></div>
                 </div>
               </article>
             ))}
@@ -276,14 +280,14 @@ export default function ClockMonitoringCenter() {
               const key = `${clock.type}:${clock.id}`;
               const tone = clockStatusTone(clock);
               return (
-                <button key={key} type="button" onClick={() => setSelectedId(key)} className={cn("w-full rounded-2xl border bg-sidebar-accent p-4 text-left transition hover:border-sidebar-primary/60", selected?.id === clock.id && selected.type === clock.type ? "border-sidebar-primary ring-1 ring-sidebar-primary" : "border-sidebar-border")}>
+                <article key={key} className={cn("w-full rounded-2xl border bg-sidebar-accent p-4 text-left transition hover:border-sidebar-primary/60", selected?.id === clock.id && selected.type === clock.type ? "border-sidebar-primary ring-1 ring-sidebar-primary" : "border-sidebar-border")}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-start gap-3"><span className="rounded-xl bg-sidebar-primary/15 p-2 text-sidebar-primary">{clock.type === "shared" ? <Tablet className="h-5 w-5" /> : <Smartphone className="h-5 w-5" />}</span><div className="min-w-0"><h3 className="truncate font-semibold">{clock.name}</h3><p className="text-xs capitalize text-sidebar-foreground/60">{clock.type === "shared" ? "Shared tablet" : "Personal clock"}{clock.department ? ` · ${clock.department}` : ""}</p></div></div>
                     <Badge className={cn("shrink-0 border", toneClasses[tone])}>{clock.status === "offline" && <WifiOff className="mr-1 h-3 w-3" />}{CLOCK_STATUS_LABELS[clock.status]}</Badge>
                   </div>
                   <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2"><p className="text-sidebar-foreground/80"><span className="text-sidebar-foreground/55">Activity:</span> {clock.current_activity || "No activity reported"}</p><p className="text-sidebar-foreground/80"><span className="text-sidebar-foreground/55">Today:</span> {clock.punches_today} punch{clock.punches_today === 1 ? "" : "es"}</p><p className="flex items-center gap-1 text-sidebar-foreground/80"><MapPin className="h-3.5 w-3.5 text-sidebar-primary" />{clockLocationLabel(clock)}</p><p className="text-sidebar-foreground/70"><span className="text-sidebar-foreground/55">Last seen:</span> {timeAgo(clock.last_seen_at)}</p></div>
-                  {clock.latitude != null && clock.longitude != null && <span className="mt-2 inline-flex items-center gap-1 text-xs text-sidebar-primary">View last reported location <ExternalLink className="h-3 w-3" /></span>}
-                </button>
+                  <div className="mt-3 flex flex-wrap gap-2"><Button size="sm" className="border-sidebar-border bg-sidebar text-sidebar-foreground" variant="outline" onClick={() => { setSelectedId(key); setRepairKey(key); }}><CloudCog className="mr-1 h-4 w-4" />Details, fix or delete</Button>{clock.latitude != null && clock.longitude != null && <Button size="sm" variant="ghost" className="text-sidebar-primary" onClick={() => setSelectedId(key)}><MapPin className="mr-1 h-4 w-4" />View location</Button>}</div>
+                </article>
               );
             })}
             {data && !visible.length && <p className="rounded-2xl border border-dashed border-sidebar-border p-8 text-center text-sidebar-foreground/65">No clocks match this view. Personal clocks appear after an administrator enables an employee’s clock schedule.</p>}
@@ -296,6 +300,7 @@ export default function ClockMonitoringCenter() {
           </div>
         </div>
       </div>
+      <ClockRepairDialog clock={repairClock} onClose={() => setRepairKey(null)} onChanged={() => load(true)} />
     </section>
   );
 }
