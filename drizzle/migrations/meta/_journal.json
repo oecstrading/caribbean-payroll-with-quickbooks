@@ -806,6 +806,13 @@
       "when": 1794850693507,
       "tag": "0114_workspace_access_active_company",
       "breakpoints": true
+    },
+    {
+      "idx": 115,
+      "version": "7",
+      "when": 1794878173338,
+      "tag": "0115_paymaster_full_company_pages",
+      "breakpoints": true
     }
   ]
 }
