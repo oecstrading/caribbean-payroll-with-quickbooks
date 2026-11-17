@@ -19,12 +19,12 @@ export const EMPLOYEE_MODULES: WorkspaceModule[] = ["attendance", "field", "secu
 export type AccessTitle = "admin" | "paymaster" | "manager" | "employee";
 export const ACCESS_TITLES: { id: AccessTitle; label: string; hint: string }[] = [
   { id: "employee", label: "Employee", hint: "Time clock and own dashboard, signing in with their PIN from any device." },
-  { id: "paymaster", label: "Pay Master", hint: "Payroll management pages. Untick any you don't want them to have." },
+  { id: "paymaster", label: "Pay Master", hint: "Every company page except Company settings and User management." },
   { id: "manager", label: "Manager", hint: "Only the pages you tick below." },
   { id: "admin", label: "Administrator", hint: "Every enabled company page plus user management." },
 ];
-export const PAYMASTER_MODULES: WorkspaceModule[] = ["hr", "payroll", "reports", "attendance", "leave", "quickbooks", "training"];
-export const PAYMASTER_DEFAULTS: WorkspaceModule[] = ["hr", "payroll", "reports", "attendance", "leave", "quickbooks", "training"];
+export const PAYMASTER_MODULES: WorkspaceModule[] = WORKSPACE_MODULES.map(m => m.id).filter(m => m !== "settings");
+export const PAYMASTER_DEFAULTS: WorkspaceModule[] = PAYMASTER_MODULES;
 export const EMPLOYEE_DEFAULTS: WorkspaceModule[] = ["attendance", "training"];
 /** Pages that may be ticked for a job role. */
 export function titleAllowedModules(title: AccessTitle): WorkspaceModule[] {
